@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Update CLAUDE.md with the following project context:
 
 ## Project
 
-Meod Farm Group Buy Management - Full Stack PoC
+SCCCI AI Challenge - Tender Process Automation (Problem Statement 4C)
 
 ## Tech Stack
 
@@ -12,7 +12,7 @@ Meod Farm Group Buy Management - Full Stack PoC
 - Backend: Node.js + Express, Sequelize ORM, Yup
 - Database: PostgreSQL (Neon)
 - Images: Cloudinary
-- GenAI service: Gemini API
+- GenAI service: Gemini API (used for tender terms comparison & text summarisation)
 
 ## Key Files
 
