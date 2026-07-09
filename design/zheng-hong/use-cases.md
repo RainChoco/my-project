@@ -48,7 +48,7 @@ Covers every function this scope owns, per `design/zheng-hong/database-schema.md
   2. MA staff confirms withdrawal/deletion.
   3. System cascades the delete to `tender_documents` and `eligibility_checks` for that tender (`onDelete: 'CASCADE'`).
 - **Edge Case / Alternative Flow:**
-  - **Tender is `approved` or `under_evaluation`:** hard delete is blocked; system requires an explicit "withdraw" status transition instead, keeping the record (and its audit trail) intact rather than removing it.
+  - **Tender is `approved` or `under_evaluation`:** hard delete is blocked; system requires an explicit "withdraw" status transition instead - the tender's `status` changes to `'withdrawn'`, keeping the record (and its audit trail) intact rather than removing it.
 
 ## UC-A5: Upload a Replacement Document (Versioning)
 
@@ -104,7 +104,7 @@ Covers every function this scope owns, per `design/zheng-hong/database-schema.md
 - **Trigger:** BCA publishes an updated grading schedule, or the team needs to correct a seeded/placeholder limit.
 - **Main Flow:**
   1. Admin user opens the BCA grade limits configuration screen.
-  2. Admin updates `max_tender_value` for a given `grade`, or adds a new `effective_from` record.
+  2. Admin sets a new `max_tender_value` for a given `grade` with an `effective_from` date - this appends a new historical entry to `bca_grade_limits` rather than overwriting the existing row for that grade.
   3. System saves the change; future `eligibility_checks` runs use the new value.
 - **Edge Case / Alternative Flow:**
   - **Existing approved tenders were checked against the old limit:** their `eligibility_checks.threshold_value_used` keeps the snapshotted historical value - updating the reference table does not retroactively change past audit records.

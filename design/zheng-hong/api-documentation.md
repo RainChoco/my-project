@@ -55,7 +55,7 @@ Covers only the endpoints this scope owns, matching `design/zheng-hong/use-cases
 - **Query Parameters:**
   | Param | Type | Notes |
   |---|---|---|
-  | `status` | string | Filter by `draft`, `submitted`, `under_evaluation`, `approved`, `rejected` |
+  | `status` | string | Filter by `draft`, `submitted`, `under_evaluation`, `approved`, `rejected`, `withdrawn` |
   | `eligibility_status` | string | Filter by `pending`, `eligible`, `flagged`, `rejected` |
   | `vendor_name` | string | Partial, case-insensitive match |
   | `page`, `limit` | integer | Pagination, defaults `page=1`, `limit=20` |
@@ -108,7 +108,7 @@ Covers only the endpoints this scope owns, matching `design/zheng-hong/use-cases
   | `401 Unauthorized` | Missing/invalid/expired JWT |
   | `403 Forbidden` | Role is not `ma_staff` |
   | `404 Not Found` | No tender with that `id` |
-  | `409 Conflict` | Tender `status` is `under_evaluation`, `approved`, or `rejected` - edits are locked past that point |
+  | `409 Conflict` | Tender `status` is `under_evaluation`, `approved`, `rejected`, or `withdrawn` - edits are locked past that point |
 
 ### `DELETE /api/tenders/:id`
 
@@ -121,7 +121,7 @@ Covers only the endpoints this scope owns, matching `design/zheng-hong/use-cases
   | `401 Unauthorized` | Missing/invalid/expired JWT |
   | `403 Forbidden` | Role is not `ma_staff` |
   | `404 Not Found` | No tender with that `id` |
-  | `409 Conflict` | Tender `status` is `under_evaluation` or `approved` - must be withdrawn via status change, not deleted |
+  | `409 Conflict` | Tender `status` is `under_evaluation`, `approved`, or `rejected` - must be withdrawn via status change, not deleted |
 
 ---
 

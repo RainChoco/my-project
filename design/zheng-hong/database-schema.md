@@ -28,7 +28,7 @@ Covers only the tables owned by this scope. External foreign keys this scope dep
 | non_debarment_declared | `DataTypes.BOOLEAN` | `allowNull: false`, `defaultValue: false` |
 | eligibility_status | `DataTypes.ENUM('pending','eligible','flagged','rejected')` | `allowNull: false`, `defaultValue: 'pending'` - **derived**: backend recomputes this from `eligibility_checks`, never set directly by AI |
 | ai_eligibility_summary | `DataTypes.TEXT` | `allowNull: true` - human-readable AI explanation only; structured pass/fail data lives in `eligibility_checks` |
-| status | `DataTypes.ENUM('draft','submitted','under_evaluation','approved','rejected')` | `allowNull: false`, `defaultValue: 'draft'` |
+| status | `DataTypes.ENUM('draft','submitted','under_evaluation','approved','rejected','withdrawn')` | `allowNull: false`, `defaultValue: 'draft'` |
 | created_by | `DataTypes.INTEGER` | **FK → `users.id`** (external, see below), `allowNull: false` |
 | created_at | `DataTypes.DATE` | `allowNull: false`, Sequelize-managed timestamp |
 | updated_at | `DataTypes.DATE` | `allowNull: false`, Sequelize-managed timestamp |
@@ -79,10 +79,20 @@ Configurable BCA FM01 grade-to-tender-value ceiling, so the limit is data the te
 | Field | Sequelize Type | Constraints |
 |---|---|---|
 | id | `DataTypes.INTEGER` | Primary Key, autoIncrement |
-| grade | `DataTypes.ENUM('L1','L2','L3','L4','L5','L6')` | `allowNull: false`, `unique: true` |
+| grade | `DataTypes.ENUM('L1','L2','L3','L4','L5','L6')` | `allowNull: false` |
 | max_tender_value | `DataTypes.DECIMAL(14,2)` | `allowNull: true` (`null` = no ceiling for that grade) |
 | effective_from | `DataTypes.DATEONLY` | `allowNull: false` |
 | updated_at | `DataTypes.DATE` | `allowNull: false`, Sequelize-managed timestamp |
+
+> `grade` is no longer unique on its own - a composite unique index on `(grade, effective_from)` replaces it, so multiple dated limits per grade can coexist as history instead of each update overwriting the only row for that grade:
+> ```js
+> BcaGradeLimit.init({ /* fields above */ }, {
+>   indexes: [
+>     { unique: true, fields: ['grade', 'effective_from'] }
+>   ]
+> });
+> ```
+> "Current" limit for a grade = the row with the latest `effective_from` that is `<= now()`; lookups at check time must query for that, not assume one row per grade.
 
 ## Table: `eligibility_thresholds` (new, reference/config data)
 
