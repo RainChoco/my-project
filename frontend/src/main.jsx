@@ -1,7 +1,8 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { DashboardPage } from './features/dashboard';
+import App from './App';
+import './index.css';
 
 const queryClient = new QueryClient();
 
@@ -11,7 +12,7 @@ if (container) {
   root.render(
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
-        <DashboardPage />
+        <App />
       </QueryClientProvider>
     </React.StrictMode>
   );
