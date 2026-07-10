@@ -45,8 +45,7 @@ const getRankings = async (req, res) => {
 const archiveRankings = async (req, res) => {
   try {
     const { tenderReferenceId, archiveReason } = req.body;
-    // In a real app, userId comes from req.user (auth middleware). For now, use mock UUID.
-    const userId = '11111111-1111-1111-1111-111111111111'; 
+    const userId = req.user.id;
 
     const archive = await dashboardService.archiveScoringList(tenderReferenceId, archiveReason, userId);
     
