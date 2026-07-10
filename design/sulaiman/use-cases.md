@@ -2,11 +2,11 @@
 
 ## UC-D1: AI Detection of Pricing Deviation (Main vs Alternative Offer)
 
-- **Actor:** System (Gemini AI) / MA Staff
+- **Actor:** System (ChatGPT AI) / MA Staff
 - **Trigger:** A tender with both a Main Offer and an Alternative Offer price completes PQM scoring (Scope B) and becomes available for clarification screening.
 - **Main Flow:**
   1. System reads the tender's `main_offer_price` and `alternative_offer_price` (and any associated term sheets) once evaluation data is available.
-  2. System sends both offers to Gemini to compute the pricing deviation and flag whether it exceeds a configured tolerance threshold.
+  2. System sends both offers to ChatGPT to compute the pricing deviation and flag whether it exceeds a configured tolerance threshold.
   3. System creates a `clarification_logs` row with `status: 'flagged'`, storing the computed deviation amount/percentage and a short AI-generated rationale.
   4. MA staff / Evaluator is notified that a new clarification candidate is ready for review.
 - **Edge Case / Alternative Flow:**
@@ -15,15 +15,15 @@
 
 ## UC-D2: AI Auto-Draft Clarification / Notification Message
 
-- **Actor:** System (Gemini AI) / MA Staff
+- **Actor:** System (ChatGPT AI) / MA Staff
 - **Trigger:** MA staff opens a `clarification_logs` row with `status: 'flagged'` to act on it.
 - **Main Flow:**
   1. MA staff selects "Draft Clarification Message" on the flagged log.
-  2. System sends the tender reference, vendor name, main/alternative offer figures, and the computed deviation to System / Gemini with a prompt to draft an official clarification request.
-  3. Gemini returns a structured draft message (subject + body) asking the vendor to confirm or justify the pricing deviation.
+  2. System sends the tender reference, vendor name, main/alternative offer figures, and the computed deviation to System / ChatGPT with a prompt to draft an official clarification request.
+  3. ChatGPT returns a structured draft message (subject + body) asking the vendor to confirm or justify the pricing deviation.
   4. System saves the draft onto the `clarification_logs` row (`draft_message`, `status: 'draft_ready'`) - it is **not** sent yet.
 - **Edge Case / Alternative Flow:**
-  - **Gemini fails or times out:** system leaves the log at `status: 'flagged'` and surfaces an error so staff can retry the draft or write the message manually, rather than silently blocking the workflow.
+  - **ChatGPT fails or times out:** system leaves the log at `status: 'flagged'` and surfaces an error so staff can retry the draft or write the message manually, rather than silently blocking the workflow.
 
 ## UC-D3: Review & Edit Draft Before Dispatch
 
