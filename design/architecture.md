@@ -84,7 +84,7 @@
 
 ## 4. Generative AI Services
 
-- **ChatGPT API** (Google) - used for:
+- **ChatGPT API** (OpenAI) - used for:
   - Parsing vendor tender documents and flagging eligibility issues (paid-up capital, BCA FM01 licensing, non-debarment declaration) - Scope A.
   - Extracting and structuring bid price/quality inputs, which the backend then scores deterministically into the PQM percentage - Scope B.
   - Generating the Risk Assessment & Mitigation Matrix from vendor constraints, subject to a human-review gate before being treated as official - Scope B.

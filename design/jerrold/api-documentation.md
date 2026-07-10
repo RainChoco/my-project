@@ -86,7 +86,7 @@ Base path: `/api`. All request/response bodies are JSON. All endpoints require `
   ```json
   { "document_ids": [9, 10, 11, 12] }
   ```
-  `document_ids` are the `tender_documents.id` values (Zheng Hong's Scope A) Gemini should read - typically the latest main offer, alternative offer, and license.
+  `document_ids` are the `tender_documents.id` values (Zheng Hong's Scope A) ChatGPT should read - typically the latest main offer, alternative offer, and license.
 - **Example success response** - `202 Accepted` (AI extraction is async):
   ```json
   { "id": 6, "tender_id": 5, "status": "processing", "evaluated_by": 2, "created_at": "2026-07-10T09:30:00.000Z" }
@@ -94,7 +94,7 @@ Base path: `/api`. All request/response bodies are JSON. All endpoints require `
 - **Error responses:**
   - `404 Not Found` - no tender with that id.
   - `409 Conflict` - tender's `eligibility_status` is `'rejected'`; the Processing Tender Form is blocked entirely for a debarred/rejected tender (UC-B4 edge case). Body: `{ "error": "tender_ineligible", "eligibility_status": "rejected" }`.
-  - `502 Bad Gateway` - Gemini API call failed/timed out; no `evaluations` row is created.
+  - `502 Bad Gateway` - ChatGPT API call failed/timed out; no `evaluations` row is created.
   - `401 Unauthorized` / `403 Forbidden`.
 
 ### 6. `GET /api/tenders/:tenderId/evaluations`
@@ -198,7 +198,7 @@ Base path: `/api`. All request/response bodies are JSON. All endpoints require `
 - **Error responses:**
   - `404 Not Found` - no evaluation with that id.
   - `409 Conflict` - evaluation `status` is not `'scored'` yet (risk matrix requires a completed PQM score).
-  - `502 Bad Gateway` - Gemini API call failed/timed out; no `risk_assessments` rows are created, so a retry doesn't leave a half-written matrix behind (UC-B7 edge case).
+  - `502 Bad Gateway` - ChatGPT API call failed/timed out; no `risk_assessments` rows are created, so a retry doesn't leave a half-written matrix behind (UC-B7 edge case).
   - `401 Unauthorized` / `403 Forbidden`.
 
 ### 11. `GET /api/evaluations/:id/risk-assessments`
