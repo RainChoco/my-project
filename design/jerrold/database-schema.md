@@ -190,6 +190,10 @@ User.hasMany(Approval, { as: 'approvalsDecided', foreignKey: 'approver_id' });
 
 ---
 
+## Trigger Sequencing Note (Scope B ↔ Scope D)
+
+`POST /api/evaluations/:id/reprocess` (see `design/jerrold/api-documentation.md`) and UC-B11 are **evaluator-initiated, manually-clicked actions** - re-processing a rejected evaluation is never triggered automatically by Sulaiman's Scope D resolving a clarification. This is intentional: Scope D's deviation detection also starts from Scope B's PQM scoring completing, so an automatic trigger in both directions would create a circular build dependency (see `design/feature-dependencies.md`, "Circular Dependency"). Build and test `reprocess` against a manual "Re-process Evaluation" button first; only wire an automatic listener on Scope D's `resolved` status (if the team decides to add one later) once both scopes are independently stable.
+
 ## Cascade Notes
 
 - Deleting an `evaluations` row cascades to its `risk_assessments` and `approvals` (`onDelete: 'CASCADE'`) - but in practice evaluations are never hard-deleted (only superseded by a new row per UC-B11), so this is a safety net rather than an expected code path.

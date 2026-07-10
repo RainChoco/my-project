@@ -40,6 +40,8 @@ Authorization: Bearer JWT Token
 }
 ```
 
+> `tenderId` maps to Zheng Hong's `tenders.id` (Scope A) - not a separate `tender_id`/`tender_reference_id` column - and is stored on `board_papers.tender_id` as an FK to `tenders.id`. See `design/feature-dependencies.md` (Shared Core Items #2).
+
 ## Success Response
 
 ```json

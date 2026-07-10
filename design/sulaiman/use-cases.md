@@ -3,9 +3,9 @@
 ## UC-D1: AI Detection of Pricing Deviation (Main vs Alternative Offer)
 
 - **Actor:** System (ChatGPT AI) / MA Staff
-- **Trigger:** A tender with both a Main Offer and an Alternative Offer price completes PQM scoring (Scope B) and becomes available for clarification screening.
+- **Trigger:** MA staff manually runs deviation detection (`POST /api/tenders/:tenderId/clarification-logs/detect-deviation`) on a tender whose PQM scoring (Scope B) has completed and which has both a Main Offer and an Alternative Offer price. **This is a manually-invoked action, not an automatic listener fired the instant Scope B finishes scoring** - avoiding an automatic trigger in both directions between Scope B and Scope D prevents a circular build dependency (see `design/feature-dependencies.md`, "Circular Dependency"). Wiring this to fire automatically off `evaluations.status: 'scored'` can be added later, once both scopes are independently stable.
 - **Main Flow:**
-  1. System reads the tender's `main_offer_price` and `alternative_offer_price` (and any associated term sheets) once evaluation data is available.
+  1. Staff triggers deviation detection; system reads the tender's `main_offer_price` and `alternative_offer_price` (and any associated term sheets) once evaluation data is available.
   2. System sends both offers to ChatGPT to compute the pricing deviation and flag whether it exceeds a configured tolerance threshold.
   3. System creates a `clarification_logs` row with `status: 'flagged'`, storing the computed deviation amount/percentage and a short AI-generated rationale.
   4. MA staff / Evaluator is notified that a new clarification candidate is ready for review.

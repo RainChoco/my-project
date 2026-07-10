@@ -124,10 +124,10 @@ Covers every function this scope owns, per `design/er-diagram.md` (`EVALUATION_C
 ## UC-B11: Re-evaluate a Rejected or Returned Tender
 
 - **Actor:** Evaluator
-- **Trigger:** A Manager rejects an evaluation (UC-B9) but the tender is not withdrawn - e.g. after a clarification response (Scope D) resolves a pricing deviation, the MA team wants it rescored.
+- **Trigger:** A Manager rejects an evaluation (UC-B9) but the tender is not withdrawn - e.g. after a clarification response (Scope D) resolves a pricing deviation, the MA team wants it rescored. **This is always a manual, evaluator-initiated action** - re-processing is never fired automatically off a Scope D clarification being resolved, to avoid a circular build dependency between Scope B and Scope D (see `design/feature-dependencies.md`, "Circular Dependency"). An evaluator checks Scope D's clarification log themselves and decides to re-process.
 - **Main Flow:**
   1. Evaluator opens a tender with `evaluations.status: 'rejected'`.
-  2. Evaluator triggers "Re-process Evaluation," which creates a new `evaluations` row (not an edit of the rejected one) linked to the same `tender_id`.
+  2. Evaluator manually triggers "Re-process Evaluation" (`POST /api/evaluations/:id/reprocess`), which creates a new `evaluations` row (not an edit of the rejected one) linked to the same `tender_id`.
   3. Flow resumes at UC-B4 (AI input extraction) using any updated documents/vendor responses.
   4. The prior rejected `evaluations` row and its `approvals`/`risk_assessments` remain untouched as historical record.
 - **Edge Case / Alternative Flow:**
