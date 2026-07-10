@@ -73,7 +73,7 @@
 | `routes/` | Express route definitions mapping HTTP endpoints to controllers. |
 | `middlewares/` | JWT auth verification, role-based access guards, centralized error handling, and upload middleware. |
 | `validators/` | Yup schemas that validate request bodies before they reach controllers. |
-| `services/` | Business/integration logic: Gemini AI calls, Cloudinary uploads, deterministic PQM score calculation. |
+| `services/` | Business/integration logic: ChatGPT calls, Cloudinary uploads, deterministic PQM score calculation. |
 | `utils/` | Generic helpers (response formatting, logging). |
 
 ---
@@ -84,7 +84,7 @@
 
 ## 4. Generative AI Services
 
-- **Gemini API** (Google) - used for:
+- **ChatGPT API** (Google) - used for:
   - Parsing vendor tender documents and flagging eligibility issues (paid-up capital, BCA FM01 licensing, non-debarment declaration) - Scope A.
   - Extracting and structuring bid price/quality inputs, which the backend then scores deterministically into the PQM percentage - Scope B.
   - Generating the Risk Assessment & Mitigation Matrix from vendor constraints, subject to a human-review gate before being treated as official - Scope B.

@@ -223,7 +223,7 @@ Covers only the endpoints this scope owns, matching `design/zheng-hong/use-cases
   | `403 Forbidden` | Role is not `ma_staff` |
   | `404 Not Found` | No tender with that `id` |
   | `409 Conflict` | Tender has no documents uploaded yet |
-  | `502 Bad Gateway` | Gemini API request failed or returned an unparseable result |
+  | `502 Bad Gateway` | ChatGPT API request failed or returned an unparseable result |
 
 ### `GET /api/tenders/:id/eligibility-checks`
 

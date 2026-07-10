@@ -64,10 +64,10 @@ Covers every function this scope owns, per `design/zheng-hong/database-schema.md
 
 ## UC-A6: AI Eligibility Parsing
 
-- **Actor:** System (Gemini API), triggered by MA staff submitting a tender
+- **Actor:** System (ChatGPT API), triggered by MA staff submitting a tender
 - **Trigger:** A tender moves to `status: 'submitted'` with its documents uploaded.
 - **Main Flow:**
-  1. System sends the uploaded documents to Gemini to extract `paid_up_capital`, `bca_fm01_license_no`, `bca_fm01_grade`, and the non-debarment declaration.
+  1. System sends the uploaded documents to ChatGPT to extract `paid_up_capital`, `bca_fm01_license_no`, `bca_fm01_grade`, and the non-debarment declaration.
   2. System writes the extracted raw values onto the `tenders` row.
   3. Backend deterministically compares each extracted value against reference data (`eligibility_thresholds.min_paid_up_capital`, `bca_grade_limits` for the extracted grade) and writes one `eligibility_checks` row per criterion, snapshotting the threshold used (`source: 'ai_extracted'`).
   4. Backend derives `tenders.eligibility_status` from the check results: `'eligible'` if all pass, `'flagged'` if any fail (but not debarred), `'rejected'` if non-debarment fails.

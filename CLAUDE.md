@@ -12,7 +12,7 @@ SCCCI AI Challenge - Tender Process Automation (Problem Statement 4C)
 - Backend: Node.js + Express, Sequelize ORM, Yup
 - Database: PostgreSQL (Neon)
 - Images: Cloudinary
-- GenAI service: Gemini API (used for tender terms comparison & text summarisation)
+- GenAI service: ChatGPT API (used for tender terms comparison & text summarisation)
 
 ## Key Files
 
@@ -22,3 +22,6 @@ SCCCI AI Challenge - Tender Process Automation (Problem Statement 4C)
 ## Writing Style
 
 - Use hyphen (-) instead of em dash (—) in all generated documents
+## Development Tools
+- ChatGPT
+- Claude Code
