@@ -7,7 +7,7 @@ SCCCI AI Challenge - Tender Process Automation (Problem Statement 4C)
 A Town Council Managing Agent (MA) currently runs its tender evaluation process manually - comparing vendor bid terms, checking eligibility, calculating Price-Quality Method (PQM) scores, assessing risk, and writing up findings for board approval. This is slow, inconsistent across evaluators, and error-prone, especially when eligibility checks and scoring calculations are done by hand across multiple vendor submissions.
 
 ## What We're Building
-A full-stack application that uses Generative AI (Gemini) to automate the highest-effort parts of this process: parsing vendor tender documents to flag eligibility issues, comparing bid terms, computing PQM scores, generating a risk matrix, and producing structured content ready to drop into Executive Board Papers and Interview Presentation Decks.
+A full-stack application that uses Generative AI (ChatGPT) to automate the highest-effort parts of this process: parsing vendor tender documents to flag eligibility issues, comparing bid terms, computing PQM scores, generating a risk matrix, and producing structured content ready to drop into Executive Board Papers and Interview Presentation Decks.
 
 ## Target Users
 `project-requirements.md` does not define explicit user roles or personas - only five functional scopes owned by team members. Based on those scopes, the inferred users are:

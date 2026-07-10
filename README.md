@@ -1,10 +1,10 @@
 ## Problem
 
-Town Council Managing Agents currently run tender evaluations manually - comparing vendor terms, checking eligibility, calculating Price-Quality Method (PQM) scores, and drafting board papers by hand. This full-stack application uses Generative AI (Gemini) to automate eligibility parsing, bid comparison, PQM scoring, risk assessment, and generation of board paper and presentation content, reducing manual effort and inconsistency across evaluators.
+Town Council Managing Agents currently run tender evaluations manually - comparing vendor terms, checking eligibility, calculating Price-Quality Method (PQM) scores, and drafting board papers by hand. This full-stack application uses Generative AI (ChatGPT) to automate eligibility parsing, bid comparison, PQM scoring, risk assessment, and generation of board paper and presentation content, reducing manual effort and inconsistency across evaluators.
 
 ## Solution
 
-The application is a full-stack tender evaluation platform where MA staff ingest vendor bid documents and Gemini parses eligibility data and structures bid terms for review. PQM scores and risk matrices are computed deterministically in the backend for accuracy, with human review gates before evaluators log approvals with a full audit trail. Approved data then flows automatically into board paper text, a 28-slide interview deck, vendor clarification logs, and a strategic rankings dashboard, turning a fragmented manual process into one connected workflow.
+The application is a full-stack tender evaluation platform where MA staff ingest vendor bid documents and ChatGPT parses eligibility data and structures bid terms for review. PQM scores and risk matrices are computed deterministically in the backend for accuracy, with human review gates before evaluators log approvals with a full audit trail. Approved data then flows automatically into board paper text, a 28-slide interview deck, vendor clarification logs, and a strategic rankings dashboard, turning a fragmented manual process into one connected workflow.
 
 ## Task Allocation
 
