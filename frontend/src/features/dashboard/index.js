@@ -1,1 +1,1 @@
-// Strategic rankings dashboard and KPI analytics screens (Kai Xuan).
+export { default as DashboardPage } from './pages/DashboardPage';
