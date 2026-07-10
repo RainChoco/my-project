@@ -25,7 +25,7 @@ const ScoringArchive = sequelize.define('ScoringArchive', {
     allowNull: false
   },
   archived_by: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: false
   },
   archived_at: {

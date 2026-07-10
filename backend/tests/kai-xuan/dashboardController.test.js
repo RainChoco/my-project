@@ -5,10 +5,14 @@ const dashboardRoutes = require('../../src/routes/dashboardRoutes');
 const tenderRepository = require('../../src/repositories/TenderRepository');
 const evaluationRepository = require('../../src/repositories/EvaluationRepository');
 const { ScoringArchive, sequelize } = require('../../src/models');
+const authService = require('../../src/services/authService');
 
 const app = express();
 app.use(express.json());
 app.use('/api/dashboard', dashboardRoutes);
+
+// POST /archive now requires authentication (see backend/src/middlewares/auth.js).
+const authToken = authService.signToken({ id: 3, full_name: 'Cheryl Lim', email: 'cheryl.lim@townms.gov.sg', role: 'management' });
 
 describe('Dashboard Controller Tests', () => {
   beforeAll(async () => {
@@ -56,6 +60,7 @@ describe('Dashboard Controller Tests', () => {
     it('Should successfully archive a finalized scoring list', async () => {
       const res = await request(app)
         .post('/api/dashboard/archive')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({
           tenderReferenceId: 'TND-2026-001',
           archiveReason: 'Final Board Approval'
@@ -68,6 +73,7 @@ describe('Dashboard Controller Tests', () => {
     it('Should auto-increment the archive_version', async () => {
       const res = await request(app)
         .post('/api/dashboard/archive')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({
           tenderReferenceId: 'TND-2026-001',
           archiveReason: 'Second Approval'
@@ -79,11 +85,21 @@ describe('Dashboard Controller Tests', () => {
     it('Should return 404 if the tenderReferenceId does not exist', async () => {
       const res = await request(app)
         .post('/api/dashboard/archive')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({
           tenderReferenceId: 'INVALID-ID'
         });
       expect(res.statusCode).toBe(404);
       expect(res.body.message).toBe('Tender not found');
+    });
+
+    it('Should return 401 when no Authorization header is provided', async () => {
+      const res = await request(app)
+        .post('/api/dashboard/archive')
+        .send({
+          tenderReferenceId: 'TND-2026-001'
+        });
+      expect(res.statusCode).toBe(401);
     });
   });
 });

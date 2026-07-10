@@ -1,15 +1,15 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { DashboardPage } from './features/dashboard';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './context';
+import { AppRoutes } from './routes';
 
-// Root component. Each scope adds its own <Route> here as its pages are built:
-// features/tenders (Zheng Hong), features/evaluations (Jerrold),
-// features/board-papers (Calista), features/clarifications (Sulaiman), features/auth (group).
+// Root component. Route tree and per-role access lives in routes/routeConfig.jsx
+// and routes/AppRoutes.jsx - add new feature routes there, not here.
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<DashboardPage />} />
-      </Routes>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </BrowserRouter>
   );
 }
