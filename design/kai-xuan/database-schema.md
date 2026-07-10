@@ -9,6 +9,8 @@
 |-------|------|-----------|-------------|
 | `id` | UUID | PRIMARY KEY, DEFAULT gen_random_uuid() | Unique identifier for the archive record |
 | `tender_reference_id` | VARCHAR(50) | NOT NULL, INDEX | Reference to the tender exercise being archived |
+| `archive_version` | INTEGER | NOT NULL DEFAULT 1 | Tracks version in case of multiple archives |
+| `archive_reason` | VARCHAR(255) | | Optional reason for archival |
 | `ranking_snapshot` | JSONB | NOT NULL | JSON array containing the sorted vendor rankings and final PQM scores |
 | `archived_by` | UUID | NOT NULL | Reference to the User ID who approved/archived the list |
 | `archived_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Timestamp of when the archive was created |
@@ -16,4 +18,4 @@
 | `updated_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Standard tracking field |
 
 **Constraints**:
-- `UNIQUE(tender_reference_id)` - A tender exercise can only have one finalized archived ranking list.
+- `UNIQUE(tender_reference_id, archive_version)` - Ensures versions for a tender are distinct.

@@ -6,6 +6,8 @@
 **Query Parameters**: 
 - `status` (optional)
 - `category` (optional)
+- `dateFrom` (optional)
+- `dateTo` (optional)
 
 **Expected Response (200 OK)**:
 ```json
@@ -26,7 +28,12 @@
 **Query Parameters**:
 - `status` (optional)
 - `category` (optional)
-- `limit` (optional)
+- `dateFrom` (optional)
+- `dateTo` (optional)
+- `page` (optional, default: 1)
+- `pageSize` (optional, default: 10)
+- `sortBy` (optional, default: "pqmScore")
+- `sortOrder` (optional, default: "desc")
 
 **Expected Response (200 OK)**:
 ```json
@@ -41,22 +48,24 @@
       "rank": 1,
       "status": "Evaluating"
     }
-  ]
+  ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 10,
+    "totalRecords": 45,
+    "totalPages": 5
+  }
 }
 ```
 
 ## POST /api/dashboard/archive
-**Description**: Archives a finalized scoring list for a tender exercise.
+**Description**: Archives a finalized scoring list for a tender exercise. The backend will compute the snapshot server-side based on the current evaluation data, rather than accepting client-submitted rankings.
 **Method**: POST
 **Request Body**:
 ```json
 {
   "tenderReferenceId": "TND-2026-001",
-  "rankingData": [
-    { "vendorId": "V-001", "rank": 1, "pqmScore": 89.2 },
-    { "vendorId": "V-002", "rank": 2, "pqmScore": 75.0 }
-  ],
-  "archivedBy": "admin-user-id"
+  "archiveReason": "Final Board Approval"
 }
 ```
 
@@ -66,7 +75,8 @@
   "status": "success",
   "message": "Scoring list archived successfully",
   "data": {
-    "archiveId": "ARC-10293"
+    "archiveId": "ARC-10293",
+    "version": 1
   }
 }
 ```
