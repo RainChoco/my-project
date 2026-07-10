@@ -28,8 +28,10 @@ Stores AI-generated Board Papers.
 
 ### Foreign Keys
 
-- tender_id → tenders.tender_id
-- created_by → users.user_id
+- tender_id → tenders.id
+- created_by → users.id
+
+> Corrected from `tenders.tender_id` / `users.user_id`: Zheng Hong's actual columns (matching `design/er-diagram.md`) are `tenders.id` and `users.id`. See `design/feature-dependencies.md` (Shared Core Items #2).
 
 ---
 

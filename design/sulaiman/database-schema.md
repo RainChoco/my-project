@@ -137,6 +137,10 @@ These tables are **not owned by this scope** - listed here only so the owning te
 | `users` | `id` (`DataTypes.INTEGER`, PK) | Shared / Auth infra (group) | `clarification_logs.escalated_by`, `clarification_logs.resolved_by`, `clarification_messages.approved_by`, `clarification_messages.created_by`, `job_adjustment_requests.requested_by`, `job_adjustment_requests.approved_by` |
 
 
+## Trigger Sequencing Note (Scope D ↔ Scope B)
+
+`clarification_logs` creation (UC-D1) is documented in `design/sulaiman/api-documentation.md` as `POST /api/tenders/:tenderId/clarification-logs/detect-deviation` - a **manually-invoked endpoint**, not an automatic listener on Scope B's PQM scoring completing. This is intentional: Scope B's re-evaluation (`POST /api/evaluations/:id/reprocess`) is itself triggered by a Scope D clarification being resolved, so an automatic trigger in both directions would create a circular build dependency (see `design/feature-dependencies.md`, "Circular Dependency"). Build and test deviation detection against the manual endpoint first (MA staff clicks "Check for Pricing Deviation" once a tender is scored); only wire an automatic trigger off Scope B's `evaluations.status: 'scored'` event (if the team decides to add one later) once both scopes are independently stable.
+
 ## Notes
 The schema doesn’t specify vendor contact info anywhere yet, but UC-D4’s edge case requires blocking dispatch when “the vendor has no contact information on file.” This scope assumes vendor contact info will be on a table owned by another scope (most likely alongside `tenders.vendor_name` in Zheng Hong's Scope A tables) - raise this gap with the team so a `vendor_contacts`-shaped table (or fields on `tenders`) gets defined and this doc can reference its FK.
 
