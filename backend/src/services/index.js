@@ -1,1 +1,1 @@
-// Business/integration logic: Gemini AI calls, Cloudinary uploads, deterministic PQM score calculation.
+// Business/integration logic: ChatGPT AI calls, Cloudinary uploads, deterministic PQM score calculation.

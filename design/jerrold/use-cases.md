@@ -43,8 +43,8 @@ Covers every function this scope owns, per `design/er-diagram.md` (`EVALUATION_C
 - **Trigger:** Evaluator opens the "Process Tender" form for a tender ready to be scored.
 - **Main Flow:**
   1. Evaluator selects a tender and opens the Processing Tender Form.
-  2. Evaluator confirms/selects which uploaded documents (main offer, alternative offer) Gemini should read.
-  3. System sends the tender's documents plus the active `evaluation_criteria` to Gemini to extract structured price and quality inputs.
+  2. Evaluator confirms/selects which uploaded documents (main offer, alternative offer) ChatGPT should read.
+  3. System sends the tender's documents plus the active `evaluation_criteria` to ChatGPT to extract structured price and quality inputs.
   4. System writes the extracted values to `evaluations.ai_extracted_inputs` (JSONB) and creates the `evaluations` row with `status: 'processing'`, `tender_id`, and `evaluated_by`.
   5. Evaluator reviews the extracted inputs on the form before confirming, then submits to trigger PQM computation (UC-B5).
 - **Edge Case / Alternative Flow:**
@@ -75,15 +75,15 @@ Covers every function this scope owns, per `design/er-diagram.md` (`EVALUATION_C
 
 ## UC-B7: Generate AI Risk Assessment & Mitigation Matrix
 
-- **Actor:** System (Gemini API), triggered by Evaluator once an evaluation reaches `status: 'scored'`
+- **Actor:** System (ChatGPT API), triggered by Evaluator once an evaluation reaches `status: 'scored'`
 - **Trigger:** A tender's PQM score has been computed and its constraints (pricing gaps, eligibility flags, contractual terms) are available.
 - **Main Flow:**
   1. Evaluator clicks "Generate Risk Matrix" on a scored evaluation.
-  2. System sends the tender's constraints and evaluation data to Gemini to draft risk items.
+  2. System sends the tender's constraints and evaluation data to ChatGPT to draft risk items.
   3. For each identified risk, system creates a `risk_assessments` row with `risk_description`, `mitigation_plan`, `risk_level`, `ai_generated: true`, and `review_status: 'pending_review'`.
   4. UI presents the drafted matrix to the evaluator for review (UC-B8) rather than treating it as final.
 - **Edge Case / Alternative Flow:**
-  - **Gemini API call fails or times out:** system leaves the evaluation at `status: 'scored'` with no `risk_assessments` rows created, and surfaces a retry option, rather than saving an empty or partial matrix as if it were complete.
+  - **ChatGPT API call fails or times out:** system leaves the evaluation at `status: 'scored'` with no `risk_assessments` rows created, and surfaces a retry option, rather than saving an empty or partial matrix as if it were complete.
 
 ## UC-B8: Review & Approve Risk Assessment Content
 
