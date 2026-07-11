@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
+import { NativeSelect } from '../components/NativeSelect';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -276,7 +276,7 @@ function TenderFormPage({ mode }) {
                   <div className="grid grid-cols-2 gap-4 items-start">
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="bca_fm01_grade">BCA FM01 Grade</Label>
-                      <Select
+                      <NativeSelect
                         id="bca_fm01_grade"
                         name="bca_fm01_grade"
                         value={formik.values.bca_fm01_grade}
@@ -289,7 +289,7 @@ function TenderFormPage({ mode }) {
                             {grade}
                           </option>
                         ))}
-                      </Select>
+                      </NativeSelect>
                       <FieldError formik={formik} name="bca_fm01_grade" />
                     </div>
                     <div className="flex items-center gap-2 pt-6">
