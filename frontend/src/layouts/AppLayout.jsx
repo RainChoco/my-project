@@ -4,14 +4,14 @@ import { routeConfig } from '../routes/routeConfig';
 import { Button } from '../components/ui/button';
 import { cn } from '../lib';
 
-// Authenticated app shell: sidebar nav (filtered to the current user's role) + topbar.
+// Authenticated app shell: horizontal top nav (filtered to the current user's role) + content.
 function AppLayout() {
   const { user, role, logout } = useAuth();
   const navigate = useNavigate();
 
   // `label` is absent on routes that aren't top-level nav items (e.g. a detail
   // route reached by clicking into a list, like /evaluations/:id) - filter
-  // those out so the sidebar doesn't render a blank/broken link for them.
+  // those out so the nav bar doesn't render a blank/broken link for them.
   const navItems = routeConfig.filter((route) => route.label && route.roles.includes(role));
 
   const handleLogout = () => {
@@ -20,9 +20,9 @@ function AppLayout() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="w-56 shrink-0 border-r border-border p-4">
-        <nav className="flex flex-col gap-1">
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-6 py-3">
+        <nav className="flex flex-wrap items-center gap-1">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
@@ -39,9 +39,7 @@ function AppLayout() {
             </NavLink>
           ))}
         </nav>
-      </aside>
-      <div className="flex flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-border px-6 py-3">
+        <div className="flex items-center gap-4">
           <div className="text-sm">
             <span className="font-medium">{user?.full_name}</span>
             <span className="ml-2 text-muted-foreground">({role})</span>
@@ -49,11 +47,11 @@ function AppLayout() {
           <Button variant="outline" size="sm" onClick={handleLogout}>
             Log out
           </Button>
-        </header>
-        <main className="flex-1 p-6">
-          <Outlet />
-        </main>
-      </div>
+        </div>
+      </header>
+      <main className="flex-1 p-6">
+        <Outlet />
+      </main>
     </div>
   );
 }
