@@ -1,4 +1,5 @@
 import { DashboardPage } from '../features/dashboard';
+import { TendersDashboardPage, TenderFormPage, TenderDetailPage } from '../features/tenders';
 import { ComingSoonPage } from '../pages';
 
 // Matches backend/src/models/user.js's `role` ENUM and design/test-tokens.md.
@@ -32,7 +33,14 @@ export const routeConfig = [
     path: '/tenders',
     label: 'Tenders',
     roles: [MA_STAFF, EVALUATOR, MANAGEMENT, REPORT_PREPARER], // UC-A2 (ma_staff/evaluator/management) + Calista UC1 step 2 needs to select a tender
-    element: <ComingSoonPage title="Tenders" description="Tender intake, CRUD, documents, eligibility (Zheng Hong)." />,
+    element: <TendersDashboardPage />,
+    // Dynamic sub-routes (new/:id/:id-edit) can't be expressed as a single flat path,
+    // so this scope's route entry carries children - see AppRoutes.jsx for how these nest.
+    children: [
+      { path: 'new', roles: [MA_STAFF], element: <TenderFormPage mode="create" /> }, // UC-A1
+      { path: ':id', roles: [MA_STAFF, EVALUATOR, MANAGEMENT, REPORT_PREPARER], element: <TenderDetailPage /> }, // UC-A2/UC-A8
+      { path: ':id/edit', roles: [MA_STAFF], element: <TenderFormPage mode="edit" /> }, // UC-A3
+    ],
   },
   {
     path: '/tenders/config',
