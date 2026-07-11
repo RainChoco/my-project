@@ -8,6 +8,7 @@ const evaluationCriteriaRoutes = require('./evaluationCriteriaRoutes');
 const tenderEvaluationRoutes = require('./tenderEvaluationRoutes');
 const boardPaperRoutes = require('./boardPaperRoutes');
 const clarificationRoutes = require('./clarificationRoutes');
+const proposalRoutes = require('./proposalRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/dashboard', dashboardRoutes);
@@ -19,5 +20,6 @@ router.use('/evaluations', evaluationRoutes);
 router.use('/evaluation-criteria', evaluationCriteriaRoutes);
 router.use('/boardpapers', boardPaperRoutes);
 router.use('/clarifications', clarificationRoutes);
+router.use('/proposals', proposalRoutes);
 
 module.exports = router;
