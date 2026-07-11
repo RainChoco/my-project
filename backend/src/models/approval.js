@@ -20,16 +20,20 @@ const Approval = sequelize.define('Approval', {
     allowNull: false
   },
   decision: {
-    type: DataTypes.ENUM('approved', 'rejected'),
+    // 'revision_requested' added per team direction - beyond the two values in
+    // database-schema.md/api-documentation.md. It does not map to an
+    // evaluations.status value (see approvalService.js) - the evaluation stays
+    // 'scored' so the evaluator can revise and resubmit.
+    type: DataTypes.ENUM('approved', 'rejected', 'revision_requested'),
     allowNull: false
   },
   remarks: {
     type: DataTypes.TEXT,
     allowNull: true,
     validate: {
-      isRequiredForRejection(value) {
-        if (this.decision === 'rejected' && !value) {
-          throw new Error('remarks is required when decision is "rejected"');
+      isRequiredForRejectionOrRevision(value) {
+        if ((this.decision === 'rejected' || this.decision === 'revision_requested') && !value) {
+          throw new Error('remarks is required when decision is "rejected" or "revision_requested"');
         }
       }
     }
