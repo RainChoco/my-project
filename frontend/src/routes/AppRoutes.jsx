@@ -15,9 +15,14 @@ function AppRoutes() {
         <Route path="/403" element={<ForbiddenPage />} />
 
         <Route element={<AppLayout />}>
-          {routeConfig.map(({ path, roles, element }) => (
+          {routeConfig.map(({ path, roles, element, children }) => (
             <Route key={path} path={path} element={<RoleRoute roles={roles} />}>
               <Route index element={element} />
+              {children?.map((child) => (
+                <Route key={child.path} path={child.path} element={<RoleRoute roles={child.roles} />}>
+                  <Route index element={child.element} />
+                </Route>
+              ))}
             </Route>
           ))}
         </Route>
