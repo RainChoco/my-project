@@ -1,4 +1,5 @@
 import { DashboardPage } from '../features/dashboard';
+import { EvaluationCriteriaPage, EvaluationsPage, EvaluationDetailPage } from '../features/evaluations';
 import { ComingSoonPage } from '../pages';
 
 // Matches backend/src/models/user.js's `role` ENUM and design/test-tokens.md.
@@ -44,13 +45,20 @@ export const routeConfig = [
     path: '/evaluations/criteria',
     label: 'Evaluation Criteria',
     roles: [MA_STAFF], // UC-B1/UC-B2, explicitly "admin function"
-    element: <ComingSoonPage title="Evaluation Criteria" description="Price/quality weight setup (Jerrold)." />,
+    element: <EvaluationCriteriaPage />,
   },
   {
     path: '/evaluations',
     label: 'Evaluations',
     roles: [MA_STAFF, EVALUATOR, MANAGEMENT], // UC-B3/B4/B6/B9/B10 actors
-    element: <ComingSoonPage title="Evaluations" description="PQM scoring, risk matrix, approvals (Jerrold)." />,
+    element: <EvaluationsPage />,
+  },
+  {
+    path: '/evaluations/:id',
+    // Not in the sidebar nav (no `label`) - reached by clicking a row on
+    // /evaluations, not a top-level nav item. Same actor list as /evaluations.
+    roles: [MA_STAFF, EVALUATOR, MANAGEMENT],
+    element: <EvaluationDetailPage />,
   },
   {
     path: '/board-papers',
