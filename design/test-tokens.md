@@ -18,6 +18,16 @@ Each token is valid 90 days from issuance (`iat`: 2026-07-10T16:13:06Z, `exp`: 2
 
 To regenerate: `node -e "require('dotenv').config(); const jwt=require('jsonwebtoken'); console.log(jwt.sign({sub:1,full_name:'...',email:'...',role:'...'}, process.env.DEV_JWT_SECRET, {algorithm:'HS256', expiresIn:'90d'}))"` from `backend/`.
 
+## Real login via the actual form / `POST /auth/login`
+
+The seeded demo users (`20260101000001-demo-users.js`, `20260101000007-demo-users-vendor-liaison.js`) now hash a real, shared dev password instead of a placeholder string, so they work through the genuine login flow (real `bcrypt.compare`, no auth code bypassed):
+
+```
+DEV_PASSWORD=DevPass123!
+```
+
+Log in as any seeded user's email above with this password. If your local DB was seeded before this change, its `users` rows still have the old placeholder hash - re-run the seeders (e.g. `npx sequelize-cli db:seed:undo --seed 20260101000001-demo-users.js && npx sequelize-cli db:seed --seed 20260101000001-demo-users.js`, and likewise for `20260101000007-demo-users-vendor-liaison.js`) to pick up the new hash.
+
 ---
 
 ## `ma_staff` - Alice Tan (`users.id: 1`)
