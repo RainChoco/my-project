@@ -4,6 +4,8 @@ const User = require('./user');
 const EvaluationCriteria = require('./evaluationCriteria');
 const Evaluation = require('./evaluation');
 const Approval = require('./approval');
+const BoardPaper = require('./BoardPaper');
+const Proposal = require('./Proposal');
 
 // --- Associations (Jerrold: Processing Tender Form w/ Evaluation Criteria, Approval Process) ---
 
@@ -32,5 +34,7 @@ module.exports = {
   User,
   EvaluationCriteria,
   Evaluation,
-  Approval
+  Approval,
+  BoardPaper,
+  Proposal
 };
