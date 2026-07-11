@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
+import { NativeSelect } from './NativeSelect';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FILE_TYPE_VALUES, FILE_TYPE_LABELS } from '../constants';
@@ -22,7 +22,7 @@ function DocumentUploadForm({ onUpload, isPending }) {
     >
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="upload-file-type">Document type</Label>
-        <Select
+        <NativeSelect
           id="upload-file-type"
           className="w-44"
           value={fileType}
@@ -33,7 +33,7 @@ function DocumentUploadForm({ onUpload, isPending }) {
               {FILE_TYPE_LABELS[value]}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="upload-file">File</Label>

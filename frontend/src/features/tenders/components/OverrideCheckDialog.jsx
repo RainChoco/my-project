@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
+import { NativeSelect } from './NativeSelect';
 import { Textarea } from '@/components/ui/textarea';
 import { eligibilityOverrideSchema } from '../schemas';
 
@@ -29,7 +29,7 @@ function OverrideCheckDialog({ check, isPending, onSubmit, onCancel }) {
   return (
     <Dialog open={Boolean(check)} onOpenChange={(open) => !open && onCancel()}>
       {check && (
-        <DialogContent onClose={onCancel}>
+        <DialogContent>
           <form onSubmit={formik.handleSubmit} noValidate className="flex flex-col gap-4">
             <DialogHeader>
               <DialogTitle>Manual review - {check.criterion}</DialogTitle>
@@ -40,7 +40,7 @@ function OverrideCheckDialog({ check, isPending, onSubmit, onCancel }) {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="override-passed">Outcome</Label>
-              <Select
+              <NativeSelect
                 id="override-passed"
                 name="passed"
                 value={formik.values.passed}
@@ -49,7 +49,7 @@ function OverrideCheckDialog({ check, isPending, onSubmit, onCancel }) {
               >
                 <option value="true">Passed</option>
                 <option value="false">Failed</option>
-              </Select>
+              </NativeSelect>
             </div>
 
             <div className="flex flex-col gap-1.5">

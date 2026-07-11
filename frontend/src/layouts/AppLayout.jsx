@@ -9,7 +9,10 @@ function AppLayout() {
   const { user, role, logout } = useAuth();
   const navigate = useNavigate();
 
-  const navItems = routeConfig.filter((route) => route.roles.includes(role));
+  // `label` is absent on routes that aren't top-level nav items (e.g. a detail
+  // route reached by clicking into a list, like /evaluations/:id) - filter
+  // those out so the sidebar doesn't render a blank/broken link for them.
+  const navItems = routeConfig.filter((route) => route.label && route.roles.includes(role));
 
   const handleLogout = () => {
     logout();

@@ -1,5 +1,5 @@
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { NativeSelect } from './NativeSelect';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { STATUS_VALUES, ELIGIBILITY_STATUS_VALUES, STATUS_LABELS, ELIGIBILITY_STATUS_LABELS } from '../constants';
@@ -21,7 +21,7 @@ function TenderFilters({ filters, onChange, onReset }) {
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="filter-status">Status</Label>
-        <Select
+        <NativeSelect
           id="filter-status"
           className="w-44"
           value={filters.status}
@@ -33,11 +33,11 @@ function TenderFilters({ filters, onChange, onReset }) {
               {STATUS_LABELS[status]}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="filter-eligibility">Eligibility</Label>
-        <Select
+        <NativeSelect
           id="filter-eligibility"
           className="w-44"
           value={filters.eligibility_status}
@@ -49,7 +49,7 @@ function TenderFilters({ filters, onChange, onReset }) {
               {ELIGIBILITY_STATUS_LABELS[status]}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
       </div>
       {(filters.status || filters.eligibility_status || filters.vendor_name) && (
         <Button type="button" variant="ghost" size="sm" onClick={onReset}>

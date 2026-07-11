@@ -5,7 +5,7 @@ function ConfirmDeleteDialog({ tender, isPending, onConfirm, onCancel }) {
   return (
     <Dialog open={Boolean(tender)} onOpenChange={(open) => !open && onCancel()}>
       {tender && (
-        <DialogContent onClose={onCancel}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Withdraw / delete tender</DialogTitle>
             <DialogDescription>
