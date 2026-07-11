@@ -3,7 +3,7 @@ const express = require('express');
 const evaluationCriteriaRoutes = require('../../src/routes/evaluationCriteriaRoutes');
 const tenderEvaluationRoutes = require('../../src/routes/tenderEvaluationRoutes');
 const evaluationRoutes = require('../../src/routes/evaluationRoutes');
-const { sequelize, User } = require('../../src/models');
+const { sequelize, User, Tender } = require('../../src/models');
 const authService = require('../../src/services/authService');
 
 const app = express();
@@ -20,16 +20,6 @@ describe('Jerrold - Evaluation Criteria / Processing Tender Form / Approval', ()
   beforeAll(async () => {
     await sequelize.sync({ force: true });
 
-    // Stand-in for Zheng Hong's tenders table (Scope A) - no model/migration for
-    // it exists in this repo yet, so create just the columns evaluationService
-    // reads via its raw query.
-    await sequelize.query(
-      'CREATE TABLE tenders (id INTEGER PRIMARY KEY, eligibility_status TEXT)'
-    );
-    await sequelize.query(
-      "INSERT INTO tenders (id, eligibility_status) VALUES (1, 'eligible'), (2, 'rejected')"
-    );
-
     const maStaff = await User.create({
       full_name: 'Alice Tan', email: 'alice.tan@test.local', password_hash: 'x', role: 'ma_staff'
     });
@@ -43,6 +33,29 @@ describe('Jerrold - Evaluation Criteria / Processing Tender Form / Approval', ()
     maStaffToken = authService.signToken(maStaff);
     evaluatorToken = authService.signToken(evaluator);
     managementToken = authService.signToken(management);
+
+    // Zheng Hong's Tender model (Scope A) is merged into the repo now, so this test
+    // uses the real model instead of the raw-SQL stand-in table it previously needed -
+    // evaluationService only reads `id`/`eligibility_status` off it, but the real
+    // model requires these other fields too.
+    await Tender.create({
+      id: 1,
+      tender_ref_no: 'TC-TEST-001',
+      vendor_name: 'Eligible Test Vendor',
+      submission_date: '2026-01-01',
+      main_offer_price: 1000000,
+      eligibility_status: 'eligible',
+      created_by: maStaff.id
+    });
+    await Tender.create({
+      id: 2,
+      tender_ref_no: 'TC-TEST-002',
+      vendor_name: 'Rejected Test Vendor',
+      submission_date: '2026-01-01',
+      main_offer_price: 1000000,
+      eligibility_status: 'rejected',
+      created_by: maStaff.id
+    });
   });
 
   afterAll(async () => {
