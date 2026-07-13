@@ -17,7 +17,7 @@ Header row per clarification / notification thread. One row covers the full life
 | alternative_offer_price_snapshot | `DataTypes.DECIMAL(14,2)` | `allowNull: true` |
 | deviation_amount | `DataTypes.DECIMAL(14,2)` | `allowNull: true` |
 | deviation_percentage | `DataTypes.DECIMAL(6,2)` | `allowNull: true` - widened from `DECIMAL(5,2)` to avoid overflow on a pathological low-base-price deviation |
-| ai_rationale | `DataTypes.TEXT` | `allowNull: true` - short AI-generated explanation of the computed deviation (UC-D1) |
+| ai_rationale | `DataTypes.TEX0000T` | `allowNull: true` - short AI-generated explanation of the computed deviation (UC-D1) |
 | follow_up_due_at | `DataTypes.DATEONLY` | `allowNull: true` - configured follow-up window deadline used to surface overdue `sent` logs (UC-D8) |
 | escalated_by | `DataTypes.INTEGER` | **FK → `users.id`** (external, see below), `allowNull: true` - MA procurement staff notified when `status` moves to `'escalated'` (UC-D8). Previously missing, unlike the actor/timestamp pair recorded for every other terminal-ish transition |
 | escalated_at | `DataTypes.DATE` | `allowNull: true` |
