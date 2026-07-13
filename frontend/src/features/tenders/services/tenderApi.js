@@ -48,6 +48,14 @@ export async function replaceTenderDocument(tenderId, documentId, file) {
   return data;
 }
 
+// Sets the tender's image_url/image_public_id (backend/src/controllers/tenderController.js#uploadTenderImage).
+export async function uploadTenderImage(tenderId, file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await apiClient.post(`/tenders/${tenderId}/image`, formData);
+  return data;
+}
+
 export async function listEligibilityChecks(id) {
   const { data } = await apiClient.get(`/tenders/${id}/eligibility-checks`);
   return data.data;

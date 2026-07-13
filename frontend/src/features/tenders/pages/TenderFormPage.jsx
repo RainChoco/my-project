@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '../components/NativeSelect';
+import TenderImageDropzone from '../components/TenderImageDropzone';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { createTenderSchema, editTenderSchema } from '../schemas';
 import { BCA_GRADES, LOCKED_FOR_EDIT_STATUSES, STATUS_LABELS } from '../constants';
-import { createTender, updateTender, getTender } from '../services/tenderApi';
+import { createTender, updateTender, getTender, uploadTenderImage } from '../services/tenderApi';
 
 const CREATE_DEFAULTS = {
   tender_ref_no: '',
@@ -42,6 +43,7 @@ function TenderFormPage({ mode }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [serverError, setServerError] = useState(null);
+  const [tenderImageFile, setTenderImageFile] = useState(null);
 
   const {
     data: tender,
@@ -75,7 +77,11 @@ function TenderFormPage({ mode }) {
 
   const createMutation = useMutation({ mutationFn: createTender });
   const updateMutation = useMutation({ mutationFn: (payload) => updateTender(id, payload) });
-  const isSubmittingMutation = createMutation.isPending || updateMutation.isPending;
+  const uploadImageMutation = useMutation({
+    mutationFn: ({ tenderId, file }) => uploadTenderImage(tenderId, file),
+  });
+  const isSubmittingMutation =
+    createMutation.isPending || updateMutation.isPending || uploadImageMutation.isPending;
 
   const formik = useFormik({
     initialValues,
@@ -86,18 +92,34 @@ function TenderFormPage({ mode }) {
       const payload = schema.cast(values, { stripUnknown: true });
 
       try {
+        let tenderId = id;
         if (isEditMode) {
           const updated = await updateMutation.mutateAsync(payload);
           queryClient.invalidateQueries({ queryKey: ['tenders'] });
           queryClient.invalidateQueries({ queryKey: ['tender', id] });
           toast({ title: 'Tender updated', description: `${updated.tender_ref_no} was saved.`, variant: 'success' });
-          navigate(`/tenders/${id}`);
         } else {
           const created = await createMutation.mutateAsync(payload);
+          tenderId = created.id;
           queryClient.invalidateQueries({ queryKey: ['tenders'] });
           toast({ title: 'Tender created', description: `${created.tender_ref_no} was logged as a draft.`, variant: 'success' });
-          navigate(`/tenders/${created.id}`);
         }
+
+        if (tenderImageFile) {
+          try {
+            await uploadImageMutation.mutateAsync({ tenderId, file: tenderImageFile });
+            queryClient.invalidateQueries({ queryKey: ['tender', String(tenderId)] });
+          } catch (uploadError) {
+            const uploadMessage = uploadError.response?.data?.message ?? 'Image upload failed.';
+            toast({
+              title: 'Tender saved, but image upload failed',
+              description: uploadMessage,
+              variant: 'destructive',
+            });
+          }
+        }
+
+        navigate(`/tenders/${tenderId}`);
       } catch (error) {
         const message = error.response?.data?.message ?? 'Something went wrong. Please try again.';
         if (error.response?.status === 409 && !isEditMode) {
@@ -150,6 +172,16 @@ function TenderFormPage({ mode }) {
           </CardHeader>
 
           <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label>Tender Document / Image (optional)</Label>
+              <TenderImageDropzone
+                file={tenderImageFile}
+                onFileSelect={setTenderImageFile}
+                onRemove={() => setTenderImageFile(null)}
+                disabled={isLocked || isSubmittingMutation}
+              />
+            </div>
+
             {isLocked && (
               <Alert variant="destructive">
                 <AlertDescription>
