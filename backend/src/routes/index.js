@@ -21,10 +21,7 @@ router.use('/tenders/:tenderId/evaluations', tenderEvaluationRoutes);
 router.use('/evaluations', evaluationRoutes);
 router.use('/evaluation-criteria', evaluationCriteriaRoutes);
 router.use('/boardpapers', boardPaperRoutes);
-// clarificationRoutes defines its own full paths (/clarification-logs, /clarification-messages,
-// /job-adjustment-requests, and /tenders/:tenderId/clarification-logs/...) since those
-// aren't all nested under one shared prefix - see tenderRoutes.js for the same pattern.
-router.use('/', clarificationRoutes);
+router.use('/clarifications', clarificationRoutes);
 router.use('/proposals', proposalRoutes);
 
 module.exports = router;

@@ -1,7 +1,16 @@
 import { DashboardPage } from '../features/dashboard';
 import { TendersDashboardPage, TenderFormPage, TenderDetailPage } from '../features/tenders';
 import { EvaluationCriteriaPage, EvaluationsPage, EvaluationDetailPage } from '../features/evaluations';
-import { ClarificationLogsPage, ClarificationLogDetailPage, JobAdjustmentRequestsPage } from '../features/clarifications';
+import {
+  BoardPaperPage,
+  BoardPaperResultPage,
+  ProposalGeneratorPage,
+  ProposalResultPage,
+  HistoryPage
+} from '../features/board-papers';
+import ClarificationLogsPage from '../features/clarifications/pages/ClarificationLogsPage';
+import ClarificationLogDetailPage from '../features/clarifications/pages/ClarificationLogDetailPage';
+import JobAdjustmentRequestsPage from '../features/clarifications/pages/JobAdjustmentRequestsPage';
 import { ComingSoonPage } from '../pages';
 
 // Matches backend/src/models/user.js's `role` ENUM and design/test-tokens.md.
@@ -70,11 +79,33 @@ export const routeConfig = [
     element: <EvaluationDetailPage />,
   },
   {
-    path: '/board-papers',
-    label: 'Board Papers',
-    roles: [REPORT_PREPARER, MANAGEMENT], // Calista's "Procurement Officer" / "Manager" actors
-    element: <ComingSoonPage title="Board Papers" description="Board paper & proposal generation (Calista)." />,
-  },
+  path: '/board-papers',
+  label: 'Board Papers',
+  roles: [REPORT_PREPARER, MANAGEMENT, MA_STAFF], // Calista's "Procurement Officer" / "Manager" actors
+  element: <BoardPaperPage />,
+  children: [
+    {
+      path: "result",
+      roles: [REPORT_PREPARER, MANAGEMENT, MA_STAFF],
+      element: <BoardPaperResultPage />
+    },
+    {
+      path: "proposal-generation",
+      roles: [REPORT_PREPARER, MANAGEMENT, MA_STAFF],
+      element: <ProposalGeneratorPage />
+    },
+    {
+      path: "proposal-result",
+      roles: [REPORT_PREPARER, MANAGEMENT, MA_STAFF],
+      element: <ProposalResultPage />
+    },
+    {
+      path: "history",
+      roles: [REPORT_PREPARER, MANAGEMENT, MA_STAFF],
+      element: <HistoryPage />
+    }
+  ]
+},
   {
     path: '/clarifications',
     label: 'Clarifications',
