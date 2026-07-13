@@ -13,7 +13,7 @@ Covers only the endpoints this scope owns, matching the use cases (UC-D1 to UC-D
 - **Request Body:** none
 - **Success Response `201 Created`** (deviation exceeds tolerance):
   ```json
-  {
+  {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
     "id": 12,
     "tender_id": 7,
     "log_type": "pricing_deviation",
