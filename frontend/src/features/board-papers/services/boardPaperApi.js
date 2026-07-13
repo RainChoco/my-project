@@ -1,10 +1,10 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000/api/boardpaper";
+const API_BASE_URL = "http://localhost:5000/api/boardpapers";
 /*
 ==========================================
 Generate AI Board Paper
-POST /api/boardpaper/generate
+POST /api/boardpapers/generate
 ==========================================
 */
 
@@ -31,7 +31,7 @@ export async function getBoardPaper(id) {
     try {
 
         const response = await fetch(
-            `${API_URL}/boardpaper/${id}`,
+            `${API_BASE_URL}/${id}`,
             {
                 credentials: "include"
             }
@@ -68,7 +68,7 @@ export async function saveBoardPaper(reportData) {
     try {
 
         const response = await fetch(
-            `${API_URL}/boardpaper/generate`,
+            `${API_BASE_URL}/generate`,
             {
                 method: "POST",
                 headers: {
@@ -110,7 +110,7 @@ export async function updateBoardPaper(id, reportData) {
     try {
 
         const response = await fetch(
-            `${API_URL}/boardpaper/generate/${id}`,
+            `${API_BASE_URL}/generate/${id}`,
             {
                 method: "PUT",
                 headers: {
@@ -152,7 +152,7 @@ export async function downloadBoardPaperPDF(id) {
     try {
 
         const response = await fetch(
-            `${API_URL}/boardpaper/generate/pdf/${id}`,
+            `${API_BASE_URL}/pdf/${id}`,
             {
                 credentials: "include"
             }
@@ -187,7 +187,7 @@ export async function deleteBoardPaper(id) {
     try {
 
         const response = await fetch(
-            `${API_URL}/boardpaper/generate/${id}`,
+            `${API_BASE_URL}/${id}`,
             {
                 method: "DELETE",
                 credentials: "include"
@@ -225,7 +225,7 @@ export async function getBoardPaperHistory() {
     try {
 
         const response = await fetch(
-            `${API_URL}/boardpaper/generate/history`,
+            `${API_BASE_URL}/history`,
             {
                 credentials: "include"
             }

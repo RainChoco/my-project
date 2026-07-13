@@ -1,7 +1,16 @@
 import { DashboardPage } from '../features/dashboard';
 import { TendersDashboardPage, TenderFormPage, TenderDetailPage } from '../features/tenders';
 import { EvaluationCriteriaPage, EvaluationsPage, EvaluationDetailPage } from '../features/evaluations';
-import { BoardPaperPage, BoardPaperResultPage, ProposalGeneratorPage, ProposalResultPage, HistoryPage } from "../features/board-papers";
+import {
+  BoardPaperPage,
+  BoardPaperResultPage,
+  ProposalGeneratorPage,
+  ProposalResultPage,
+  HistoryPage
+} from '../features/board-papers';
+import ClarificationLogsPage from '../features/clarifications/pages/ClarificationLogsPage';
+import ClarificationLogDetailPage from '../features/clarifications/pages/ClarificationLogDetailPage';
+import JobAdjustmentRequestsPage from '../features/clarifications/pages/JobAdjustmentRequestsPage';
 import { ComingSoonPage } from '../pages';
 
 // Matches backend/src/models/user.js's `role` ENUM and design/test-tokens.md.
@@ -101,6 +110,15 @@ export const routeConfig = [
     path: '/clarifications',
     label: 'Clarifications',
     roles: [MA_STAFF, VENDOR_LIAISON, EVALUATOR], // UC-D1-D9 actors; evaluator is notified per UC-D5
-    element: <ComingSoonPage title="Clarifications" description="Pricing deviation clarifications & job adjustments (Sulaiman)." />,
+    element: <ClarificationLogsPage />,
+    children: [
+      { path: ':id', roles: [MA_STAFF, VENDOR_LIAISON, EVALUATOR], element: <ClarificationLogDetailPage /> }, // UC-D2-D9
+    ],
+  },
+  {
+    path: '/job-adjustment-requests',
+    label: 'Job Adjustments',
+    roles: [MA_STAFF, VENDOR_LIAISON], // UC-D7 actors
+    element: <JobAdjustmentRequestsPage />,
   },
 ];
