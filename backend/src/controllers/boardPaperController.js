@@ -1,92 +1,57 @@
 const BoardPaper = require("../models/BoardPaper");
 
-
-
-
 exports.generateBoardPaper = async (req, res) => {
-
     try {
-
         const {
-
-            tenderId,
+            tender,
             title,
             purpose,
-            language,
-            sections
-
+            preparedBy
         } = req.body;
 
-
-        if (!tenderId) {
-
+        if (!tender) {
             return res.status(400).json({
                 message: "Tender is required."
             });
-
         }
 
+        const tenderId =
+            tender === "Managing Agent Services"
+                ? 1
+                : tender === "Lift Maintenance Contract"
+                    ? 2
+                    : 3;
 
         const boardPaper = await BoardPaper.create({
-
             tenderId,
-
             title,
-
             purpose,
-
-            language,
-
-            executiveSummary: sections.executiveSummary,
-
-            background: sections.background,
-
-            scopeOfWork: sections.scopeOfWork,
-
-            financialAnalysis: sections.financialAnalysis,
-
-            riskAssessment: sections.riskAssessment,
-
-            recommendation: sections.recommendation,
-
+            language: "English",
+            executiveSummary: true,
+            background: true,
+            scopeOfWork: true,
+            financialAnalysis: true,
+            riskAssessment: true,
+            recommendation: true,
             confidence: 94,
-
             score: "91 / 100",
-
-            finalRecommendation:
-                "Proceed to Management Approval.",
-
-            preparedBy: "AI Summary Tool",
-
+            finalRecommendation: "Proceed to Management Approval.",
+            preparedBy,
             generatedBy: "EM Services AI Platform",
-
             status: "Generated"
-
         });
 
-
-        res.status(201).json({
-
+        return res.status(201).json({
             message: "Board Paper generated successfully.",
-
             report: boardPaper
-
         });
-
     }
-
     catch (error) {
-
-        console.error(error);
-
+        console.error('BoardPaper generate error:', error);
         res.status(500).json({
-
-            message: "Unable to generate board paper."
-
+            message: error.message || "Unable to generate board paper."
         });
-
     }
-
 };
 
 
