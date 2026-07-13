@@ -11,6 +11,10 @@ const Evaluation = require('./evaluation');
 const Approval = require('./approval');
 const BoardPaper = require('./BoardPaper');
 const Proposal = require('./Proposal');
+const ClarificationLog = require('./clarificationLog');
+const ClarificationMessage = require('./clarificationMessage');
+const ClarificationAttachment = require('./clarificationAttachment');
+const JobAdjustmentRequest = require('./jobAdjustmentRequest');
 
 // Associations - defined here (not in the model files) so every model is already
 // required before any association referencing another model is set up.
@@ -45,6 +49,29 @@ User.hasMany(Approval, { as: 'approvalsDecided', foreignKey: 'approver_id' });
 // (see Tender above) - add the association once someone from Scope B confirms the FK name
 // matches the evaluations migration.
 
+// --- Associations (Sulaiman: Scope D - Alternate Proposal Communication System) ---
+
+ClarificationLog.belongsTo(Tender, { foreignKey: 'tender_id', as: 'tender' });
+ClarificationLog.belongsTo(User, { foreignKey: 'escalated_by', as: 'escalatedByUser' });
+ClarificationLog.belongsTo(User, { foreignKey: 'resolved_by', as: 'resolvedByUser' });
+ClarificationLog.hasMany(ClarificationMessage, { foreignKey: 'clarification_log_id', as: 'messages', onDelete: 'CASCADE' });
+ClarificationLog.hasMany(JobAdjustmentRequest, { foreignKey: 'clarification_log_id', as: 'jobAdjustmentRequests', onDelete: 'CASCADE' });
+
+ClarificationMessage.belongsTo(ClarificationLog, { foreignKey: 'clarification_log_id', as: 'clarificationLog' });
+ClarificationMessage.belongsTo(ClarificationMessage, { foreignKey: 'source_draft_id', as: 'sourceDraft' });
+ClarificationMessage.belongsTo(User, { foreignKey: 'approved_by', as: 'approver' });
+ClarificationMessage.belongsTo(User, { foreignKey: 'created_by', as: 'author' });
+ClarificationMessage.hasMany(ClarificationAttachment, { foreignKey: 'clarification_message_id', as: 'attachments', onDelete: 'CASCADE' });
+
+ClarificationAttachment.belongsTo(ClarificationMessage, { foreignKey: 'clarification_message_id', as: 'message' });
+
+JobAdjustmentRequest.belongsTo(ClarificationLog, { foreignKey: 'clarification_log_id', as: 'clarificationLog' });
+JobAdjustmentRequest.belongsTo(ClarificationLog, { foreignKey: 'follow_up_clarification_log_id', as: 'followUpNotification' });
+JobAdjustmentRequest.belongsTo(ClarificationMessage, { foreignKey: 'source_message_id', as: 'sourceMessage' });
+JobAdjustmentRequest.belongsTo(Tender, { foreignKey: 'tender_id', as: 'tender' });
+JobAdjustmentRequest.belongsTo(User, { foreignKey: 'requested_by', as: 'requester' });
+JobAdjustmentRequest.belongsTo(User, { foreignKey: 'approved_by', as: 'approver' });
+
 // Export models and connection
 module.exports = {
   sequelize,
@@ -59,5 +86,9 @@ module.exports = {
   Evaluation,
   Approval,
   BoardPaper,
-  Proposal
+  Proposal,
+  ClarificationLog,
+  ClarificationMessage,
+  ClarificationAttachment,
+  JobAdjustmentRequest
 };
