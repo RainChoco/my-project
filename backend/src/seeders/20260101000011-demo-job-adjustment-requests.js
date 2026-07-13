@@ -2,7 +2,7 @@
 
 // Scenario coverage - the timeline adjustment implied by MegaWorks' vendor_response
 // (message id 3) to clarification log 2, per UC-D7. Marked material since it's a schedule
-// term change mid-evaluation, so approval_status went through actual sign-off (Alice Tan)
+// term change mid-evaluation, so approval_status went through actual sign-off (Zheng Hong)
 // rather than being auto-approved. follow_up_clarification_log_id points at log 3, the
 // job_adjustment_notification thread that confirmed the adjustment back to the vendor.
 module.exports = {

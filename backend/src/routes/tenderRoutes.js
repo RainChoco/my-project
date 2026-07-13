@@ -50,6 +50,16 @@ router.put(
   tenderController.replaceDocument
 );
 
+// --- Tender Image ---
+router.post(
+  '/tenders/:id/image',
+  authenticate,
+  authorise('ma_staff'),
+  upload.single('file'),
+  validate(tenderIdParamsSchema),
+  tenderController.uploadTenderImage
+);
+
 // --- Eligibility ---
 router.post(
   '/tenders/:id/eligibility-check',

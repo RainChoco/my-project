@@ -21,13 +21,13 @@ describe('Jerrold - Evaluation Criteria / Processing Tender Form / Approval', ()
     await sequelize.sync({ force: true });
 
     const maStaff = await User.create({
-      full_name: 'Alice Tan', email: 'alice.tan@test.local', password_hash: 'x', role: 'ma_staff'
+      full_name: 'Zheng Hong', email: 'zheng.hong@test.local', password_hash: 'x', role: 'ma_staff'
     });
     const evaluator = await User.create({
-      full_name: 'Ben Ong', email: 'ben.ong@test.local', password_hash: 'x', role: 'evaluator'
+      full_name: 'Jerrold', email: 'jerrold@test.local', password_hash: 'x', role: 'evaluator'
     });
     const management = await User.create({
-      full_name: 'Cheryl Lim', email: 'cheryl.lim@test.local', password_hash: 'x', role: 'management'
+      full_name: 'Kai Xuan', email: 'kai.xuan@test.local', password_hash: 'x', role: 'management'
     });
 
     maStaffToken = authService.signToken(maStaff);

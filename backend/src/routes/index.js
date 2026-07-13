@@ -20,7 +20,7 @@ router.use('/', tenderRoutes);
 router.use('/tenders/:tenderId/evaluations', tenderEvaluationRoutes);
 router.use('/evaluations', evaluationRoutes);
 router.use('/evaluation-criteria', evaluationCriteriaRoutes);
-router.use('/boardpaper', boardPaperRoutes);
+router.use('/boardpapers', boardPaperRoutes);
 router.use('/clarifications', clarificationRoutes);
 router.use('/proposals', proposalRoutes);
 

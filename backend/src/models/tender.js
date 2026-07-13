@@ -62,6 +62,14 @@ const Tender = sequelize.define('Tender', {
   created_by: {
     type: DataTypes.INTEGER,
     allowNull: false
+  },
+  image_url: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  image_public_id: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   tableName: 'tenders',
