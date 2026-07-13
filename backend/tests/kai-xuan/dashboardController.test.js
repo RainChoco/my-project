@@ -12,7 +12,7 @@ app.use(express.json());
 app.use('/api/dashboard', dashboardRoutes);
 
 // POST /archive now requires authentication (see backend/src/middlewares/auth.js).
-const authToken = authService.signToken({ id: 3, full_name: 'Cheryl Lim', email: 'cheryl.lim@townms.gov.sg', role: 'management' });
+const authToken = authService.signToken({ id: 3, full_name: 'Kai Xuan', email: 'kai.xuan@townms.gov.sg', role: 'management' });
 
 describe('Dashboard Controller Tests', () => {
   beforeAll(async () => {

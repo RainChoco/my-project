@@ -14,68 +14,68 @@ Payload shape (matches `backend/src/services/authService.js#signToken` and `user
 { "sub": <users.id>, "full_name": "<users.full_name>", "email": "<users.email>", "role": "<users.role>", "iat": <issued-at>, "exp": <expiry> }
 ```
 
-Each token is valid 90 days from issuance (`iat`: 2026-07-10T16:13:06Z, `exp`: 2026-10-08T16:13:06Z) - long-lived since these are for local dev/test convenience only, not real logins (real logins via `POST /api/auth/login` get an 8-hour token). Use as `Authorization: Bearer <token>`.
+Each token is valid 90 days from issuance (`iat`: 2026-07-13T08:03:37Z, `exp`: 2026-10-11T08:03:37Z) - long-lived since these are for local dev/test convenience only, not real logins (real logins via `POST /api/auth/login` get an 8-hour token). Use as `Authorization: Bearer <token>`.
 
 To regenerate: `node -e "require('dotenv').config(); const jwt=require('jsonwebtoken'); console.log(jwt.sign({sub:1,full_name:'...',email:'...',role:'...'}, process.env.DEV_JWT_SECRET, {algorithm:'HS256', expiresIn:'90d'}))"` from `backend/`.
 
 ## Real login via the actual form / `POST /auth/login`
 
-The seeded demo users (`20260101000001-demo-users.js`, `20260101000007-demo-users-vendor-liaison.js`) now hash a real, shared dev password instead of a placeholder string, so they work through the genuine login flow (real `bcrypt.compare`, no auth code bypassed):
+The seeded demo users (`20260101000001-demo-users.js`, `20260101000007-demo-users-vendor-liaison.js`, `20260101000008-demo-users-report-preparer.js`) now hash a real, shared dev password instead of a placeholder string, so they work through the genuine login flow (real `bcrypt.compare`, no auth code bypassed):
 
 ```
 DEV_PASSWORD=DevPass123!
 ```
 
-Log in as any seeded user's email above with this password. If your local DB was seeded before this change, its `users` rows still have the old placeholder hash - re-run the seeders (e.g. `npx sequelize-cli db:seed:undo --seed 20260101000001-demo-users.js && npx sequelize-cli db:seed --seed 20260101000001-demo-users.js`, and likewise for `20260101000007-demo-users-vendor-liaison.js`) to pick up the new hash.
+Log in as any seeded user's email above with this password. If your local DB was seeded before this change, its `users` rows still have the old placeholder hash - re-run the seeders (e.g. `npx sequelize-cli db:seed:undo --seed 20260101000001-demo-users.js && npx sequelize-cli db:seed --seed 20260101000001-demo-users.js`, and likewise for `20260101000007-demo-users-vendor-liaison.js` and `20260101000008-demo-users-report-preparer.js`) to pick up the new hash.
 
 ---
 
-## `ma_staff` - Alice Tan (`users.id: 1`)
+## `ma_staff` - Zheng Hong (`users.id: 1`)
 
 ```json
-{ "sub": 1, "full_name": "Alice Tan", "email": "alice.tan@townms.gov.sg", "role": "ma_staff", "iat": 1783699986, "exp": 1791475986 }
+{ "sub": 1, "full_name": "Zheng Hong", "email": "zheng.hong@townms.gov.sg", "role": "ma_staff", "iat": 1783929817, "exp": 1791705817 }
 ```
 
 ```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImZ1bGxfbmFtZSI6IkFsaWNlIFRhbiIsImVtYWlsIjoiYWxpY2UudGFuQHRvd25tcy5nb3Yuc2ciLCJyb2xlIjoibWFfc3RhZmYiLCJpYXQiOjE3ODM2OTk5ODYsImV4cCI6MTc5MTQ3NTk4Nn0.dgHYHXwrhptOIAdFQ2cvlEP8VQdKDXETaNVjV1ckoBI
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImZ1bGxfbmFtZSI6IlpoZW5nIEhvbmciLCJlbWFpbCI6InpoZW5nLmhvbmdAdG93bm1zLmdvdi5zZyIsInJvbGUiOiJtYV9zdGFmZiIsImlhdCI6MTc4MzkyOTgxNywiZXhwIjoxNzkxNzA1ODE3fQ.YBg_9V2fjx3GapbC2PjhmtQqCtI-1sHJh4KCNnC9U_Q
 ```
 
-## `evaluator` - Ben Ong (`users.id: 2`)
-
-```json
-{ "sub": 2, "full_name": "Ben Ong", "email": "ben.ong@townms.gov.sg", "role": "evaluator", "iat": 1783699986, "exp": 1791475986 }
-```
-
-```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsImZ1bGxfbmFtZSI6IkJlbiBPbmciLCJlbWFpbCI6ImJlbi5vbmdAdG93bm1zLmdvdi5zZyIsInJvbGUiOiJldmFsdWF0b3IiLCJpYXQiOjE3ODM2OTk5ODYsImV4cCI6MTc5MTQ3NTk4Nn0.WjTsTihUD3P0rRA1omy9rdnO_tkiXLhHfiXU93TfHm8
-```
-
-## `management` - Cheryl Lim (`users.id: 3`)
+## `evaluator` - Jerrold (`users.id: 2`)
 
 ```json
-{ "sub": 3, "full_name": "Cheryl Lim", "email": "cheryl.lim@townms.gov.sg", "role": "management", "iat": 1783699986, "exp": 1791475986 }
+{ "sub": 2, "full_name": "Jerrold", "email": "jerrold@townms.gov.sg", "role": "evaluator", "iat": 1783929817, "exp": 1791705817 }
 ```
 
 ```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMsImZ1bGxfbmFtZSI6IkNoZXJ5bCBMaW0iLCJlbWFpbCI6ImNoZXJ5bC5saW1AdG93bm1zLmdvdi5zZyIsInJvbGUiOiJtYW5hZ2VtZW50IiwiaWF0IjoxNzgzNjk5OTg2LCJleHAiOjE3OTE0NzU5ODZ9.9BMyukxtgbqL66-yzqqvhvz3FwyHdyTQ68EHLHB4e8w
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsImZ1bGxfbmFtZSI6IkplcnJvbGQiLCJlbWFpbCI6ImplcnJvbGRAdG93bm1zLmdvdi5zZyIsInJvbGUiOiJldmFsdWF0b3IiLCJpYXQiOjE3ODM5Mjk4MTcsImV4cCI6MTc5MTcwNTgxN30.BwN27J6WqzjoswKRovQ07MsQR-SQsE1dUuuqe9_wsoA
 ```
 
-## `report_preparer` - Devi Ravi (`users.id: 4`)
-
-```json
-{ "sub": 4, "full_name": "Devi Ravi", "email": "devi.ravi@townms.gov.sg", "role": "report_preparer", "iat": 1783699986, "exp": 1791475986 }
-```
-
-```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsImZ1bGxfbmFtZSI6IkRldmkgUmF2aSIsImVtYWlsIjoiZGV2aS5yYXZpQHRvd25tcy5nb3Yuc2ciLCJyb2xlIjoicmVwb3J0X3ByZXBhcmVyIiwiaWF0IjoxNzgzNjk5OTg2LCJleHAiOjE3OTE0NzU5ODZ9.hIhFaM_tA9EXPyCFMtppE-jszAHZoFCrHK1F6S50uNE
-```
-
-## `vendor_liaison` - Farid Rahman (`users.id: 5`)
+## `management` - Kai Xuan (`users.id: 3`)
 
 ```json
-{ "sub": 5, "full_name": "Farid Rahman", "email": "farid.rahman@townms.gov.sg", "role": "vendor_liaison", "iat": 1783699986, "exp": 1791475986 }
+{ "sub": 3, "full_name": "Kai Xuan", "email": "kai.xuan@townms.gov.sg", "role": "management", "iat": 1783929817, "exp": 1791705817 }
 ```
 
 ```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjUsImZ1bGxfbmFtZSI6IkZhcmlkIFJhaG1hbiIsImVtYWlsIjoiZmFyaWQucmFobWFuQHRvd25tcy5nb3Yuc2ciLCJyb2xlIjoidmVuZG9yX2xpYWlzb24iLCJpYXQiOjE3ODM2OTk5ODYsImV4cCI6MTc5MTQ3NTk4Nn0.X1DLYKa3Owbx9BXNQLwthLmaecAlvmtap_L-AfxP4KU
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMsImZ1bGxfbmFtZSI6IkthaSBYdWFuIiwiZW1haWwiOiJrYWkueHVhbkB0b3dubXMuZ292LnNnIiwicm9sZSI6Im1hbmFnZW1lbnQiLCJpYXQiOjE3ODM5Mjk4MTcsImV4cCI6MTc5MTcwNTgxN30.08jo6QJuSH87ssX_64Z0JJn1DTZzD1l3DJjeH6ZaJa8
+```
+
+## `report_preparer` - Calista (`users.id: 4`)
+
+```json
+{ "sub": 4, "full_name": "Calista", "email": "calista@townms.gov.sg", "role": "report_preparer", "iat": 1783929817, "exp": 1791705817 }
+```
+
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsImZ1bGxfbmFtZSI6IkNhbGlzdGEiLCJlbWFpbCI6ImNhbGlzdGFAdG93bm1zLmdvdi5zZyIsInJvbGUiOiJyZXBvcnRfcHJlcGFyZXIiLCJpYXQiOjE3ODM5Mjk4MTcsImV4cCI6MTc5MTcwNTgxN30.GhDIwFVAPVlDqH97Oz4TDCZcfhTFEVzOAdjzv946nqw
+```
+
+## `vendor_liaison` - Sulaiman (`users.id: 5`)
+
+```json
+{ "sub": 5, "full_name": "Sulaiman", "email": "sulaiman@townms.gov.sg", "role": "vendor_liaison", "iat": 1783929817, "exp": 1791705817 }
+```
+
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjUsImZ1bGxfbmFtZSI6IlN1bGFpbWFuIiwiZW1haWwiOiJzdWxhaW1hbkB0b3dubXMuZ292LnNnIiwicm9sZSI6InZlbmRvcl9saWFpc29uIiwiaWF0IjoxNzgzOTI5ODE3LCJleHAiOjE3OTE3MDU4MTd9.EmkfqpQWAfbUXYBuAQepKs2UL6MP04iaRgPzbOg1Z1E
 ```

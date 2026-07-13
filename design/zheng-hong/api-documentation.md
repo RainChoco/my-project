@@ -357,42 +357,42 @@ Each token is valid for 90 days from issuance and decodes to the payload shown b
 
 **`ma_staff`** - payload:
 ```json
-{ "sub": 1, "full_name": "Alice Tan", "email": "alice.tan@townms.gov.sg", "role": "ma_staff", "iat": 1781000000, "exp": 1788776000 }
+{ "sub": 1, "full_name": "Zheng Hong", "email": "zheng.hong@townms.gov.sg", "role": "ma_staff", "iat": 1783929817, "exp": 1791705817 }
 ```
 ```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImZ1bGxfbmFtZSI6IkFsaWNlIFRhbiIsImVtYWlsIjoiYWxpY2UudGFuQHRvd25tcy5nb3Yuc2ciLCJyb2xlIjoibWFfc3RhZmYiLCJpYXQiOjE3ODEwMDAwMDAsImV4cCI6MTc4ODc3NjAwMH0.GLMqNPXMMU-EMr6bjFtzfwYV4qefmFeNAZ4YwSdHE5E
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImZ1bGxfbmFtZSI6IlpoZW5nIEhvbmciLCJlbWFpbCI6InpoZW5nLmhvbmdAdG93bm1zLmdvdi5zZyIsInJvbGUiOiJtYV9zdGFmZiIsImlhdCI6MTc4MzkyOTgxNywiZXhwIjoxNzkxNzA1ODE3fQ.YBg_9V2fjx3GapbC2PjhmtQqCtI-1sHJh4KCNnC9U_Q
 ```
 
 **`evaluator`** - payload:
 ```json
-{ "sub": 2, "full_name": "Ben Ong", "email": "ben.ong@townms.gov.sg", "role": "evaluator", "iat": 1781000000, "exp": 1788776000 }
+{ "sub": 2, "full_name": "Jerrold", "email": "jerrold@townms.gov.sg", "role": "evaluator", "iat": 1783929817, "exp": 1791705817 }
 ```
 ```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsImZ1bGxfbmFtZSI6IkJlbiBPbmciLCJlbWFpbCI6ImJlbi5vbmdAdG93bm1zLmdvdi5zZyIsInJvbGUiOiJldmFsdWF0b3IiLCJpYXQiOjE3ODEwMDAwMDAsImV4cCI6MTc4ODc3NjAwMH0.WQeEvEw8njqi859z-JBX8vSz1tM1_l8fiHkaTzoGLDk
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsImZ1bGxfbmFtZSI6IkplcnJvbGQiLCJlbWFpbCI6ImplcnJvbGRAdG93bm1zLmdvdi5zZyIsInJvbGUiOiJldmFsdWF0b3IiLCJpYXQiOjE3ODM5Mjk4MTcsImV4cCI6MTc5MTcwNTgxN30.BwN27J6WqzjoswKRovQ07MsQR-SQsE1dUuuqe9_wsoA
 ```
 
 **`report_preparer`** - payload:
 ```json
-{ "sub": 4, "full_name": "Devi Ravi", "email": "devi.ravi@townms.gov.sg", "role": "report_preparer", "iat": 1781000000, "exp": 1788776000 }
+{ "sub": 4, "full_name": "Calista", "email": "calista@townms.gov.sg", "role": "report_preparer", "iat": 1783929817, "exp": 1791705817 }
 ```
 ```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsImZ1bGxfbmFtZSI6IkRldmkgUmF2aSIsImVtYWlsIjoiZGV2aS5yYXZpQHRvd25tcy5nb3Yuc2ciLCJyb2xlIjoicmVwb3J0X3ByZXBhcmVyIiwiaWF0IjoxNzgxMDAwMDAwLCJleHAiOjE3ODg3NzYwMDB9.GZuMF_e5y5KmO542G-tx_ommBALMXtAeW5nzY5KWl9U
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsImZ1bGxfbmFtZSI6IkNhbGlzdGEiLCJlbWFpbCI6ImNhbGlzdGFAdG93bm1zLmdvdi5zZyIsInJvbGUiOiJyZXBvcnRfcHJlcGFyZXIiLCJpYXQiOjE3ODM5Mjk4MTcsImV4cCI6MTc5MTcwNTgxN30.GhDIwFVAPVlDqH97Oz4TDCZcfhTFEVzOAdjzv946nqw
 ```
 
 **`vendor_liaison`** - payload:
 ```json
-{ "sub": 5, "full_name": "Farid Rahman", "email": "farid.rahman@townms.gov.sg", "role": "vendor_liaison", "iat": 1781000000, "exp": 1788776000 }
+{ "sub": 5, "full_name": "Sulaiman", "email": "sulaiman@townms.gov.sg", "role": "vendor_liaison", "iat": 1783929817, "exp": 1791705817 }
 ```
 ```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjUsImZ1bGxfbmFtZSI6IkZhcmlkIFJhaG1hbiIsImVtYWlsIjoiZmFyaWQucmFobWFuQHRvd25tcy5nb3Yuc2ciLCJyb2xlIjoidmVuZG9yX2xpYWlzb24iLCJpYXQiOjE3ODEwMDAwMDAsImV4cCI6MTc4ODc3NjAwMH0.rzW0nW_viTylUb8prs3pR3Hwu9NdkHJcITR-5t0mwKQ
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjUsImZ1bGxfbmFtZSI6IlN1bGFpbWFuIiwiZW1haWwiOiJzdWxhaW1hbkB0b3dubXMuZ292LnNnIiwicm9sZSI6InZlbmRvcl9saWFpc29uIiwiaWF0IjoxNzgzOTI5ODE3LCJleHAiOjE3OTE3MDU4MTd9.EmkfqpQWAfbUXYBuAQepKs2UL6MP04iaRgPzbOg1Z1E
 ```
 
 **`management`** - payload:
 ```json
-{ "sub": 3, "full_name": "Cheryl Lim", "email": "cheryl.lim@townms.gov.sg", "role": "management", "iat": 1781000000, "exp": 1788776000 }
+{ "sub": 3, "full_name": "Kai Xuan", "email": "kai.xuan@townms.gov.sg", "role": "management", "iat": 1783929817, "exp": 1791705817 }
 ```
 ```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMsImZ1bGxfbmFtZSI6IkNoZXJ5bCBMaW0iLCJlbWFpbCI6ImNoZXJ5bC5saW1AdG93bm1zLmdvdi5zZyIsInJvbGUiOiJtYW5hZ2VtZW50IiwiaWF0IjoxNzgxMDAwMDAwLCJleHAiOjE3ODg3NzYwMDB9.EtPvQ2wstBF4U29Eex5TXe41l-qoxmf_XxLgr02Zjo4
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMsImZ1bGxfbmFtZSI6IkthaSBYdWFuIiwiZW1haWwiOiJrYWkueHVhbkB0b3dubXMuZ292LnNnIiwicm9sZSI6Im1hbmFnZW1lbnQiLCJpYXQiOjE3ODM5Mjk4MTcsImV4cCI6MTc5MTcwNTgxN30.08jo6QJuSH87ssX_64Z0JJn1DTZzD1l3DJjeH6ZaJa8
 ```
 
-These were generated with a plain Node `crypto` HMAC-SHA256 script (no external libraries) against the exact payloads shown - anyone on the team can regenerate fresh ones locally the same way once the real `jsonwebtoken`-based auth middleware exists, by calling `jwt.sign(payload, process.env.DEV_JWT_SECRET, { algorithm: 'HS256' })`.
+These match the canonical set in `design/test-tokens.md` (signed by the real `jsonwebtoken`-based auth middleware, via `jwt.sign(payload, process.env.DEV_JWT_SECRET, { algorithm: 'HS256', expiresIn: '90d' })`) - regenerate the same way if the seeded users ever change.
