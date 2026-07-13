@@ -264,6 +264,42 @@ const replaceDocument = async (req, res) => {
   }
 };
 
+const uploadTenderImage = async (req, res) => {
+  try {
+    const tender = await Tender.findByPk(req.params.id);
+    if (!tender) {
+      return res.status(404).json({ status: 'error', message: 'Tender not found' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ status: 'error', message: 'No file attached' });
+    }
+    if (!req.file.mimetype.startsWith('image/')) {
+      return res.status(400).json({ status: 'error', message: 'File must be an image' });
+    }
+
+    let uploadResult;
+    try {
+      // Stable public_id (unlike tender_documents' versioned ids) - a tender has exactly
+      // one display image, so re-uploading overwrites the same Cloudinary asset instead
+      // of accumulating orphaned ones.
+      uploadResult = await cloudinaryService.uploadBuffer(req.file.buffer, {
+        folder: `town-council-tender/${tender.tender_ref_no}`,
+        publicId: 'tender-image',
+        resourceType: 'image'
+      });
+    } catch (uploadError) {
+      console.error('Cloudinary upload failed:', uploadError);
+      return res.status(502).json({ status: 'error', message: 'Cloudinary upload failed' });
+    }
+
+    await tender.update({ image_url: uploadResult.secure_url, image_public_id: uploadResult.public_id });
+    return res.status(200).json(tender.toJSON());
+  } catch (error) {
+    console.error('Error in uploadTenderImage:', error);
+    return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+  }
+};
+
 // ---------------------------------------------------------------------------
 // Eligibility
 // ---------------------------------------------------------------------------
@@ -529,6 +565,7 @@ module.exports = {
   uploadDocument,
   listDocuments,
   replaceDocument,
+  uploadTenderImage,
   triggerEligibilityCheck,
   listEligibilityChecks,
   overrideEligibilityCheck,
