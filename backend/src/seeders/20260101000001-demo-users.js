@@ -18,8 +18,8 @@ module.exports = {
     await queryInterface.bulkInsert('users', [
       {
         id: 1,
-        full_name: 'Alice Tan',
-        email: 'alice.tan@townms.gov.sg',
+        full_name: 'Zheng Hong',
+        email: 'zheng.hong@townms.gov.sg',
         password_hash,
         role: 'ma_staff',
         avatar_url: null,
@@ -28,8 +28,8 @@ module.exports = {
       },
       {
         id: 2,
-        full_name: 'Ben Ong',
-        email: 'ben.ong@townms.gov.sg',
+        full_name: 'Jerrold',
+        email: 'jerrold@townms.gov.sg',
         password_hash,
         role: 'evaluator',
         avatar_url: null,
@@ -38,8 +38,8 @@ module.exports = {
       },
       {
         id: 3,
-        full_name: 'Cheryl Lim',
-        email: 'cheryl.lim@townms.gov.sg',
+        full_name: 'Kai Xuan',
+        email: 'kai.xuan@townms.gov.sg',
         password_hash,
         role: 'management',
         avatar_url: null,

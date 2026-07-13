@@ -2,10 +2,10 @@
 
 const bcrypt = require('bcrypt');
 
-// TEMPORARY STUB - extends 20260101000001-demo-users.js with the `vendor_liaison`
-// user already reserved (id 5, Sulaiman) in design/zheng-hong/api-documentation.md's
-// dev-auth token list. Needed here so Scope D's clarification_logs/messages/
-// job_adjustment_requests have a valid FK to point at. Replace once real registration exists.
+// TEMPORARY STUB - extends 20260101000001-demo-users.js with the `report_preparer`
+// user already reserved (id 4, Calista) in design/zheng-hong/api-documentation.md's
+// dev-auth token list. Needed so Scope C's board_papers have a valid FK to point at.
+// Replace once real registration exists.
 //
 // Uses the same DEV_PASSWORD as 20260101000001-demo-users.js - see that file's comment.
 const DEV_PASSWORD = 'DevPass123!';
@@ -16,11 +16,11 @@ module.exports = {
 
     await queryInterface.bulkInsert('users', [
       {
-        id: 5,
-        full_name: 'Sulaiman',
-        email: 'sulaiman@townms.gov.sg',
+        id: 4,
+        full_name: 'Calista',
+        email: 'calista@townms.gov.sg',
         password_hash,
-        role: 'vendor_liaison',
+        role: 'report_preparer',
         avatar_url: null,
         created_at: '2026-06-01T09:00:00.000Z',
         updated_at: '2026-06-01T09:00:00.000Z',
@@ -29,6 +29,6 @@ module.exports = {
   },
 
   async down(queryInterface) {
-    await queryInterface.bulkDelete('users', { id: [5] }, {});
+    await queryInterface.bulkDelete('users', { id: [4] }, {});
   },
 };

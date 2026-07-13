@@ -12,11 +12,18 @@ const loginSchema = Yup.object({
   password: Yup.string().required('Password is required'),
 });
 
-// TEMP DEV ONLY - pre-signed ma_staff (Alice Tan) token from design/test-tokens.md.
-// Reuses the exact same login()/AuthContext flow as a real login; no auth logic changed.
-// import.meta.env.DEV keeps this out of production builds. Remove this whole block when done.
-const DEV_MA_STAFF_TOKEN =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImZ1bGxfbmFtZSI6IkFsaWNlIFRhbiIsImVtYWlsIjoiYWxpY2UudGFuQHRvd25tcy5nb3Yuc2ciLCJyb2xlIjoibWFfc3RhZmYiLCJpYXQiOjE3ODM2OTk5ODYsImV4cCI6MTc5MTQ3NTk4Nn0.dgHYHXwrhptOIAdFQ2cvlEP8VQdKDXETaNVjV1ckoBI';
+// TEMP DEV ONLY - quick-switch login as any seeded demo user (backend/src/seeders/).
+// Reuses the exact same POST /auth/login + login()/AuthContext flow as a real login;
+// no auth logic changed. import.meta.env.DEV keeps this out of production builds.
+// Remove this whole block when done.
+const DEV_PASSWORD = 'DevPass123!';
+const DEV_USERS = [
+  { label: 'Zheng Hong (ma_staff)', email: 'zheng.hong@townms.gov.sg' },
+  { label: 'Jerrold (evaluator)', email: 'jerrold@townms.gov.sg' },
+  { label: 'Kai Xuan (management)', email: 'kai.xuan@townms.gov.sg' },
+  { label: 'Calista (report_preparer)', email: 'calista@townms.gov.sg' },
+  { label: 'Sulaiman (vendor_liaison)', email: 'sulaiman@townms.gov.sg' },
+];
 
 function LoginPage() {
   const { login } = useAuth();
@@ -24,6 +31,20 @@ function LoginPage() {
   const location = useLocation();
   const [serverError, setServerError] = useState(null);
   const [rememberMe, setRememberMe] = useState(false);
+  const [devUserEmail, setDevUserEmail] = useState(DEV_USERS[0].email);
+  const [devLoginError, setDevLoginError] = useState(null);
+
+  const handleDevQuickLogin = async () => {
+    setDevLoginError(null);
+    try {
+      const response = await apiClient.post('/auth/login', { email: devUserEmail, password: DEV_PASSWORD });
+      login(response.data.data.token);
+      const redirectTo = location.state?.from?.pathname ?? '/';
+      navigate(redirectTo, { replace: true });
+    } catch (error) {
+      setDevLoginError(error.response?.data?.message ?? 'Dev quick login failed.');
+    }
+  };
 
   const formik = useFormik({
     initialValues: { email: '', password: '' },
@@ -118,18 +139,27 @@ function LoginPage() {
                   {formik.isSubmitting ? 'Signing in...' : 'Sign in'}
                 </Button>
                 {import.meta.env.DEV && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => {
-                      login(DEV_MA_STAFF_TOKEN);
-                      const redirectTo = location.state?.from?.pathname ?? '/';
-                      navigate(redirectTo, { replace: true });
-                    }}
-                  >
-                    Dev Quick Login (ma_staff)
-                  </Button>
+                  <div className="flex w-full flex-col gap-2 border-t pt-2">
+                    <label htmlFor="dev-quick-login-user" className="text-xs font-medium text-muted-foreground">
+                      Dev Quick Login
+                    </label>
+                    <select
+                      id="dev-quick-login-user"
+                      className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                      value={devUserEmail}
+                      onChange={(e) => setDevUserEmail(e.target.value)}
+                    >
+                      {DEV_USERS.map((user) => (
+                        <option key={user.email} value={user.email}>
+                          {user.label}
+                        </option>
+                      ))}
+                    </select>
+                    <Button type="button" variant="outline" className="w-full" onClick={handleDevQuickLogin}>
+                      Quick Login
+                    </Button>
+                    {devLoginError && <p className="text-xs text-destructive">{devLoginError}</p>}
+                  </div>
                 )}
               </CardFooter>
             </form>
