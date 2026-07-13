@@ -44,8 +44,6 @@ import { createJobAdjustmentRequest } from '../services/jobAdjustmentApi';
 import { useAuth } from '@/context';
 import { ROLES } from '@/routes/routeConfig';
 
-const ACTION_ROLES = [ROLES.MA_STAFF, ROLES.VENDOR_LIAISON];
-
 // UC-D2-D9: the full clarification log thread and every lifecycle action against
 // it - draft, edit, approve, send, record vendor response + attachment, resend/
 // escalate, resolve, and (UC-D7) job adjustment requests raised off a response.
