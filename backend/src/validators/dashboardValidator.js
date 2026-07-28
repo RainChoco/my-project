@@ -4,8 +4,8 @@ const getKPIsSchema = yup.object({
   query: yup.object({
     status: yup.string().optional(),
     category: yup.string().optional(),
-    dateFrom: yup.date().optional(),
-    dateTo: yup.date().optional(),
+    dateFrom: yup.date().transform((curr, orig) => orig === '' ? undefined : curr).optional(),
+    dateTo: yup.date().transform((curr, orig) => orig === '' ? undefined : curr).optional(),
     contractId: yup.string().optional()   // Added: filter by Contract Opportunity
   })
 });
@@ -14,8 +14,8 @@ const getRankingsSchema = yup.object({
   query: yup.object({
     status: yup.string().optional(),
     category: yup.string().optional(),
-    dateFrom: yup.date().optional(),
-    dateTo: yup.date().optional(),
+    dateFrom: yup.date().transform((curr, orig) => orig === '' ? undefined : curr).optional(),
+    dateTo: yup.date().transform((curr, orig) => orig === '' ? undefined : curr).optional(),
     contractId: yup.string().optional(),  // Added: filter by Contract Opportunity
     page: yup.number().integer().min(1).default(1),
     pageSize: yup.number().integer().min(1).max(100).default(10), // SECURITY: Limit to max 100

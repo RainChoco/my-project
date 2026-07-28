@@ -4,9 +4,11 @@ import { getAuthHeader } from '../../../utils/auth';
 // Use Vite proxy (/api → http://localhost:5050) so this works in all envs
 const API_BASE_URL = '/api/v1/dashboard';
 
+const cleanFilters = (filters) => Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== ''));
+
 export const fetchKPIs = async (filters) => {
   const { data } = await axios.get(`${API_BASE_URL}/kpis`, {
-    params: filters,
+    params: cleanFilters(filters),
     headers: getAuthHeader()
   });
   return data.data;
@@ -14,7 +16,7 @@ export const fetchKPIs = async (filters) => {
 
 export const fetchRankings = async (filters) => {
   const { data } = await axios.get(`${API_BASE_URL}/rankings`, {
-    params: filters,
+    params: cleanFilters(filters),
     headers: getAuthHeader()
   });
   return data;
