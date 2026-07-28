@@ -3,17 +3,40 @@ const evaluationRepository = require('../repositories/EvaluationRepository');
 const { ScoringArchive, sequelize } = require('../models');
 
 class DashboardService {
-  
+
+  /**
+   * Get KPI metrics for the dashboard header cards.
+   * Supports filters: status, category, dateFrom, dateTo, contractId
+   */
   async getKPIs(filters) {
     const tenders = await tenderRepository.findAll(filters);
-    
+
     const totalTenders = tenders.length;
-    const averagePQM = totalTenders > 0 ? 82.5 : 0; 
-    const highRiskTenders = totalTenders > 0 ? Math.floor(totalTenders * 0.1) : 0;
-    
+
+    // Derive KPIs from real data
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const recentSubmissions = tenders.filter(t => t.createdAt >= thirtyDaysAgo).length;
+    const recentSubmissions = tenders.filter(t => {
+      const date = t.submission_date ? new Date(t.submission_date) : null;
+      return date && date >= thirtyDaysAgo;
+    }).length;
+
+    // If we have evaluations for these tenders, compute real averages
+    let averagePQM = 0;
+    let highRiskTenders = 0;
+
+    if (totalTenders > 0) {
+      const rankings = await evaluationRepository.getAllRankings();
+      const relevant = filters.contractId
+        ? rankings.filter(r => r.contractId === filters.contractId)
+        : rankings;
+
+      if (relevant.length > 0) {
+        const totalPQM = relevant.reduce((sum, r) => sum + (r.pqmScore || 0), 0);
+        averagePQM = parseFloat((totalPQM / relevant.length).toFixed(2));
+        highRiskTenders = relevant.filter(r => r.riskLevel === 'high').length;
+      }
+    }
 
     return {
       totalTenders,
@@ -23,67 +46,89 @@ class DashboardService {
     };
   }
 
+  /**
+   * Get paginated, sorted rankings.
+   * Supports filters: status, category, dateFrom, dateTo, contractId
+   */
   async getRankings(filters, pagination, sorting) {
-    let rankings = await evaluationRepository.getAllRankings();
-    
+    // Use contract-specific query if contractId is provided (more efficient)
+    let rankings;
+    if (filters.contractId) {
+      rankings = await evaluationRepository.getRankingsForContract(filters.contractId);
+    } else {
+      rankings = await evaluationRepository.getAllRankings();
+    }
+
+    // Apply additional filters
     if (filters.status) rankings = rankings.filter(r => r.status === filters.status);
-    
+    if (filters.category) rankings = rankings.filter(r => r.category === filters.category);
+
+    // Sorting
     const { sortBy, sortOrder } = sorting;
-    if (sortBy) {
+    if (sortBy && rankings.length > 0) {
       rankings.sort((a, b) => {
-        if (a[sortBy] < b[sortBy]) return sortOrder === 'asc' ? -1 : 1;
-        if (a[sortBy] > b[sortBy]) return sortOrder === 'asc' ? 1 : -1;
+        const aVal = a[sortBy] ?? 0;
+        const bVal = b[sortBy] ?? 0;
+        if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
         return 0;
       });
     }
 
-    // Limit pagination size on the service layer as a secondary defense
+    // Pagination
     const page = Math.max(1, pagination.page || 1);
     const pageSize = Math.min(100, Math.max(1, pagination.pageSize || 10));
-
     const totalRecords = rankings.length;
     const totalPages = Math.ceil(totalRecords / pageSize);
     const paginatedData = rankings.slice((page - 1) * pageSize, page * pageSize);
 
     return {
       data: paginatedData,
-      pagination: {
-        page,
-        pageSize,
-        totalRecords,
-        totalPages
-      }
+      pagination: { page, pageSize, totalRecords, totalPages }
     };
   }
 
-  async archiveScoringList(tenderReferenceId, archiveReason, userId) {
-    const tender = await tenderRepository.findById(tenderReferenceId);
-    if (!tender) {
-      const err = new Error('Tender not found');
-      err.status = 404;
-      throw err;
-    }
+  /**
+   * Archive final rankings for a contract opportunity.
+   * Accepts contractId (preferred) or tenderReferenceId (legacy).
+   */
+  async archiveScoringList(contractId, archiveReason, userId) {
+    // Support both contractId and tenderReferenceId (backward compat)
+    const referenceId = contractId;
 
-    const rankingSnapshot = await evaluationRepository.getRankingsForTender(tenderReferenceId);
-    if (!rankingSnapshot || rankingSnapshot.length === 0) {
-      const err = new Error('No evaluation rankings found for this tender');
+    if (!referenceId) {
+      const err = new Error('contractId is required');
       err.status = 400;
       throw err;
     }
 
-    // SECURITY: Use transaction to ensure atomicity and prevent race conditions with multiple concurrent archives
+    // Try to get rankings by contractId first, fall back to tender lookup
+    let rankingSnapshot = await evaluationRepository.getRankingsForContract(referenceId);
+
+    if (!rankingSnapshot || rankingSnapshot.length === 0) {
+      // Fallback: treat referenceId as a tender reference and look up directly
+      const tenderRankings = await evaluationRepository.getRankingsForTender(referenceId);
+      if (!tenderRankings || tenderRankings.length === 0) {
+        const err = new Error('No evaluation rankings found for this contract');
+        err.status = 400;
+        throw err;
+      }
+      rankingSnapshot = tenderRankings;
+    }
+
+    // SECURITY: Use transaction to ensure atomicity
     const result = await sequelize.transaction(async (t) => {
       const previousArchive = await ScoringArchive.findOne({
-        where: { tender_reference_id: tenderReferenceId },
+        where: { tender_reference_id: referenceId },
         order: [['archive_version', 'DESC']],
         transaction: t,
-        lock: t.LOCK.UPDATE // Lock the rows to prevent concurrent inserts causing constraint violations
+        lock: t.LOCK.UPDATE
       });
-      
+
       const nextVersion = previousArchive ? previousArchive.archive_version + 1 : 1;
 
       const archive = await ScoringArchive.create({
-        tender_reference_id: tenderReferenceId,
+        tender_reference_id: referenceId,
         archive_version: nextVersion,
         archive_reason: archiveReason,
         ranking_snapshot: rankingSnapshot,

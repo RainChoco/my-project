@@ -12,4 +12,13 @@ export default defineConfig({
       '@': path.resolve(dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      // Proxy /api/* → http://localhost:5050/api/* so frontend never hardcodes the backend URL
+      '/api': {
+        target: 'http://localhost:5050',
+        changeOrigin: true,
+      },
+    },
+  },
 });

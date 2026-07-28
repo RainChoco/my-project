@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 
 export default function useDashboardFilters() {
   const [filters, setFilters] = useState({
+    contractId: '',
     status: '',
     category: '',
     dateFrom: '',
@@ -22,6 +23,7 @@ export default function useDashboardFilters() {
 
   const resetFilters = useCallback(() => {
     setFilters({
+      contractId: '',
       status: '',
       category: '',
       dateFrom: '',

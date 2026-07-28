@@ -21,11 +21,11 @@ const ScoringArchive = sequelize.define('ScoringArchive', {
     allowNull: true
   },
   ranking_snapshot: {
-    type: DataTypes.JSONB,
+    type: DataTypes.JSON,
     allowNull: false
   },
   archived_by: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER,   // User.id is INTEGER — was UUID which caused type mismatch
     allowNull: false
   },
   archived_at: {

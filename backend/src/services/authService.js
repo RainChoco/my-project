@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const SALT_ROUNDS = 10;
-const JWT_SECRET = process.env.JWT_SECRET || process.env.DEV_JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || process.env.DEV_JWT_SECRET || 'test-secret-do-not-use-in-production';
 const TOKEN_EXPIRY = '8h';
 
 const hashPassword = (plainPassword) => bcrypt.hash(plainPassword, SALT_ROUNDS);

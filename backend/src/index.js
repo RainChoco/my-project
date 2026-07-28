@@ -4,9 +4,16 @@ const routes = require('./routes');
 const { sequelize } = require('./models');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5050;
 
-app.use(cors());
+const corsOptions = {
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.get('/health', (req, res) => {
@@ -15,15 +22,23 @@ app.get('/health', (req, res) => {
 
 app.use('/api', routes);
 
-// Sync db and start server
-sequelize.sync().then(() => {
+// Sync database schema and start server
+sequelize.sync({ alter: true }).then(() => {
   console.log('Database synced');
-  
-  if (process.env.NODE_ENV !== 'test') {
-    app.listen(PORT, () => {
-      console.log('Server running on port ' + PORT);
-    });
-  }
+
+  const server = app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Port ${PORT} is already in use. Run: taskkill /F /IM node.exe`);
+    } else {
+      console.error('Server error:', err.message);
+    }
+    process.exit(1);
+  });
+
 }).catch(err => {
   console.error('Failed to sync database:', err);
 });

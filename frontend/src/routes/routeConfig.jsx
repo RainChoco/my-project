@@ -1,4 +1,5 @@
 import { DashboardPage } from '../features/dashboard';
+import { ContractListPage, ContractFormPage } from '../features/contracts';
 import { TendersDashboardPage, TenderFormPage, TenderDetailPage } from '../features/tenders';
 import { EvaluationCriteriaPage, EvaluationsPage, EvaluationDetailPage } from '../features/evaluations';
 import {
@@ -37,8 +38,18 @@ export const routeConfig = [
   {
     path: '/',
     label: 'Dashboard',
-    roles: ALL_ROLES, // design/kai-xuan/use-cases.md UC-KX-01/02 name evaluator/ma_staff; no role restriction documented on the read endpoints, so left open to all
+    roles: ALL_ROLES,
     element: <DashboardPage />,
+  },
+  {
+    path: '/contracts',
+    label: 'Contracts',
+    roles: ALL_ROLES, // All roles can view contracts (Contract Opportunity is a public listing)
+    element: <ContractListPage />,
+    children: [
+      { path: 'new',  roles: [MA_STAFF], element: <ContractFormPage mode="create" /> },
+      { path: ':id/edit', roles: [MA_STAFF], element: <ContractFormPage mode="edit" /> },
+    ],
   },
   {
     path: '/tenders',
