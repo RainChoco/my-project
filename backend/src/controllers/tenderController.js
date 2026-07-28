@@ -585,9 +585,17 @@ const getTendersByContract = async (req, res) => {
     if (!contract) {
       return res.status(404).json({ status: 'error', message: 'Contract not found' });
     }
+    const { Evaluation } = require('../models');
     const tenders = await Tender.findAll({
       where: { contractId },
-      order: [['created_at', 'DESC']]
+      order: [['created_at', 'DESC']],
+      include: [{
+        model: Evaluation,
+        as: 'evaluations',
+        attributes: ['id', 'pqm_score', 'price_score', 'quality_score', 'risk_level', 'status'],
+        limit: 1,
+        order: [['created_at', 'DESC']]
+      }]
     });
     return res.status(200).json({ status: 'success', data: tenders.map(t => t.toJSON()) });
   } catch (error) {

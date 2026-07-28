@@ -21,6 +21,7 @@ const stringToBoolean = (value, originalValue) => {
 };
 
 export const createTenderSchema = Yup.object({
+  contractId: Yup.string().trim().required('Please select a contract'),
   tender_ref_no: Yup.string().trim().required('Tender reference number is required'),
   vendor_name: Yup.string().trim().required('Vendor name is required'),
   submission_date: Yup.date().typeError('Enter a valid date').required('Submission date is required'),
