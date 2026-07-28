@@ -1,5 +1,6 @@
 import { DashboardPage } from '../features/dashboard';
 import { ContractListPage, ContractFormPage } from '../features/contracts';
+import ContractDetailPage from '../features/contracts/pages/ContractDetailPage';
 import { TendersDashboardPage, TenderFormPage, TenderDetailPage } from '../features/tenders';
 import { EvaluationCriteriaPage, EvaluationsPage, EvaluationDetailPage } from '../features/evaluations';
 import {
@@ -48,6 +49,7 @@ export const routeConfig = [
     element: <ContractListPage />,
     children: [
       { path: 'new',  roles: [MA_STAFF], element: <ContractFormPage mode="create" /> },
+      { path: ':id', roles: ALL_ROLES, element: <ContractDetailPage /> },
       { path: ':id/edit', roles: [MA_STAFF], element: <ContractFormPage mode="edit" /> },
     ],
   },

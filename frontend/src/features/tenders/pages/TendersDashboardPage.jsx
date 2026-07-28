@@ -29,6 +29,7 @@ function TendersDashboardPage() {
   const queryParams = {
     page,
     limit: PAGE_LIMIT,
+    ...(filters.contractId && { contractId: filters.contractId }),
     ...(filters.status && { status: filters.status }),
     ...(filters.eligibility_status && { eligibility_status: filters.eligibility_status }),
     ...(filters.vendor_name && { vendor_name: filters.vendor_name }),

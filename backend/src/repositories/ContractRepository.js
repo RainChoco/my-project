@@ -1,4 +1,4 @@
-const { Contract } = require('../models');
+const { Contract, Tender, Evaluation } = require('../models');
 
 class ContractRepository {
   async findAll() {
@@ -6,7 +6,21 @@ class ContractRepository {
   }
 
   async findById(id) {
-    return await Contract.findOne({ where: { id, isDeleted: false } });
+    return await Contract.findOne({
+      where: { id, isDeleted: false },
+      include: [{
+        model: Tender,
+        as: 'tenders',
+        attributes: ['id', 'tender_ref_no', 'vendor_name', 'submission_date', 'status', 'eligibility_status', 'contractId'],
+        include: [{
+          model: Evaluation,
+          as: 'evaluations',
+          attributes: ['id', 'pqm_score', 'price_score', 'quality_score', 'risk_level', 'status'],
+          limit: 1,
+          order: [['created_at', 'DESC']]
+        }]
+      }]
+    });
   }
 
   async create(data) {

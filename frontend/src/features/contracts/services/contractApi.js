@@ -33,3 +33,8 @@ export const deleteContract = async (id) => {
   const { data } = await axios.delete(`${API_BASE_URL}/${id}`, { headers: authHeader() });
   return data.data;
 };
+
+export const fetchContractTenders = async (contractId) => {
+  const { data } = await axios.get(`${API_BASE_URL}/${contractId}/tenders`, { headers: authHeader() });
+  return data.data;
+};
