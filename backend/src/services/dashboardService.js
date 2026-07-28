@@ -51,13 +51,17 @@ class DashboardService {
    * Supports filters: status, category, dateFrom, dateTo, contractId
    */
   async getRankings(filters, pagination, sorting) {
-    // Use contract-specific query if contractId is provided (more efficient)
     let rankings;
     if (filters.contractId) {
       rankings = await evaluationRepository.getRankingsForContract(filters.contractId);
     } else {
       rankings = await evaluationRepository.getAllRankings();
     }
+
+    // Assign rank based on initial PQM score sort (which is descending from DB)
+    rankings.forEach((r, index) => {
+      r.rank = index + 1;
+    });
 
     // Apply additional filters
     if (filters.status) rankings = rankings.filter(r => r.status === filters.status);

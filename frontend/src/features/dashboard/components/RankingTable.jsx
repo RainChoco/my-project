@@ -63,7 +63,7 @@ export default function RankingTable({ data, filters, updateFilter }) {
             </tr>
           ) : data.map((row) => (
             <tr key={row.tenderId} className={styles.tr}>
-              <td className={styles.td}>{row.tenderId}</td>
+              <td className={styles.td}>{row.tenderRefNo}</td>
               <td className={styles.td} style={{ fontWeight: 'bold', color: '#111827' }}>{row.supplierName}</td>
               <td className={styles.td} style={{ color: '#4b5563' }}>{row.category}</td>
               <td className={styles.td}>{getStatusPill(row.status)}</td>

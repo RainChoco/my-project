@@ -49,6 +49,7 @@ class DatabaseEvaluationRepository {
       tenderId: ev.tender_id,
       tenderRefNo: tender.tender_ref_no || null,
       supplierName: tender.vendor_name || 'Unknown',
+      category: tender.category || 'Uncategorized',
       pqmScore: parseFloat(ev.pqm_score) || 0,
       priceScore: parseFloat(ev.price_score) || 0,
       qualityScore: parseFloat(ev.quality_score) || 0,
