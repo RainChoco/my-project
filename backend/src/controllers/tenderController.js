@@ -592,9 +592,7 @@ const getTendersByContract = async (req, res) => {
       include: [{
         model: Evaluation,
         as: 'evaluations',
-        attributes: ['id', 'pqm_score', 'price_score', 'quality_score', 'risk_level', 'status'],
-        limit: 1,
-        order: [['created_at', 'DESC']]
+        attributes: ['id', 'pqm_score', 'price_score', 'quality_score', 'risk_level', 'status']
       }]
     });
     return res.status(200).json({ status: 'success', data: tenders.map(t => t.toJSON()) });
