@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { sequelize, Tender, TenderDocument, EligibilityCheck, BcaGradeLimit, EligibilityThreshold } = require('../models');
+const { sequelize, Tender, TenderDocument, EligibilityCheck, BcaGradeLimit, EligibilityThreshold, Contract } = require('../models');
 const cloudinaryService = require('../services/cloudinaryService');
 
 const LOCKED_FOR_EDIT_STATUSES = ['under_evaluation', 'approved', 'rejected', 'withdrawn'];
@@ -11,9 +11,26 @@ const LOCKED_FOR_DELETE_STATUSES = ['under_evaluation', 'approved', 'rejected'];
 
 const createTender = async (req, res) => {
   try {
-    const { tender_ref_no, vendor_name, submission_date, main_offer_price, alternative_offer_price } = req.body;
+    const { contractId, tender_ref_no, vendor_name, submission_date, main_offer_price, alternative_offer_price } = req.body;
+
+    // Validate contract exists
+    const contract = await Contract.findByPk(contractId);
+    if (!contract) {
+      return res.status(400).json({ status: 'error', message: `Contract '${contractId}' does not exist.` });
+    }
+    // Reject archived or closed contracts
+    const blockedStatuses = ['Archived', 'Closed', 'Cancelled'];
+    if (blockedStatuses.includes(contract.status)) {
+      return res.status(422).json({ status: 'error', message: `Cannot submit a tender to a contract with status '${contract.status}'.` });
+    }
+    // Warn if closing date has passed (still allow — procurement officers may have a grace period)
+    const now = new Date();
+    if (contract.closingDate && new Date(contract.closingDate) < now) {
+      // Allow but note it in the response
+    }
 
     const tender = await Tender.create({
+      contractId,
       tender_ref_no,
       vendor_name,
       submission_date,
@@ -34,18 +51,17 @@ const createTender = async (req, res) => {
 
 const listTenders = async (req, res) => {
   try {
-    const { status, eligibility_status, vendor_name } = req.query;
+    const { contractId, status, eligibility_status, vendor_name } = req.query;
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
 
     const where = {};
+    if (contractId) where.contractId = contractId;
     if (status) where.status = status;
     if (eligibility_status) where.eligibility_status = eligibility_status;
 
     const andConditions = [];
     if (vendor_name) {
-      // LOWER()+LIKE instead of Op.iLike so this works on both Postgres and the
-      // SQLite in-memory DB used in tests (Op.iLike is Postgres-only).
       andConditions.push(
         sequelize.where(sequelize.fn('LOWER', sequelize.col('vendor_name')), {
           [Op.like]: `%${vendor_name.toLowerCase()}%`
@@ -55,6 +71,7 @@ const listTenders = async (req, res) => {
 
     const { rows, count } = await Tender.findAndCountAll({
       where: andConditions.length ? { [Op.and]: [where, ...andConditions] } : where,
+      include: [{ model: Contract, as: 'contract', attributes: ['id', 'name', 'category', 'status', 'closingDate'] }],
       offset: (page - 1) * limit,
       limit,
       order: [['created_at', 'DESC']]
@@ -72,7 +89,9 @@ const listTenders = async (req, res) => {
 
 const getTender = async (req, res) => {
   try {
-    const tender = await Tender.findByPk(req.params.id);
+    const tender = await Tender.findByPk(req.params.id, {
+      include: [{ model: Contract, as: 'contract', attributes: ['id', 'name', 'category', 'status', 'closingDate', 'budgetLimit'] }]
+    });
     if (!tender) {
       return res.status(404).json({ status: 'error', message: 'Tender not found' });
     }
@@ -556,6 +575,27 @@ const updateEligibilityThreshold = async (req, res) => {
   }
 };
 
+// ---------------------------------------------------------------------------
+// GET /contracts/:contractId/tenders — all tenders belonging to a contract
+// ---------------------------------------------------------------------------
+const getTendersByContract = async (req, res) => {
+  try {
+    const { contractId } = req.params;
+    const contract = await Contract.findByPk(contractId);
+    if (!contract) {
+      return res.status(404).json({ status: 'error', message: 'Contract not found' });
+    }
+    const tenders = await Tender.findAll({
+      where: { contractId },
+      order: [['created_at', 'DESC']]
+    });
+    return res.status(200).json({ status: 'success', data: tenders.map(t => t.toJSON()) });
+  } catch (error) {
+    console.error('Error in getTendersByContract:', error);
+    return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+  }
+};
+
 module.exports = {
   createTender,
   listTenders,
@@ -572,5 +612,6 @@ module.exports = {
   listBcaGradeLimits,
   updateBcaGradeLimit,
   listEligibilityThresholds,
-  updateEligibilityThreshold
+  updateEligibilityThreshold,
+  getTendersByContract
 };

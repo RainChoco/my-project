@@ -59,6 +59,11 @@ const Tender = sequelize.define('Tender', {
     allowNull: false,
     defaultValue: 'draft'
   },
+  contractId: {
+    type: DataTypes.STRING,
+    allowNull: true,   // allowNull:true so alter:true doesn't break existing rows
+    references: { model: 'Contracts', key: 'id' }
+  },
   created_by: {
     type: DataTypes.INTEGER,
     allowNull: false
