@@ -78,9 +78,7 @@ const Tender = sequelize.define('Tender', {
   }
 }, {
   tableName: 'tenders',
-  timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  timestamps: true
 });
 
 module.exports = Tender;

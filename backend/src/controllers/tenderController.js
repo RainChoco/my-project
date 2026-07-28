@@ -588,7 +588,7 @@ const getTendersByContract = async (req, res) => {
     const { Evaluation } = require('../models');
     const tenders = await Tender.findAll({
       where: { contractId },
-      order: [['created_at', 'DESC']],
+      order: [['createdAt', 'DESC']],
       include: [{
         model: Evaluation,
         as: 'evaluations',
