@@ -25,7 +25,7 @@ export const archiveRankings = async (contractId, archiveReason) => {
   const { data } = await axios.post(
     `${API_BASE_URL}/archive`,
     { contractId, archiveReason },
-    { headers: authHeader() }
+    { headers: getAuthHeader() }
   );
   return data;
 };
