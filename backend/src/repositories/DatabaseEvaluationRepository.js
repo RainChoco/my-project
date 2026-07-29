@@ -15,6 +15,11 @@ class DatabaseEvaluationRepository {
         required: false,   // ← LEFT JOIN: include tenders with NO evaluation
         limit: 1,
         order: [['pqm_score', 'DESC']]
+      },
+      {
+        model: Contract,
+        as: 'contract',
+        required: false
       }
     ];
   }
@@ -32,7 +37,7 @@ class DatabaseEvaluationRepository {
       tenderId: tender.id,
       tenderRefNo: tender.tender_ref_no || null,
       supplierName: tender.vendor_name || 'Unknown',
-      category: tender.category || 'Uncategorized',
+      category: tender.contract?.category || 'Uncategorized', // Fix: category is on Contract
       pqmScore: ev && ev.pqm_score != null ? parseFloat(ev.pqm_score) : null,
       priceScore: ev && ev.price_score != null ? parseFloat(ev.price_score) : null,
       qualityScore: ev && ev.quality_score != null ? parseFloat(ev.quality_score) : null,

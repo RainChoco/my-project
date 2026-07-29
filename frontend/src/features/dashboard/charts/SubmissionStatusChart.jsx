@@ -5,12 +5,14 @@ import {
 import styles from '../styles/dashboard.module.css';
 
 const STATUS_MAP = {
-  draft:            { label: 'Draft',            color: '#94a3b8' },
-  submitted:        { label: 'Submitted',         color: '#3b82f6' },
-  under_evaluation: { label: 'Under Evaluation',  color: '#f59e0b' },
-  approved:         { label: 'Approved',           color: '#10b981' },
-  rejected:         { label: 'Rejected',           color: '#ef4444' },
-  withdrawn:        { label: 'Withdrawn',          color: '#6b7280' },
+  draft:            { label: 'Draft',            color: '#9ca3af' }, // Grey
+  submitted:        { label: 'Submitted',         color: '#3b82f6' }, // Blue
+  under_evaluation: { label: 'Under Evaluation',  color: '#f59e0b' }, // Orange
+  Evaluating:       { label: 'Evaluating',        color: '#f59e0b' },
+  approved:         { label: 'Evaluated',         color: '#10b981' }, // Green
+  Awarded:          { label: 'Awarded',           color: '#10b981' },
+  rejected:         { label: 'Rejected',          color: '#ef4444' }, // Red
+  withdrawn:        { label: 'Withdrawn',         color: '#ef4444' }, // Red
 };
 
 const CustomTooltip = ({ active, payload }) => {
@@ -30,7 +32,10 @@ export default function SubmissionStatusChart({ rankings = [] }) {
   const statusMap = {};
 
   rankings.forEach(r => {
-    const key = r.status || 'draft';
+    let key = r.status || 'draft';
+    if (r.pqmScore != null && key === 'under_evaluation') {
+      key = 'approved'; // if it has a score, consider it evaluated for this chart's sake
+    }
     statusMap[key] = (statusMap[key] || 0) + 1;
   });
 
@@ -40,7 +45,7 @@ export default function SubmissionStatusChart({ rankings = [] }) {
     .map(([key, count]) => ({
       name:  STATUS_MAP[key]?.label || key,
       Count: count,
-      color: STATUS_MAP[key]?.color || '#94a3b8',
+      color: STATUS_MAP[key]?.color || '#9ca3af',
       pct:   total > 0 ? Math.round((count / total) * 100) : 0
     }))
     .sort((a, b) => b.Count - a.Count);
@@ -51,7 +56,7 @@ export default function SubmissionStatusChart({ rankings = [] }) {
     <div className={styles.chartCard}>
       <h3 className={styles.cardTitle} style={{ marginBottom: '0.25rem' }}>Submission Status Breakdown</h3>
       {isEmpty ? (
-        <div style={{ height: 250, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', gap: '0.5rem' }}>
+        <div style={{ height: 250, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', gap: '0.5rem' }}>
           <div style={{ fontSize: '2rem' }}>📋</div>
           <div style={{ fontSize: '0.9rem', textAlign: 'center' }}>No submissions yet for this contract</div>
         </div>

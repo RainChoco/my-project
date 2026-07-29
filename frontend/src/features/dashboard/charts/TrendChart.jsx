@@ -1,82 +1,83 @@
 ﻿import React from 'react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area, AreaChart
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
 
-export default function TrendChart({ rankings = [] }) {
-  const monthMap = {};
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.75rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+        <p style={{ margin: '0 0 0.25rem 0', fontWeight: 600, color: '#374151' }}>{label}</p>
+        <p style={{ margin: 0, color: '#2563eb', fontWeight: 700 }}>
+          Avg PQM: {payload[0].value.toFixed(1)}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
-  rankings.forEach(r => {
-    if (r.pqmScore == null) return;
-    const label = r.submissionMonth || (r.tenderRefNo?.slice(0, 7)) || 'Period';
-    if (!monthMap[label]) monthMap[label] = { total: 0, count: 0 };
-    monthMap[label].total += r.pqmScore;
-    monthMap[label].count += 1;
+export default function TrendChart({ rankings = [] }) {
+  // Filter for evaluated tenders only
+  const evaluated = rankings.filter(r => r.pqmScore != null);
+  
+  // Aggregate average score by submission month
+  const monthData = {};
+  evaluated.forEach(r => {
+    if (!r.submissionDate) return;
+    const d = new Date(r.submissionDate);
+    if (isNaN(d)) return;
+    const month = d.toLocaleString('default', { month: 'short' });
+    if (!monthData[month]) {
+      monthData[month] = { total: 0, count: 0, time: d.getTime() };
+    }
+    monthData[month].total += r.pqmScore;
+    monthData[month].count += 1;
   });
 
-  const data = Object.entries(monthMap)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([name, { total, count }]) => ({
-      name,
-      'Avg PQM': parseFloat((total / count).toFixed(1))
+  const data = Object.entries(monthData)
+    .sort((a, b) => a[1].time - b[1].time)
+    .map(([month, stats]) => ({
+      name: month,
+      Score: stats.total / stats.count
     }));
 
   const isEmpty = data.length === 0;
 
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      const score = payload[0].value;
-      const color = score >= 90 ? '#166534' : score >= 80 ? '#1d4ed8' : score >= 70 ? '#c2410c' : '#991b1b';
-      return (
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.6rem 1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-          <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#6b7280', marginBottom: '4px' }}>{label}</div>
-          <div style={{ fontWeight: 700, fontSize: '1.1rem', color }}>PQM {score}</div>
-        </div>
-      );
-    }
-    return null;
-  };
+  // Empty state timeline
+  const emptyData = [
+    { name: 'Jun', Score: null },
+    { name: 'Jul', Score: null },
+    { name: 'Aug', Score: null }
+  ];
 
   return (
-    <div className={styles.chartCard}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-        <h3 className={styles.cardTitle}>Average PQM Score Over Time</h3>
-        <span style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: '2px' }}>per submission period</span>
+    <div className={styles.chartCard} style={{ gridColumn: 'span 2' }}>
+      <h3 className={styles.cardTitle}>Average PQM Score Over Time <span style={{ fontWeight: 400, color: '#9ca3af', fontSize: '0.8rem' }}>per submission period</span></h3>
+      <div style={{ height: 260, width: '100%', position: 'relative' }}>
+        {isEmpty && (
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.7)', zIndex: 10 }}>
+            <div style={{ color: '#9ca3af', fontWeight: 600 }}>Waiting for evaluations...</div>
+          </div>
+        )}
+        <ResponsiveContainer>
+          <AreaChart data={isEmpty ? emptyData : data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#3b82f6" stopOpacity={isEmpty ? 0.1 : 0.8}/>
+                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
+            <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+            {!isEmpty && <Tooltip content={<CustomTooltip />} />}
+            <ReferenceLine y={80} stroke="#10b981" strokeDasharray="3 3" label={{ position: 'insideTopLeft', value: 'Target (80)', fill: '#10b981', fontSize: 11 }} />
+            <Area type="monotone" dataKey="Score" stroke={isEmpty ? '#d1d5db' : '#3b82f6'} strokeWidth={3} fillOpacity={1} fill="url(#colorScore)" />
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
-      {isEmpty ? (
-        <div style={{ height: 250, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', gap: '0.5rem' }}>
-          <div style={{ fontSize: '2rem' }}>📈</div>
-          <div style={{ fontSize: '0.9rem', textAlign: 'center' }}>Score trend will appear after evaluations are scored</div>
-        </div>
-      ) : (
-        <div style={{ height: 240, width: '100%', marginTop: '0.5rem' }}>
-          <ResponsiveContainer>
-            <AreaChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-              <defs>
-                <linearGradient id="pqmGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-              <Tooltip content={<CustomTooltip />} />
-              <ReferenceLine y={80} stroke="#10b981" strokeDasharray="4 4" strokeOpacity={0.6} label={{ value: '80', position: 'right', fontSize: 10, fill: '#10b981' }} />
-              <Area
-                type="monotone"
-                dataKey="Avg PQM"
-                stroke="#2563eb"
-                strokeWidth={2.5}
-                fill="url(#pqmGradient)"
-                dot={{ r: 5, fill: '#2563eb', strokeWidth: 2, stroke: 'white' }}
-                activeDot={{ r: 7 }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      )}
     </div>
   );
 }

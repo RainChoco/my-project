@@ -16,7 +16,7 @@ export default function FilterBar({ filters, updateFilter, onReset }) {
           </div>
           <input
             type="text"
-            placeholder="Search supplier..."
+            placeholder="Search supplier, tender ID, or ref no..."
             className={styles.input}
             style={{ paddingLeft: '32px', height: '40px', width: '100%', boxSizing: 'border-box' }}
             value={filters.supplierSearch}
@@ -122,3 +122,4 @@ export default function FilterBar({ filters, updateFilter, onReset }) {
     </div>
   );
 }
+
