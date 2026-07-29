@@ -123,3 +123,5 @@ export default function FilterBar({ filters, updateFilter, onReset }) {
   );
 }
 
+
+

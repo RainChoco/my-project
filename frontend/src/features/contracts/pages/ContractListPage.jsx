@@ -36,7 +36,7 @@ function DeleteConfirmModal({ contract, onConfirm, onCancel, isDeleting }) {
         <div style={{ background: '#f9fafb', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.5rem', border: '1px solid #e5e7eb' }}>
           <div style={{ fontWeight: 700, color: '#111827', fontSize: '0.95rem' }}>{contract.name}</div>
           <div style={{ color: '#6b7280', fontSize: '0.85rem', marginTop: '0.2rem' }}>
-            {contract.id} &nbsp;·&nbsp; {contract.category} &nbsp;·&nbsp;
+            {contract.id} &nbsp;Â·&nbsp; {contract.category} &nbsp;Â·&nbsp;
             <span style={{ color: '#ef4444', fontWeight: 600 }}>${parseFloat(contract.budgetLimit).toLocaleString()}</span>
           </div>
         </div>
@@ -129,7 +129,7 @@ export default function ContractListPage() {
             placeholder="Search contracts..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.5rem', borderRadius: '8px', border: '1px solid #d1d5db', boxSizing: 'border-box', fontSize: '1rem' }}
+            style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.5rem', borderRadius: '8px', border: '1px solid #d1d5db', boxSizing: 'border-box', fontSize: '1.15rem' }}
           />
         </div>
         <div style={{ position: 'relative', width: '200px' }}>
@@ -137,7 +137,7 @@ export default function ContractListPage() {
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.5rem', borderRadius: '8px', border: '1px solid #d1d5db', boxSizing: 'border-box', appearance: 'none', fontSize: '1rem', background: 'white' }}
+            style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.5rem', borderRadius: '8px', border: '1px solid #d1d5db', boxSizing: 'border-box', appearance: 'none', fontSize: '1.15rem', background: 'white' }}
           >
             <option value="">All Statuses</option>
             <option value="Draft">Draft</option>
@@ -190,3 +190,5 @@ export default function ContractListPage() {
     </div>
   );
 }
+
+

@@ -235,7 +235,7 @@ export default function DashboardPage() {
             <select
               value={filters.contractId}
               onChange={e => updateFilter('contractId', e.target.value)}
-              style={{ padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid #d1d5db', minWidth: '320px', fontSize: '1rem', flex: 1, background: '#f9fafb' }}
+              style={{ padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid #d1d5db', minWidth: '320px', fontSize: '1.15rem', flex: 1, padding: '0.75rem 1rem', background: '#f9fafb' }}
             >
               <option value="">— Select a Contract —</option>
               {availableContracts.map(c => (
@@ -482,3 +482,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
