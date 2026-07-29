@@ -173,6 +173,9 @@ export default function ContractListPage() {
                 <td style={{ padding: '1rem', color: '#4b5563' }}>${parseFloat(contract.budgetLimit).toLocaleString()}</td>
                 <td style={{ padding: '1rem' }}>{statusBadge(contract.status)}</td>
                 <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem' }}>
+                  <Link to={`/contracts/${contract.id}`} style={{ padding: '0.5rem', color: '#2563eb', background: '#eff6ff', borderRadius: '6px', display: 'inline-flex' }} title="View detail">
+                    <Search size={18} />
+                  </Link>
                   <Link to={`/contracts/${contract.id}/edit`} style={{ padding: '0.5rem', color: '#4b5563', background: '#f3f4f6', borderRadius: '6px', display: 'inline-flex' }}>
                     <Edit2 size={18} />
                   </Link>
