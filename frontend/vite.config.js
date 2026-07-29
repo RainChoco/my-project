@@ -1,4 +1,4 @@
-import path from 'node:path';
+﻿import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -14,11 +14,14 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // Proxy /api/* → http://localhost:5050/api/* so frontend never hardcodes the backend URL
       '/api': {
         target: 'http://localhost:5050',
         changeOrigin: true,
       },
     },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
   },
 });

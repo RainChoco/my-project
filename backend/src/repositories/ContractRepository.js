@@ -15,7 +15,7 @@ class ContractRepository {
         include: [{
           model: Evaluation,
           as: 'evaluations',
-          attributes: ['id', 'pqm_score', 'price_score', 'quality_score', 'risk_level', 'status'],
+          attributes: ['id', 'pqm_score', 'price_score', 'quality_score', 'status'],
           limit: 1,
           order: [['created_at', 'DESC']]
         }]
@@ -41,3 +41,5 @@ class ContractRepository {
 }
 
 module.exports = new ContractRepository();
+
+

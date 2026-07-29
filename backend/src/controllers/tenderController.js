@@ -1,4 +1,4 @@
-const { Op } = require('sequelize');
+﻿const { Op } = require('sequelize');
 const { sequelize, Tender, TenderDocument, EligibilityCheck, BcaGradeLimit, EligibilityThreshold, Contract } = require('../models');
 const cloudinaryService = require('../services/cloudinaryService');
 
@@ -23,7 +23,7 @@ const createTender = async (req, res) => {
     if (blockedStatuses.includes(contract.status)) {
       return res.status(422).json({ status: 'error', message: `Cannot submit a tender to a contract with status '${contract.status}'.` });
     }
-    // Warn if closing date has passed (still allow — procurement officers may have a grace period)
+    // Warn if closing date has passed (still allow â€” procurement officers may have a grace period)
     const now = new Date();
     if (contract.closingDate && new Date(contract.closingDate) < now) {
       // Allow but note it in the response
@@ -576,7 +576,7 @@ const updateEligibilityThreshold = async (req, res) => {
 };
 
 // ---------------------------------------------------------------------------
-// GET /contracts/:contractId/tenders — all tenders belonging to a contract
+// GET /contracts/:contractId/tenders â€” all tenders belonging to a contract
 // ---------------------------------------------------------------------------
 const getTendersByContract = async (req, res) => {
   try {
@@ -588,11 +588,11 @@ const getTendersByContract = async (req, res) => {
     const { Evaluation } = require('../models');
     const tenders = await Tender.findAll({
       where: { contractId },
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
       include: [{
         model: Evaluation,
         as: 'evaluations',
-        attributes: ['id', 'pqm_score', 'price_score', 'quality_score', 'risk_level', 'status']
+        attributes: ['id', 'pqm_score', 'price_score', 'quality_score', 'status']
       }]
     });
     return res.status(200).json({ status: 'success', data: tenders.map(t => t.toJSON()) });
@@ -621,3 +621,5 @@ module.exports = {
   updateEligibilityThreshold,
   getTendersByContract
 };
+
+

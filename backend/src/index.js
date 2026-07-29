@@ -23,7 +23,7 @@ app.get('/health', (req, res) => {
 app.use('/api', routes);
 
 // Sync database schema and start server
-sequelize.sync({ alter: true }).then(() => {
+sequelize.authenticate().then(() => {
   console.log('Database synced');
 
   const server = app.listen(PORT, () => {
@@ -44,3 +44,7 @@ sequelize.sync({ alter: true }).then(() => {
 });
 
 module.exports = app;
+
+
+
+
