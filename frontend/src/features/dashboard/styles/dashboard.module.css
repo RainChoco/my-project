@@ -1,4 +1,4 @@
-.container {
+﻿.container {
   padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
@@ -59,14 +59,24 @@
 }
 .filterBar {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
   flex-wrap: wrap;
+  align-items: center;
 }
 .input, .select {
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  color: #374151;
+  background: white;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.input:focus, .select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
 }
 .tableWrapper {
   background: white;
@@ -157,9 +167,10 @@
 }
 .emptyState, .errorState {
   text-align: center;
-  padding: 3rem;
+  padding: 3.5rem 2rem;
   background: white;
-  border-radius: 8px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 .skeleton {
   background: #e5e7eb;
@@ -220,3 +231,4 @@
   gap: 1rem;
   margin-top: 1.5rem;
 }
+
