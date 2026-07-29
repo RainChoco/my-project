@@ -7,42 +7,58 @@ import EmptyState from './EmptyState';
 function getRankDisplay(rank) {
   if (rank === 1) return { emoji: '🥇', color: '#b45309', bg: '#fef3c7' };
   if (rank === 2) return { emoji: '🥈', color: '#475569', bg: '#f1f5f9' };
-  if (rank === 3) return { emoji: '🥉', color: '#92400e', bg: '#fef3c7' };
+  if (rank === 3) return { emoji: '🥉', color: '#92400e', bg: '#fff7ed' };
   return { emoji: null, color: '#4b5563', bg: '#f3f4f6' };
 }
 
 function getPQMBadge(score) {
-  if (score == null) return { bg: '#f3f4f6', color: '#6b7280' };
-  if (score >= 90) return { bg: '#dcfce7', color: '#166534' };
-  if (score >= 80) return { bg: '#eff6ff', color: '#1d4ed8' };
-  if (score >= 70) return { bg: '#fff7ed', color: '#c2410c' };
-  return { bg: '#fee2e2', color: '#991b1b' };
+  if (score == null) return { bg: '#f3f4f6', color: '#6b7280', label: 'Pending' };
+  if (score >= 90)   return { bg: '#dcfce7', color: '#166534', label: score.toFixed(1) };
+  if (score >= 80)   return { bg: '#eff6ff', color: '#1d4ed8', label: score.toFixed(1) };
+  if (score >= 70)   return { bg: '#fff7ed', color: '#c2410c', label: score.toFixed(1) };
+  return             { bg: '#fee2e2', color: '#991b1b', label: score.toFixed(1) };
 }
 
 function getRiskPill(level) {
+  if (!level) {
+    return (
+      <span style={{ background: '#f3f4f6', color: '#9ca3af', padding: '3px 10px', borderRadius: '12px', fontWeight: 600, fontSize: '0.82rem' }}>
+        Pending
+      </span>
+    );
+  }
   const map = {
     High:   { bg: '#fee2e2', color: '#991b1b', icon: '🔴' },
     Medium: { bg: '#fef3c7', color: '#92400e', icon: '🟠' },
     Low:    { bg: '#dcfce7', color: '#166534', icon: '🟢' },
   };
-  const s = map[level] || map.Low;
+  // Normalise capitalisation (backend may return 'high' lowercase)
+  const key = level.charAt(0).toUpperCase() + level.slice(1).toLowerCase();
+  const s = map[key] || map.Low;
   return (
     <span style={{ background: s.bg, color: s.color, padding: '3px 10px', borderRadius: '12px', fontWeight: 700, fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-      {s.icon} {level || 'Low'}
+      {s.icon} {key}
     </span>
   );
 }
 
 function getStatusPill(status) {
   const map = {
-    Evaluating: { bg: '#e0e7ff', color: '#4338ca' },
-    Awarded:    { bg: '#fce7f3', color: '#be185d' },
-    Archived:   { bg: '#f3f4f6', color: '#6b7280' },
+    draft:            { bg: '#f1f5f9', color: '#64748b' },
+    submitted:        { bg: '#e0e7ff', color: '#4338ca' },
+    under_evaluation: { bg: '#fefce8', color: '#854d0e' },
+    approved:         { bg: '#f0fdf4', color: '#166534' },
+    rejected:         { bg: '#fee2e2', color: '#b91c1c' },
+    withdrawn:        { bg: '#f9fafb', color: '#6b7280' },
+    Evaluating:       { bg: '#e0e7ff', color: '#4338ca' },
+    Awarded:          { bg: '#fce7f3', color: '#be185d' },
+    Archived:         { bg: '#f3f4f6', color: '#6b7280' },
   };
   const s = map[status] || { bg: '#f3f4f6', color: '#6b7280' };
+  const label = status ? status.replace(/_/g, ' ') : '—';
   return (
-    <span style={{ background: s.bg, color: s.color, padding: '3px 10px', borderRadius: '12px', fontWeight: 700, fontSize: '0.82rem' }}>
-      {status}
+    <span style={{ background: s.bg, color: s.color, padding: '3px 10px', borderRadius: '12px', fontWeight: 700, fontSize: '0.82rem', textTransform: 'capitalize' }}>
+      {label}
     </span>
   );
 }
@@ -104,7 +120,7 @@ export default function RankingTable({ data, filters, updateFilter }) {
             </tr>
           ) : data.map((row) => {
             const rankStyle = getRankDisplay(row.rank);
-            const pqmStyle = getPQMBadge(row.pqmScore);
+            const pqmBadge  = getPQMBadge(row.pqmScore);
             return (
               <tr key={row.tenderId} className={styles.tr}>
                 {/* Rank */}
@@ -120,7 +136,7 @@ export default function RankingTable({ data, filters, updateFilter }) {
                 {/* Tender Ref */}
                 <td className={styles.td}>
                   <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: '#6b7280' }}>
-                    {row.tenderRefNo}
+                    {row.tenderRefNo || `#${row.tenderId}`}
                   </span>
                 </td>
                 {/* Supplier */}
@@ -134,10 +150,11 @@ export default function RankingTable({ data, filters, updateFilter }) {
                 {/* PQM Score */}
                 <td className={styles.td}>
                   <span style={{
-                    background: pqmStyle.bg, color: pqmStyle.color,
-                    padding: '4px 10px', borderRadius: '12px', fontWeight: 700, fontSize: '0.9rem'
+                    background: pqmBadge.bg, color: pqmBadge.color,
+                    padding: '4px 10px', borderRadius: '12px', fontWeight: 700, fontSize: '0.9rem',
+                    fontStyle: row.pqmScore == null ? 'italic' : 'normal'
                   }}>
-                    {row.pqmScore != null ? row.pqmScore.toFixed(1) : '—'}
+                    {pqmBadge.label}
                   </span>
                 </td>
                 {/* Risk */}

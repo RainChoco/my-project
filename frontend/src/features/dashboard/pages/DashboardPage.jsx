@@ -159,7 +159,7 @@ export default function DashboardPage() {
   const totalTenders   = kpis?.totalTenders ?? 0;
   const highRiskPct    = totalTenders > 0 ? Math.round((highRiskCount / totalTenders) * 100) : 0;
   const avgPQM         = kpis?.averagePQM;
-  const pqmBadge       = getPQMBadge(avgPQM);
+  const pqmBadge       = avgPQM != null ? getPQMBadge(avgPQM) : null;
   const archInfo       = archiveVersion[filters.contractId];
   const isArchived     = archivedContracts.has(filters.contractId);
 
@@ -278,7 +278,7 @@ export default function DashboardPage() {
               {/* Average PQM */}
               <KPICard
                 title="Average PQM Score"
-                value={avgPQM != null ? avgPQM.toFixed(1) : '—'}
+                value={avgPQM != null ? avgPQM.toFixed(1) : 'Pending'}
                 isLoading={kpisLoading}
                 badge={pqmBadge}
                 subtitle="Price-Quality-Method weighted score"
@@ -428,3 +428,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

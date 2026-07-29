@@ -1,4 +1,4 @@
-const tenderRepository = require('../repositories/TenderRepository');
+﻿const tenderRepository = require('../repositories/TenderRepository');
 const evaluationRepository = require('../repositories/EvaluationRepository');
 const { ScoringArchive, sequelize } = require('../models');
 
@@ -6,41 +6,43 @@ class DashboardService {
 
   /**
    * Get KPI metrics for the dashboard header cards.
-   * Supports filters: status, category, dateFrom, dateTo, contractId
+   * KPIs are derived from ALL tenders (not just evaluated ones).
    */
   async getKPIs(filters) {
     const tenders = await tenderRepository.findAll(filters);
-
     const totalTenders = tenders.length;
 
-    // Derive KPIs from real data
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // Recent submissions in the last 7 days (matches frontend label)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const recentSubmissions = tenders.filter(t => {
       const date = t.submission_date ? new Date(t.submission_date) : null;
-      return date && date >= thirtyDaysAgo;
+      return date && date >= sevenDaysAgo;
     }).length;
 
-    // If we have evaluations for these tenders, compute real averages
-    let averagePQM = 0;
+    // Evaluation-based metrics — only from tenders that have been evaluated
+    let averagePQM = null;
     let highRiskTenders = 0;
 
     if (totalTenders > 0) {
-      const rankings = await evaluationRepository.getAllRankings();
-      const relevant = filters.contractId
-        ? rankings.filter(r => r.contractId === filters.contractId)
-        : rankings;
+      const rankings = filters.contractId
+        ? await evaluationRepository.getRankingsForContract(filters.contractId)
+        : await evaluationRepository.getAllRankings();
 
-      if (relevant.length > 0) {
-        const totalPQM = relevant.reduce((sum, r) => sum + (r.pqmScore || 0), 0);
-        averagePQM = parseFloat((totalPQM / relevant.length).toFixed(2));
-        highRiskTenders = relevant.filter(r => r.riskLevel === 'high').length;
+      // Only count rows that actually have a pqmScore (i.e. have been evaluated)
+      const evaluated = rankings.filter(r => r.pqmScore != null);
+      if (evaluated.length > 0) {
+        const totalPQM = evaluated.reduce((sum, r) => sum + r.pqmScore, 0);
+        averagePQM = parseFloat((totalPQM / evaluated.length).toFixed(2));
+        highRiskTenders = evaluated.filter(r =>
+          r.riskLevel && r.riskLevel.toLowerCase() === 'high'
+        ).length;
       }
     }
 
     return {
       totalTenders,
-      averagePQM,
+      averagePQM,        // null if no evaluations yet
       highRiskTenders,
       recentSubmissions
     };
@@ -48,7 +50,8 @@ class DashboardService {
 
   /**
    * Get paginated, sorted rankings.
-   * Supports filters: status, category, dateFrom, dateTo, contractId
+   * Returns ALL tenders for the contract, including those not yet evaluated.
+   * Unevaluated tenders show pqmScore=null, riskLevel=null.
    */
   async getRankings(filters, pagination, sorting) {
     let rankings;
@@ -58,32 +61,50 @@ class DashboardService {
       rankings = await evaluationRepository.getAllRankings();
     }
 
-    // Assign rank based on initial PQM score sort (which is descending from DB)
-    rankings.forEach((r, index) => {
-      r.rank = index + 1;
+    // Assign initial rank based on pqmScore (null scores go to end)
+    rankings.sort((a, b) => {
+      if (a.pqmScore == null && b.pqmScore == null) return 0;
+      if (a.pqmScore == null) return 1;
+      if (b.pqmScore == null) return -1;
+      return b.pqmScore - a.pqmScore;
     });
+    rankings.forEach((r, index) => { r.rank = index + 1; });
 
-    // Apply additional filters
-    if (filters.status) rankings = rankings.filter(r => r.status === filters.status);
-    if (filters.category) rankings = rankings.filter(r => r.category === filters.category);
-
-    // Sorting
-    const { sortBy, sortOrder } = sorting;
-    if (sortBy && rankings.length > 0) {
-      rankings.sort((a, b) => {
-        const aVal = a[sortBy] ?? 0;
-        const bVal = b[sortBy] ?? 0;
-        if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
-        if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
-        return 0;
-      });
+    // Apply additional frontend filters (only filter if value is non-empty)
+    if (filters.status)    rankings = rankings.filter(r => r.status === filters.status);
+    if (filters.category)  rankings = rankings.filter(r => r.category === filters.category);
+    if (filters.riskLevel) rankings = rankings.filter(r =>
+      r.riskLevel && r.riskLevel.toLowerCase() === filters.riskLevel.toLowerCase()
+    );
+    if (filters.supplierSearch) {
+      const q = filters.supplierSearch.toLowerCase();
+      rankings = rankings.filter(r =>
+        (r.supplierName || '').toLowerCase().includes(q) ||
+        (r.tenderRefNo  || '').toLowerCase().includes(q)
+      );
+    }
+    if (filters.pqmMin != null && filters.pqmMin !== '') {
+      rankings = rankings.filter(r => r.pqmScore != null && r.pqmScore >= parseFloat(filters.pqmMin));
+    }
+    if (filters.pqmMax != null && filters.pqmMax !== '') {
+      rankings = rankings.filter(r => r.pqmScore != null && r.pqmScore <= parseFloat(filters.pqmMax));
     }
 
+    // Sorting
+    const { sortBy = 'pqmScore', sortOrder = 'desc' } = sorting;
+    rankings.sort((a, b) => {
+      const aVal = a[sortBy] ?? (sortOrder === 'asc' ? Infinity : -Infinity);
+      const bVal = b[sortBy] ?? (sortOrder === 'asc' ? Infinity : -Infinity);
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+
     // Pagination
-    const page = Math.max(1, pagination.page || 1);
-    const pageSize = Math.min(100, Math.max(1, pagination.pageSize || 10));
+    const page     = Math.max(1, parseInt(pagination.page)     || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(pagination.pageSize) || 10));
     const totalRecords = rankings.length;
-    const totalPages = Math.ceil(totalRecords / pageSize);
+    const totalPages   = Math.ceil(totalRecords / pageSize) || 1;
     const paginatedData = rankings.slice((page - 1) * pageSize, page * pageSize);
 
     return {
@@ -94,36 +115,25 @@ class DashboardService {
 
   /**
    * Archive final rankings for a contract opportunity.
-   * Accepts contractId (preferred) or tenderReferenceId (legacy).
    */
   async archiveScoringList(contractId, archiveReason, userId) {
-    // Support both contractId and tenderReferenceId (backward compat)
-    const referenceId = contractId;
-
-    if (!referenceId) {
+    if (!contractId) {
       const err = new Error('contractId is required');
       err.status = 400;
       throw err;
     }
 
-    // Try to get rankings by contractId first, fall back to tender lookup
-    let rankingSnapshot = await evaluationRepository.getRankingsForContract(referenceId);
+    const rankingSnapshot = await evaluationRepository.getRankingsForContract(contractId);
 
     if (!rankingSnapshot || rankingSnapshot.length === 0) {
-      // Fallback: treat referenceId as a tender reference and look up directly
-      const tenderRankings = await evaluationRepository.getRankingsForTender(referenceId);
-      if (!tenderRankings || tenderRankings.length === 0) {
-        const err = new Error('No evaluation rankings found for this contract');
-        err.status = 400;
-        throw err;
-      }
-      rankingSnapshot = tenderRankings;
+      const err = new Error('No tenders found for this contract');
+      err.status = 400;
+      throw err;
     }
 
-    // SECURITY: Use transaction to ensure atomicity
     const result = await sequelize.transaction(async (t) => {
       const previousArchive = await ScoringArchive.findOne({
-        where: { tender_reference_id: referenceId },
+        where: { tender_reference_id: contractId },
         order: [['archive_version', 'DESC']],
         transaction: t,
         lock: t.LOCK.UPDATE
@@ -132,7 +142,7 @@ class DashboardService {
       const nextVersion = previousArchive ? previousArchive.archive_version + 1 : 1;
 
       const archive = await ScoringArchive.create({
-        tender_reference_id: referenceId,
+        tender_reference_id: contractId,
         archive_version: nextVersion,
         archive_reason: archiveReason,
         ranking_snapshot: rankingSnapshot,
