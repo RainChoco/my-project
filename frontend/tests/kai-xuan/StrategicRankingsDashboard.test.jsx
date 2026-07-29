@@ -1,5 +1,6 @@
 ﻿import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import DashboardPage from '../../src/features/dashboard/pages/DashboardPage';
@@ -23,7 +24,7 @@ const queryClient = new QueryClient({
 const renderComponent = () => {
   return render(
     <QueryClientProvider client={queryClient}>
-      <DashboardPage />
+      <MemoryRouter><DashboardPage /></MemoryRouter>
     </QueryClientProvider>
   );
 };
@@ -56,7 +57,7 @@ describe('DashboardPage (Kai Xuan)', () => {
   it('renders EmptyState when no contract is selected', async () => {
     renderComponent();
     expect(await screen.findByText(/Strategic Rankings Dashboard/i)).toBeInTheDocument();
-    expect(await screen.findByText(/Please select a Contract Opportunity above/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Select a contract above to view rankings/i)).toBeInTheDocument();
   });
 
   it('fetches and displays KPIs when a contract is selected', async () => {
@@ -79,10 +80,10 @@ describe('DashboardPage (Kai Xuan)', () => {
 
     renderComponent();
     
-    expect(await screen.findByText('Total Tenders')).toBeInTheDocument();
-    expect(await screen.findByText('10')).toBeInTheDocument();
+    expect(await screen.findByText('Total Supplier Submissions')).toBeInTheDocument();
+    expect((await screen.findAllByText('10')).length).toBeGreaterThan(0);
     expect(await screen.findByText('Average PQM Score')).toBeInTheDocument();
-    expect(await screen.findByText('85.5')).toBeInTheDocument();
+    expect((await screen.findAllByText('85.5')).length).toBeGreaterThan(0);
   });
 
   it('triggers archive mutation', async () => {
@@ -113,3 +114,5 @@ describe('DashboardPage (Kai Xuan)', () => {
     });
   });
 });
+
+

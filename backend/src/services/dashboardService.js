@@ -126,7 +126,7 @@ class DashboardService {
     const rankingSnapshot = await evaluationRepository.getRankingsForContract(contractId);
 
     if (!rankingSnapshot || rankingSnapshot.length === 0) {
-      const err = new Error('No tenders found for this contract');
+      const err = new Error('No evaluation rankings found for this contract');
       err.status = 400;
       throw err;
     }
@@ -157,3 +157,4 @@ class DashboardService {
 }
 
 module.exports = new DashboardService();
+
