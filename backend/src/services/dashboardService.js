@@ -1,4 +1,4 @@
-﻿const tenderRepository = require('../repositories/TenderRepository');
+const tenderRepository = require('../repositories/TenderRepository');
 const evaluationRepository = require('../repositories/EvaluationRepository');
 const { ScoringArchive, sequelize } = require('../models');
 
@@ -157,4 +157,3 @@ class DashboardService {
 }
 
 module.exports = new DashboardService();
-

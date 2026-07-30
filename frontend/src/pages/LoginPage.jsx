@@ -15,7 +15,8 @@ const loginSchema = Yup.object({
 // TEMP DEV ONLY - pre-signed ma_staff (Alice Tan) token from design/test-tokens.md.
 // Reuses the exact same login()/AuthContext flow as a real login; no auth logic changed.
 // import.meta.env.DEV keeps this out of production builds. Remove this whole block when done.
-const DEV_MA_STAFF_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImZ1bGxfbmFtZSI6IkFsaWNlIFRhbiIsImVtYWlsIjoiYWxpY2UudGFuQHRvd25tcy5nb3Yuc2ciLCJyb2xlIjoibWFfc3RhZmYiLCJpYXQiOjE3ODUyNTM5NDYsImV4cCI6MTc4Nzg0NTk0Nn0.9EoZI89B8d1PaO3GJb6pPEO9jPvDX7SgB0KLfpar-g8";
+const DEV_MA_STAFF_TOKEN =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImZ1bGxfbmFtZSI6IkFsaWNlIFRhbiIsImVtYWlsIjoiYWxpY2UudGFuQHRvd25tcy5nb3Yuc2ciLCJyb2xlIjoibWFfc3RhZmYiLCJpYXQiOjE3ODM2OTk5ODYsImV4cCI6MTc5MTQ3NTk4Nn0.dgHYHXwrhptOIAdFQ2cvlEP8VQdKDXETaNVjV1ckoBI';
 
 function LoginPage() {
   const { login } = useAuth();

@@ -39,7 +39,7 @@ export const routeConfig = [
   {
     path: '/',
     label: 'Dashboard',
-    roles: ALL_ROLES,
+    roles: ALL_ROLES, // design/kai-xuan/use-cases.md UC-KX-01/02 name evaluator/ma_staff; no role restriction documented on the read endpoints, so left open to all
     element: <DashboardPage />,
   },
   {

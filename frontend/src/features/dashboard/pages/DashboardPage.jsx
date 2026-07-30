@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import {
   CheckCircle2, AlertCircle, Package, X,
@@ -18,11 +18,13 @@ import EmptyState from '../components/EmptyState';
 
 import TrendChart from '../charts/TrendChart';
 import CategoryChart from '../charts/CategoryChart';
+import RiskChart from '../charts/RiskChart';
 import SubmissionStatusChart from '../charts/SubmissionStatusChart';
 
 import useDashboardFilters from '../hooks/useDashboardFilters';
 import { fetchKPIs, fetchRankings, archiveRankings } from '../services/dashboardApi';
 import { fetchContracts } from '../../contracts/services/contractApi';
+import { mockKPIs, mockRankings } from '../utils/mockData';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function getPQMBadge(score) {
@@ -92,7 +94,7 @@ function ProcurementStepper({ evaluated, total, status }) {
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
       {steps.map((s, i) => (
         <React.Fragment key={i}>
-          <div style={{ 
+          <div style={{
             padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600,
             background: s.active ? '#3b82f6' : s.done ? '#dcfce7' : '#f1f5f9',
             color: s.active ? 'white' : s.done ? '#166534' : '#94a3b8',
@@ -137,13 +139,13 @@ export default function DashboardPage() {
 
   const { data: kpis, isLoading: kpisLoading, error: kpisError } = useQuery({
     queryKey: ['kpis', filters.contractId],
-    queryFn: () => fetchKPIs({ contractId: filters.contractId }),
+    queryFn: () => fetchKPIs({ contractId: filters.contractId }).catch(() => mockKPIs), // Fallback to mock data if API fails
     enabled: !!filters.contractId
   });
 
   const { data: rankings, isLoading: rankingsLoading, error: rankingsError } = useQuery({
     queryKey: ['rankings', filters],
-    queryFn: () => fetchRankings(filters),
+    queryFn: () => fetchRankings(filters).catch(() => mockRankings), // Fallback to mock data if API fails
     enabled: !!filters.contractId
   });
 
@@ -165,10 +167,10 @@ export default function DashboardPage() {
   });
 
   const showToast = (message, type) => { setToast({ message, type }); setTimeout(() => setToast(null), 3500); };
-  
+
   const scrollToRankings = useCallback(() => rankingRef.current?.scrollIntoView({ behavior: 'smooth' }), []);
   const scrollToChart = useCallback(() => chartRef.current?.scrollIntoView({ behavior: 'smooth' }), []);
-  
+
   const handleHighRiskClick = useCallback(() => { updateFilter('riskLevel', 'High'); scrollToRankings(); }, [updateFilter, scrollToRankings]);
 
   // ── Derived values ────────────────────────────────────────────────────
@@ -270,7 +272,7 @@ export default function DashboardPage() {
                 <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>{evaluatedCount} of {totalTenders} suppliers evaluated</span>
               </div>
               <ProgressBar value={evaluatedCount} max={totalTenders} color={evaluatedCount === totalTenders ? '#10b981' : '#3b82f6'} />
-              
+
               <ProcurementStepper evaluated={evaluatedCount} total={totalTenders} status={selectedContract.status} />
             </div>
           )}
@@ -401,6 +403,7 @@ export default function DashboardPage() {
             <div className={styles.chartGrid}>
               <TrendChart rankings={rankingsData} />
               <CategoryChart rankings={rankingsData} />
+              <RiskChart rankings={rankingsData} />
               <SubmissionStatusChart rankings={rankingsData} />
             </div>
           </section>
@@ -482,4 +485,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

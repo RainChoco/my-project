@@ -177,5 +177,14 @@ describe('Dashboard Controller Tests', () => {
         .send({ archiveReason: 'Test' });
       expect(res.statusCode).toBe(400);
     });
+
+    it('Should return 401 when no Authorization header is provided', async () => {
+      const res = await request(app)
+        .post('/api/dashboard/archive')
+        .send({
+          contractId: testContractId
+        });
+      expect(res.statusCode).toBe(401);
+    });
   });
 });

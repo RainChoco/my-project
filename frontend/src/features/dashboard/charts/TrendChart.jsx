@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts';
@@ -21,7 +21,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function TrendChart({ rankings = [] }) {
   // Filter for evaluated tenders only
   const evaluated = rankings.filter(r => r.pqmScore != null);
-  
+
   // Aggregate average score by submission month
   const monthData = {};
   evaluated.forEach(r => {

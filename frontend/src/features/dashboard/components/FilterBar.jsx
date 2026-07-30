@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Filter, Tags, Search, ShieldAlert, BarChart2, X } from 'lucide-react';
 import styles from '../styles/dashboard.module.css';
 
@@ -122,6 +122,3 @@ export default function FilterBar({ filters, updateFilter, onReset }) {
     </div>
   );
 }
-
-
-

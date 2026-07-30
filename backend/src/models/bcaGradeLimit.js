@@ -1,4 +1,4 @@
-﻿const { DataTypes } = require('sequelize');
+const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const BcaGradeLimit = sequelize.define('BcaGradeLimit', {
@@ -23,9 +23,10 @@ const BcaGradeLimit = sequelize.define('BcaGradeLimit', {
   tableName: 'bca_grade_limits',
   timestamps: true,
   createdAt: false,
-  updatedAt: 'updated_at'
+  updatedAt: 'updated_at',
+  indexes: [
+    { unique: true, fields: ['grade', 'effective_from'] }
+  ]
 });
 
 module.exports = BcaGradeLimit;
-
-

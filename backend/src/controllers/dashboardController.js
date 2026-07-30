@@ -11,6 +11,7 @@ const getKPIs = async (req, res) => {
       data: kpis
     });
   } catch (error) {
+    // SECURITY: Avoid leaking internal error details
     console.error('Error in getKPIs:', error);
     res.status(500).json({ status: 'error', message: 'Internal Server Error' });
   }
@@ -71,6 +72,7 @@ const archiveRankings = async (req, res) => {
   } catch (error) {
     console.error('Error in archiveRankings:', error);
     const status = error.status || 500;
+    // Only return the error message for known application errors (400, 404), mask 500s.
     const message = status < 500 ? error.message : 'Internal Server Error';
     res.status(status).json({ status: 'error', message });
   }

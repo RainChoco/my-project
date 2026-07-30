@@ -25,7 +25,7 @@ const ScoringArchive = sequelize.define('ScoringArchive', {
     allowNull: false
   },
   archived_by: {
-    type: DataTypes.INTEGER,   // User.id is INTEGER — was UUID which caused type mismatch
+    type: DataTypes.INTEGER,   // User.id is INTEGER - was UUID which caused type mismatch
     allowNull: false
   },
   archived_at: {

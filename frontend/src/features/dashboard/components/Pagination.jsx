@@ -6,9 +6,9 @@ export default function Pagination({ pagination, updateFilter }) {
   if (!pagination) return null;
   const { page, totalPages, totalRecords } = pagination;
 
-  const btnStyle = { 
-    display: 'flex', 
-    alignItems: 'center', 
+  const btnStyle = {
+    display: 'flex',
+    alignItems: 'center',
     justifyContent: 'center',
     width: '36px',
     height: '36px',
@@ -32,7 +32,7 @@ export default function Pagination({ pagination, updateFilter }) {
     <div className={styles.pagination} style={{ padding: '1.5rem', borderRadius: '0 0 12px 12px' }}>
       <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>Total: {totalRecords} records</span>
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        <button 
+        <button
           style={page <= 1 ? disabledStyle : btnStyle}
           disabled={page <= 1}
           onClick={() => updateFilter('page', page - 1)}
@@ -42,7 +42,7 @@ export default function Pagination({ pagination, updateFilter }) {
           <ChevronLeft size={18} />
         </button>
         <span style={{ fontWeight: '500', fontSize: '0.9rem', color: '#374151' }}>Page {page} of {totalPages || 1}</span>
-        <button 
+        <button
           style={page >= totalPages ? disabledStyle : btnStyle}
           disabled={page >= totalPages}
           onClick={() => updateFilter('page', page + 1)}

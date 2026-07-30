@@ -1,4 +1,4 @@
-﻿const { Op } = require('sequelize');
+const { Op } = require('sequelize');
 const { sequelize, Tender, TenderDocument, EligibilityCheck, BcaGradeLimit, EligibilityThreshold, Contract } = require('../models');
 const cloudinaryService = require('../services/cloudinaryService');
 
@@ -23,7 +23,7 @@ const createTender = async (req, res) => {
     if (blockedStatuses.includes(contract.status)) {
       return res.status(422).json({ status: 'error', message: `Cannot submit a tender to a contract with status '${contract.status}'.` });
     }
-    // Warn if closing date has passed (still allow â€” procurement officers may have a grace period)
+    // Warn if closing date has passed (still allow - procurement officers may have a grace period)
     const now = new Date();
     if (contract.closingDate && new Date(contract.closingDate) < now) {
       // Allow but note it in the response
@@ -62,6 +62,8 @@ const listTenders = async (req, res) => {
 
     const andConditions = [];
     if (vendor_name) {
+      // LOWER()+LIKE instead of Op.iLike so this works on both Postgres and the
+      // SQLite in-memory DB used in tests (Op.iLike is Postgres-only).
       andConditions.push(
         sequelize.where(sequelize.fn('LOWER', sequelize.col('vendor_name')), {
           [Op.like]: `%${vendor_name.toLowerCase()}%`
@@ -576,7 +578,7 @@ const updateEligibilityThreshold = async (req, res) => {
 };
 
 // ---------------------------------------------------------------------------
-// GET /contracts/:contractId/tenders â€” all tenders belonging to a contract
+// GET /contracts/:contractId/tenders - all tenders belonging to a contract
 // ---------------------------------------------------------------------------
 const getTendersByContract = async (req, res) => {
   try {
@@ -621,5 +623,3 @@ module.exports = {
   updateEligibilityThreshold,
   getTendersByContract
 };
-
-

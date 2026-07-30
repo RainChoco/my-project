@@ -1,4 +1,4 @@
-﻿const { DataTypes } = require('sequelize');
+const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Tender = sequelize.define('Tender', {
@@ -80,11 +80,7 @@ const Tender = sequelize.define('Tender', {
   tableName: 'tenders',
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at',
-  createdAt: 'created_at',
   updatedAt: 'updated_at'
 });
 
 module.exports = Tender;
-
-

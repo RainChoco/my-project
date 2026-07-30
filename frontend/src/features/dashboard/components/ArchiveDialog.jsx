@@ -10,7 +10,7 @@ export default function ArchiveDialog({ isOpen, onClose, onConfirm, contractId, 
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modal} style={{ padding: 0, overflow: 'hidden' }}>
-        
+
         {/* Header */}
         <div style={{ padding: '1.5rem', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f9fafb' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -30,12 +30,12 @@ export default function ArchiveDialog({ isOpen, onClose, onConfirm, contractId, 
             Are you sure you want to archive the finalized ranking list for <strong style={{ color: '#111827' }}>{contractName} ({contractId})</strong>?
             This action will create an immutable snapshot that cannot be modified.
           </p>
-          
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <label style={{ fontSize: '0.85rem', fontWeight: 500, color: '#374151' }}>Reason for Archiving (Optional)</label>
-            <textarea 
-              placeholder="e.g. Final board approval received on..." 
-              className={styles.input} 
+            <textarea
+              placeholder="e.g. Final board approval received on..."
+              className={styles.input}
               style={{ width: '100%', boxSizing: 'border-box', minHeight: '80px', resize: 'vertical', fontFamily: 'inherit' }}
               value={reason}
               onChange={e => setReason(e.target.value)}
@@ -45,17 +45,17 @@ export default function ArchiveDialog({ isOpen, onClose, onConfirm, contractId, 
 
         {/* Footer */}
         <div className={styles.modalActions} style={{ padding: '1.25rem 1.5rem', background: '#f9fafb', borderTop: '1px solid #e5e7eb', margin: 0 }}>
-          <button 
-            className={styles.btnSecondary} 
-            onClick={onClose} 
+          <button
+            className={styles.btnSecondary}
+            onClick={onClose}
             disabled={isSubmitting}
             style={{ padding: '0.6rem 1.2rem', borderRadius: '6px', fontWeight: 500, border: '1px solid #d1d5db', cursor: 'pointer' }}
           >
             Cancel
           </button>
-          <button 
-            className={styles.btnArchive} 
-            onClick={() => onConfirm(reason)} 
+          <button
+            className={styles.btnArchive}
+            onClick={() => onConfirm(reason)}
             disabled={isSubmitting}
             style={{ padding: '0.6rem 1.2rem', borderRadius: '6px', fontWeight: 500, cursor: 'pointer', opacity: isSubmitting ? 0.7 : 1 }}
           >

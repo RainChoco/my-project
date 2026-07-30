@@ -16,10 +16,14 @@ const contractRoutes          = require('./contractRoutes');
 
 // ── Public routes ─────────────────────────────────────────────────────────────
 router.use('/auth', authRoutes);
+router.use('/dashboard', dashboardRoutes);
 
 // ── Teammate routes (preserved exactly as pushed to remote) ───────────────────
 // tenderRoutes defines its own full paths (/tenders, /eligibility-checks, /config/...)
+// since those aren't all nested under one shared prefix - see tenderRoutes.js.
 router.use('/', tenderRoutes);
+// Mounted separately from tenderRoutes so that file stays untouched - this only
+// adds the /tenders/:tenderId/evaluations sub-resource.
 router.use('/tenders/:tenderId/evaluations', tenderEvaluationRoutes);
 router.use('/evaluations', evaluationRoutes);
 router.use('/evaluation-criteria', evaluationCriteriaRoutes);
@@ -29,7 +33,8 @@ router.use('/proposals', proposalRoutes);
 
 // ── Kai Xuan's modules under /v1 ─────────────────────────────────────────────
 // Contract CRUD and Dashboard are namespaced under /v1 to avoid collisions
-// with teammate flat routes above.
+// with teammate flat routes above. dashboardRoutes is also mounted at the flat
+// /dashboard path above for backwards compatibility with existing callers.
 const v1Router = express.Router();
 v1Router.use('/contracts', contractRoutes);
 v1Router.use('/dashboard', dashboardRoutes);

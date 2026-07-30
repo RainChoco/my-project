@@ -1,4 +1,4 @@
-﻿const { Tender, Evaluation, Contract } = require('../models');
+const { Tender, Evaluation, Contract } = require('../models');
 const { Op } = require('sequelize');
 
 class DatabaseEvaluationRepository {

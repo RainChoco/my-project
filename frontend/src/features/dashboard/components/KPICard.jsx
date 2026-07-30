@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import styles from '../styles/dashboard.module.css';
 

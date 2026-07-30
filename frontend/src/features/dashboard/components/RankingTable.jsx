@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { ArrowUp, ArrowDown, Eye, FileText, ClipboardCheck, FileCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import styles from '../styles/dashboard.module.css';
@@ -61,7 +61,7 @@ function getStatusPill(status) {
   );
 }
 
-export default function RankingTable({ data, filters, updateFilter }) {
+export default function RankingTable({ data, filters, updateFilter, onArchiveClick }) {
   const navigate = useNavigate();
 
   const handleSort = (field) => {
@@ -91,7 +91,8 @@ export default function RankingTable({ data, filters, updateFilter }) {
     </th>
   );
 
-  const pendingCount = data.filter(r => r.pqmScore == null).length;
+  const pendingCount = (data || []).filter(r => r.pqmScore == null).length;
+
 
   return (
     <div className={styles.tableWrapper}>
@@ -196,6 +197,19 @@ export default function RankingTable({ data, filters, updateFilter }) {
                     >
                       <FileCheck size={16} />
                     </button>
+                    {onArchiveClick && (
+                      <button
+                        title="Archive"
+                        className={styles.btnPrimary}
+                        onClick={() => onArchiveClick(row.tenderId)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          padding: '0 0.6rem', height: '32px', borderRadius: '6px', cursor: 'pointer'
+                        }}
+                      >
+                        Archive
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
