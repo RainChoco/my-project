@@ -3,23 +3,25 @@ require('dotenv').config();
 // Config consumed by sequelize-cli only (db:migrate / db:seed). The app itself
 // connects via config/database.js - this file just mirrors those same env vars
 // into the plain-object shape sequelize-cli expects.
+const useSqlite = (process.env.DB_DIALECT || 'sqlite') === 'sqlite';
+
+const sqliteConfig = (storage) => ({
+  dialect: 'sqlite',
+  storage
+});
+
+const postgresConfig = {
+  username: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'postgres',
+  database: process.env.DB_NAME || 'tender_db',
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 5432,
+  dialect: 'postgres'
+};
+
 module.exports = {
-  development: {
-    username: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_NAME || 'tender_db',
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    dialect: 'postgres'
-  },
-  test: {
-    username: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_NAME || 'tender_db',
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    dialect: 'postgres'
-  },
+  development: useSqlite ? sqliteConfig('./tender_db.sqlite') : postgresConfig,
+  test: useSqlite ? sqliteConfig(':memory:') : postgresConfig,
   production: {
     use_env_variable: 'DATABASE_URL',
     dialect: 'postgres',
