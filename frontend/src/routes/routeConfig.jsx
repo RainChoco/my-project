@@ -1,7 +1,7 @@
 import { DashboardPage } from '../features/dashboard';
 import { ContractListPage, ContractFormPage } from '../features/contracts';
 import ContractDetailPage from '../features/contracts/pages/ContractDetailPage';
-import { TendersDashboardPage, TenderFormPage, TenderDetailPage } from '../features/tenders';
+import { TendersDashboardPage, TenderFormPage, TenderDetailPage, TenderRecordLookupPage } from '../features/tenders';
 import { EvaluationCriteriaPage, EvaluationsPage, EvaluationDetailPage } from '../features/evaluations';
 import {
   BoardPaperPage,
@@ -62,6 +62,7 @@ export const routeConfig = [
     // so this scope's route entry carries children - see AppRoutes.jsx for how these nest.
     children: [
       { path: 'new', roles: [MA_STAFF], element: <TenderFormPage mode="create" /> }, // UC-A1
+      { path: 'lookup', roles: [MA_STAFF], element: <TenderRecordLookupPage /> }, // Existing/past record (OCR) entry option from the 'new' mode-selection screen
       { path: ':id', roles: [MA_STAFF, EVALUATOR, MANAGEMENT, REPORT_PREPARER], element: <TenderDetailPage /> }, // UC-A2/UC-A8
       { path: ':id/edit', roles: [MA_STAFF], element: <TenderFormPage mode="edit" /> }, // UC-A3
     ],

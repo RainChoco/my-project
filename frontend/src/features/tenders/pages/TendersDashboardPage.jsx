@@ -10,6 +10,7 @@ import TenderFilters, { EMPTY_FILTERS } from '../components/TenderFilters';
 import TenderTable from '../components/TenderTable';
 import TenderPagination from '../components/TenderPagination';
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog';
+import TenderStatsOverview from '../components/TenderStatsOverview';
 import { listTenders, deleteTender } from '../services/tenderApi';
 
 const PAGE_LIMIT = 20;
@@ -81,6 +82,12 @@ function TendersDashboardPage() {
         </div>
         {canManage && <Button onClick={() => navigate('/tenders/new')}>New Tender Submission</Button>}
       </div>
+
+      <TenderStatsOverview
+        tenders={data?.data ?? []}
+        totalCount={data?.pagination?.total ?? 0}
+        isLoading={isLoading}
+      />
 
       <Card>
         <CardHeader>

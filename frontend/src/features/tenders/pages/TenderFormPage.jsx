@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useFormik } from 'formik';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { FileEdit, ScanSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,6 +37,50 @@ const EDIT_DEFAULTS = {
 function FieldError({ formik, name }) {
   if (!formik.touched[name] || !formik.errors[name]) return null;
   return <p className="text-xs text-destructive">{formik.errors[name]}</p>;
+}
+
+// Initial step shown at /tenders/new before the manual-entry form - lets the user
+// pick between filling the form in themselves or (eventually) an OCR-based upload.
+function EntryModeSelection({ onSelectManual, onSelectLookup }) {
+  return (
+    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>New Tender Submission</CardTitle>
+          <CardDescription>Choose how you&apos;d like to log this tender.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={onSelectManual}
+            className="flex flex-col items-start gap-2 rounded-xl border border-border p-5 text-left transition-colors hover:border-primary hover:bg-primary/5"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <FileEdit className="h-5 w-5 text-primary" />
+            </div>
+            <span className="font-semibold">New Tender Submission</span>
+            <span className="text-sm text-muted-foreground">
+              Manual entry - fill in Contract Opportunity, vendor, price, and dates yourself.
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onSelectLookup}
+            className="flex flex-col items-start gap-2 rounded-xl border border-border p-5 text-left transition-colors hover:border-primary hover:bg-primary/5"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <ScanSearch className="h-5 w-5 text-primary" />
+            </div>
+            <span className="font-semibold">Existing / Past Record</span>
+            <span className="text-sm text-muted-foreground">
+              OCR upload - look up by reference number or upload an existing document package.
+            </span>
+          </button>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 // Info panel shown when a contract is selected
@@ -85,6 +130,8 @@ function TenderFormPage({ mode }) {
   const { toast } = useToast();
   const [serverError, setServerError] = useState(null);
   const [tenderImageFile, setTenderImageFile] = useState(null);
+  // null = show the entry-mode selection screen (create mode only); edit mode skips it.
+  const [entryMode, setEntryMode] = useState(isEditMode ? 'manual' : null);
 
   const {
     data: tender,
@@ -191,6 +238,15 @@ function TenderFormPage({ mode }) {
     : tender?.contract ?? null;
 
   const isContractBlocked = selectedContract && ['Archived', 'Closed', 'Cancelled'].includes(selectedContract.status);
+
+  if (!isEditMode && entryMode === null) {
+    return (
+      <EntryModeSelection
+        onSelectManual={() => setEntryMode('manual')}
+        onSelectLookup={() => navigate('/tenders/lookup')}
+      />
+    );
+  }
 
   if (isEditMode && isTenderLoading) {
     return (
@@ -440,22 +496,31 @@ function TenderFormPage({ mode }) {
             </fieldset>
           </CardContent>
 
-          <CardFooter className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => navigate(-1)}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={
-                formik.isSubmitting ||
-                isSubmittingMutation ||
-                isLocked ||
-                (!isEditMode && !formik.values.contractId) ||
-                isContractBlocked
-              }
-            >
-              {formik.isSubmitting || isSubmittingMutation ? 'Saving...' : 'Save Tender'}
-            </Button>
+          <CardFooter className="flex items-center justify-between gap-2">
+            <div>
+              {!isEditMode && (
+                <Button type="button" variant="ghost" onClick={() => setEntryMode(null)}>
+                  ← Back
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  formik.isSubmitting ||
+                  isSubmittingMutation ||
+                  isLocked ||
+                  (!isEditMode && !formik.values.contractId) ||
+                  isContractBlocked
+                }
+              >
+                {formik.isSubmitting || isSubmittingMutation ? 'Saving...' : 'Save Tender'}
+              </Button>
+            </div>
           </CardFooter>
         </form>
       </Card>
