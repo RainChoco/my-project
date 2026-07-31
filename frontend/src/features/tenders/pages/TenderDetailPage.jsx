@@ -174,6 +174,33 @@ function TenderDetailPage() {
         </div>
       )}
 
+      {/* ── Linked Contract Opportunity ─────────────────────────────── */}
+      {tender.contract && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle className="text-base">Contract Opportunity</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">This tender belongs to the following contract</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => navigate(`/contracts/${tender.contract.id}`)}>
+              View Contract
+            </Button>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <Field label="Contract ID" value={tender.contract.id} />
+            <Field label="Name" value={tender.contract.name} />
+            <Field label="Category" value={tender.contract.category} />
+            <Field label="Status" value={tender.contract.status} />
+            {tender.contract.closingDate && (
+              <Field
+                label="Closing Date"
+                value={new Date(tender.contract.closingDate).toLocaleDateString()}
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {tender.ai_eligibility_summary && (
         <Alert>
           <AlertDescription>{tender.ai_eligibility_summary}</AlertDescription>
