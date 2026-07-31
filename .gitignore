@@ -1,18 +1,18 @@
 .claude/*
-!.claude/settings.jsonnode_modules/
-dist/
-.env
+!.claude/settings.json
 
 node_modules/
-dist/
-.env
 backend/node_modules/
 frontend/node_modules/
+
+dist/
 frontend/dist/
 
-node_modules/
-dist/
 .env
-backend/node_modules/
-frontend/node_modules/
-frontend/dist/
+backend/.env
+frontend/.env
+
+*.sqlite
+*.sqlite3
+tender_db.sqlite
+backend/tender_db.sqlite
