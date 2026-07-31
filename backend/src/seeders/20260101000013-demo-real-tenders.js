@@ -1,0 +1,123 @@
+'use strict';
+
+// Real vendor submissions for the two Town Council contracts seeded in
+// 20260101000012-demo-real-contracts.js. Continues the tender_ref_no sequence
+// (TC-2026-007 onward) after the existing mock tenders (001-006) rather than
+// replacing them - see that seeder's file for why.
+module.exports = {
+  async up(queryInterface) {
+    await queryInterface.bulkInsert('tenders', [
+      // -- PRPGTC/RR/22/001: R&R Works to 22 Blocks in Pasir Ris East Division --
+      {
+        id: 7,
+        contractId: 'CTR-PRPGTC-RR-22-001',
+        tender_ref_no: 'TC-2026-007',
+        vendor_name: 'Cana Construction Pte Ltd',
+        submission_date: '2026-07-10',
+        main_offer_price: 2830000.00,
+        alternative_offer_price: null,
+        eligibility_status: 'eligible',
+        ai_eligibility_summary: 'All eligibility criteria met.',
+        status: 'submitted',
+        created_by: 1,
+        created_at: '2026-07-10T09:00:00.000Z',
+        updated_at: '2026-07-10T09:00:00.000Z',
+      },
+      {
+        id: 8,
+        contractId: 'CTR-PRPGTC-RR-22-001',
+        tender_ref_no: 'TC-2026-008',
+        vendor_name: 'Jia Ren Construction Pte Ltd',
+        submission_date: '2026-07-12',
+        main_offer_price: 3120000.00,
+        alternative_offer_price: null,
+        eligibility_status: 'eligible',
+        ai_eligibility_summary: 'All eligibility criteria met.',
+        status: 'submitted',
+        created_by: 1,
+        created_at: '2026-07-12T09:00:00.000Z',
+        updated_at: '2026-07-12T09:00:00.000Z',
+      },
+      {
+        id: 9,
+        contractId: 'CTR-PRPGTC-RR-22-001',
+        tender_ref_no: 'TC-2026-009',
+        vendor_name: 'SKK Works (S) Pte Ltd',
+        submission_date: '2026-07-15',
+        main_offer_price: 3450000.00,
+        alternative_offer_price: null,
+        eligibility_status: 'eligible',
+        ai_eligibility_summary: 'All eligibility criteria met.',
+        status: 'submitted',
+        created_by: 1,
+        created_at: '2026-07-15T09:00:00.000Z',
+        updated_at: '2026-07-15T09:00:00.000Z',
+      },
+      {
+        id: 10,
+        contractId: 'CTR-PRPGTC-RR-22-001',
+        tender_ref_no: 'TC-2026-010',
+        vendor_name: 'Yeo Seng Services Pte Ltd',
+        submission_date: '2026-07-18',
+        main_offer_price: 3890000.00,
+        alternative_offer_price: null,
+        eligibility_status: 'flagged',
+        ai_eligibility_summary: 'Submission flagged for review - pending document verification.',
+        status: 'draft',
+        created_by: 1,
+        created_at: '2026-07-18T09:00:00.000Z',
+        updated_at: '2026-07-18T09:00:00.000Z',
+      },
+      // -- TMTC/UPG/23/004: Upgrading of Covered Linkways & Facilities in Tampines --
+      {
+        id: 11,
+        contractId: 'CTR-TMTC-UPG-23-004',
+        tender_ref_no: 'TC-2026-011',
+        vendor_name: 'BuildTech Infrastructure Pte Ltd',
+        submission_date: '2026-07-20',
+        main_offer_price: 1420000.00,
+        alternative_offer_price: null,
+        eligibility_status: 'eligible',
+        ai_eligibility_summary: 'All eligibility criteria met.',
+        status: 'submitted',
+        created_by: 1,
+        created_at: '2026-07-20T09:00:00.000Z',
+        updated_at: '2026-07-20T09:00:00.000Z',
+      },
+      {
+        id: 12,
+        contractId: 'CTR-TMTC-UPG-23-004',
+        tender_ref_no: 'TC-2026-012',
+        vendor_name: 'Seng Chuan Engineering Pte Ltd',
+        submission_date: '2026-07-22',
+        main_offer_price: 1580000.00,
+        alternative_offer_price: null,
+        eligibility_status: 'eligible',
+        ai_eligibility_summary: 'All eligibility criteria met.',
+        status: 'submitted',
+        created_by: 1,
+        created_at: '2026-07-22T09:00:00.000Z',
+        updated_at: '2026-07-22T09:00:00.000Z',
+      },
+      {
+        id: 13,
+        contractId: 'CTR-TMTC-UPG-23-004',
+        tender_ref_no: 'TC-2026-013',
+        vendor_name: 'Rich-Link Construction Pte Ltd',
+        submission_date: '2026-07-25',
+        main_offer_price: 1690000.00,
+        alternative_offer_price: null,
+        eligibility_status: 'pending',
+        ai_eligibility_summary: null,
+        status: 'under_evaluation',
+        created_by: 1,
+        created_at: '2026-07-25T09:00:00.000Z',
+        updated_at: '2026-07-25T09:00:00.000Z',
+      },
+    ], {});
+  },
+
+  async down(queryInterface) {
+    await queryInterface.bulkDelete('tenders', { id: [7, 8, 9, 10, 11, 12, 13] }, {});
+  },
+};
