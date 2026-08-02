@@ -1,16 +1,16 @@
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL ?? "/api";
 
 /*
 -----------------------------------------
 Generate AI Proposal
-POST /api/proposal/generate
+POST /api/proposals/generate
 -----------------------------------------
 */
 
 export async function generateProposal(data) {
 
     const response = await fetch(
-        `${API_URL}/api/proposal/generate`,
+        `${API_URL}/proposals/generate`,
         {
             method: "POST",
             headers: {
@@ -38,7 +38,7 @@ GET /api/proposal/:id
 export async function getProposal(id) {
 
     const response = await fetch(
-        `${API_URL}/api/proposal/${id}`
+        `${API_URL}/proposals/${id}`
     );
 
     if (!response.ok) {
@@ -59,7 +59,7 @@ PUT /api/proposal/:id
 export async function updateProposal(id, data) {
 
     const response = await fetch(
-        `${API_URL}/api/proposal/${id}`,
+        `${API_URL}/proposals/${id}`,
         {
             method: "PUT",
             headers: {
@@ -87,9 +87,10 @@ DELETE /api/proposal/:id
 export async function deleteProposal(id) {
 
     const response = await fetch(
-        `${API_URL}/api/proposal/${id}`,
+        `${API_URL}/proposals/${id}`,
         {
-            method: "DELETE"
+            method: "DELETE",
+            credentials: "include"
         }
     );
 
@@ -111,7 +112,7 @@ GET /api/proposal
 export async function getProposalHistory() {
 
     const response = await fetch(
-        `${API_URL}/api/proposal`
+        `${API_URL}/proposals`
     );
 
     if (!response.ok) {
@@ -132,7 +133,7 @@ GET /api/proposal/pdf/:id
 export async function downloadProposalPDF(id) {
 
     const response = await fetch(
-        `${API_URL}/api/proposal/pdf/${id}`
+        `${API_URL}/proposals/pdf/${id}`
     );
 
     if (!response.ok) {
@@ -153,7 +154,7 @@ GET /api/proposal/docx/:id
 export async function downloadProposalDOCX(id) {
 
     const response = await fetch(
-        `${API_URL}/api/proposal/docx/${id}`
+        `${API_URL}/proposals/docx/${id}`
     );
 
     if (!response.ok) {

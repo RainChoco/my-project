@@ -1,3 +1,4 @@
+import { Navigate } from 'react-router-dom';
 import { DashboardPage } from '../features/dashboard';
 import { ContractListPage, ContractFormPage } from '../features/contracts';
 import ContractDetailPage from '../features/contracts/pages/ContractDetailPage';
@@ -120,6 +121,25 @@ export const routeConfig = [
     }
   ]
 },
+  {
+    path: '/history',
+    label: 'History',
+    roles: [REPORT_PREPARER, MANAGEMENT, MA_STAFF],
+    element: <Navigate to="/board-papers/history" replace />,
+  },
+  {
+    path: '/proposal-report',
+    label: 'Proposal Reports',
+    roles: [REPORT_PREPARER, MANAGEMENT, MA_STAFF],
+    element: <ProposalGeneratorPage />,
+    children: [
+      {
+        path: 'result',
+        roles: [REPORT_PREPARER, MANAGEMENT, MA_STAFF],
+        element: <ProposalResultPage />
+      }
+    ]
+  },
   {
     path: '/clarifications',
     label: 'Clarifications',

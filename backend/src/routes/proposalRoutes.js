@@ -29,6 +29,11 @@ router.delete(
     proposalController.deleteProposal
 );
 
+router.delete(
+    "/history/:id",
+    proposalController.deleteHistoryEntry
+);
+
 router.get(
     "/pdf/:id",
     proposalController.downloadPDF

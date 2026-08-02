@@ -10,8 +10,10 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  // axios uses a plain object for headers; set the property directly
+  config.headers = config.headers || {};
   if (token) {
-    config.headers.set(`Authorization`, `Bearer ${token}`);
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });

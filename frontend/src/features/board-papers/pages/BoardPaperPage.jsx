@@ -1,9 +1,13 @@
 import { generateBoardPaper } from "../services/boardPaperApi";
 import { useToast } from "../../../hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
+import { buildBoardPaperTitle, getSelectedTenderDetails } from "../utils/boardPaperFormUtils";
+
 import { Button } from "../../../components/ui/button";
+import { listTenders } from "../../tenders/services/tenderApi";
 import {
     Card,
     CardContent,
@@ -28,29 +32,52 @@ function BoardPaperPage() {
 
     const { toast } = useToast();
 
+    const { data: tendersResponse = { data: [] }, isLoading: isTendersLoading, isError: isTendersError } = useQuery({
+        queryKey: ['tenders', { eligibility_status: 'eligible' }],
+        queryFn: () => listTenders({ eligibility_status: 'eligible' }),
+    });
+
+    const tenders = tendersResponse.data || [];
+    const noEligibleTenders = !isTendersLoading && tenders.length === 0;
+
     const [loading, setLoading] = useState(false);
 
     const [errors, setErrors] = useState({});
 
     const [formData, setFormData] = useState({
-        tender: "",
+        tenderId: "",
         title: "",
         purpose: "",
         preparedBy: ""
     });
 
+    const selectedTender = getSelectedTenderDetails(tenders, formData.tenderId);
+
+    useEffect(() => {
+        if (!formData.tenderId) {
+            setFormData((prev) => ({ ...prev, title: "" }));
+            return;
+        }
+
+        const autoTitle = buildBoardPaperTitle(selectedTender);
+        setFormData((prev) => ({
+            ...prev,
+            title: autoTitle
+        }));
+    }, [formData.tenderId, selectedTender]);
+
     const handleChange = (field, value) => {
 
-        setFormData({
-            ...formData,
+        setFormData((prevFormData) => ({
+            ...prevFormData,
             [field]: value
-        });
+        }));
 
         if (errors[field]) {
-            setErrors({
-                ...errors,
+            setErrors((prevErrors) => ({
+                ...prevErrors,
                 [field]: false
-            });
+            }));
         }
 
     };
@@ -59,9 +86,10 @@ function BoardPaperPage() {
 
         const newErrors = {};
         const missingFields = [];
+        const selectedTenderId = String(formData.tenderId || "").trim();
 
-        if (!formData.tender) {
-            newErrors.tender = true;
+        if (!selectedTenderId) {
+            newErrors.tenderId = true;
             missingFields.push("Tender");
         }
 
@@ -99,8 +127,14 @@ function BoardPaperPage() {
         setLoading(true);
 
         try {
+            const parsedTenderId = Number(selectedTenderId);
 
-            const result = await generateBoardPaper(formData);
+            const result = await generateBoardPaper({
+                tenderId: parsedTenderId,
+                title: formData.title,
+                purpose: formData.purpose,
+                preparedBy: formData.preparedBy,
+            });
 
             console.log(result);
 
@@ -109,19 +143,32 @@ function BoardPaperPage() {
                 description: "Board Paper generated successfully."
             });
 
+            const tenderLabel = selectedTender
+                ? selectedTender.tender_ref_no
+                : "Selected Tender";
+
             navigate("/board-papers/result", {
-                state: result.report
+                state: {
+                    report: result.report,
+                    tenderLabel,
+                    tenderId: formData.tenderId,
+                    title: formData.title || buildBoardPaperTitle(selectedTender),
+                    purpose: formData.purpose,
+                    preparedBy: formData.preparedBy,
+                }
             });
 
         }
         catch (error) {
+            const message = error.response?.data?.message || error.message;
 
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: error.message
+                description: message
             });
 
+            console.error('Board paper generate failed:', error);
         }
         finally {
 
@@ -166,40 +213,46 @@ function BoardPaperPage() {
                         </Label>
 
                         <Select
+                            value={formData.tenderId}
                             onValueChange={(value) =>
-                                handleChange("tender", value)
+                                handleChange("tenderId", value)
                             }
                         >
 
                             <SelectTrigger
-                                className={errors.tender ? "border-red-500 focus:ring-red-500" : ""}>
+                                className={errors.tenderId ? "border-red-500 focus:ring-red-500" : ""}>
 
                                 <SelectValue placeholder="Select Tender" />
 
                             </SelectTrigger>
 
                             <SelectContent>
-
-                                <SelectItem value="Managing Agent Services">
-                                    Managing Agent Services
-                                </SelectItem>
-
-                                <SelectItem value="Lift Maintenance Contract">
-                                    Lift Maintenance Contract
-                                </SelectItem>
-
-                                <SelectItem value="Cleaning Services">
-                                    Cleaning Services
-                                </SelectItem>
-
+                                {isTendersLoading ? (
+                                    <SelectItem value="">Loading tenders...</SelectItem>
+                                ) : tenders.length > 0 ? (
+                                    tenders.map((tender) => (
+                                        <SelectItem key={tender.id} value={String(tender.id)}>
+                                            {tender.tender_ref_no}
+                                        </SelectItem>
+                                    ))
+                                ) : (
+                                    <SelectItem value="">No eligible tenders available</SelectItem>
+                                )}
                             </SelectContent>
 
                         </Select>
 
-                        {errors.tender && (
+                        {errors.tenderId && (
                             <p className="text-sm text-red-600">
                                 Please select a tender.
                             </p>
+                        )}
+
+                        {selectedTender && (
+                            <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+                                <p className="text-sm font-medium text-gray-700">Vendor</p>
+                                <p className="text-sm text-gray-600">{selectedTender.vendor_name}</p>
+                            </div>
                         )}
 
                     </div>
@@ -297,12 +350,19 @@ function BoardPaperPage() {
 
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-3">
+
+                        <Button
+                            variant="outline"
+                            onClick={() => navigate("/history")}
+                        >
+                            History
+                        </Button>
 
                         <Button
                             className="bg-red-700 hover:bg-red-800"
                             onClick={handleGenerate}
-                            disabled={loading}
+                            disabled={loading || noEligibleTenders}
                         >
 
                             <>
