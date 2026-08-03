@@ -1,7 +1,18 @@
 import { DashboardPage } from '../features/dashboard';
-import { TendersDashboardPage, TenderFormPage, TenderDetailPage } from '../features/tenders';
+import { ContractListPage, ContractFormPage } from '../features/contracts';
+import ContractDetailPage from '../features/contracts/pages/ContractDetailPage';
+import { TendersDashboardPage, TenderFormPage, TenderDetailPage, TenderRecordLookupPage } from '../features/tenders';
 import { EvaluationCriteriaPage, EvaluationsPage, EvaluationDetailPage } from '../features/evaluations';
-import { ClarificationLogsPage, ClarificationLogDetailPage, JobAdjustmentRequestsPage } from '../features/clarifications';
+import {
+  BoardPaperPage,
+  BoardPaperResultPage,
+  ProposalGeneratorPage,
+  ProposalResultPage,
+  HistoryPage
+} from '../features/board-papers';
+import ClarificationLogsPage from '../features/clarifications/pages/ClarificationLogsPage';
+import ClarificationLogDetailPage from '../features/clarifications/pages/ClarificationLogDetailPage';
+import JobAdjustmentRequestsPage from '../features/clarifications/pages/JobAdjustmentRequestsPage';
 import { ComingSoonPage } from '../pages';
 
 // Matches backend/src/models/user.js's `role` ENUM and design/test-tokens.md.
@@ -32,6 +43,17 @@ export const routeConfig = [
     element: <DashboardPage />,
   },
   {
+    path: '/contracts',
+    label: 'Contracts',
+    roles: ALL_ROLES, // All roles can view contracts (Contract Opportunity is a public listing)
+    element: <ContractListPage />,
+    children: [
+      { path: 'new',  roles: [MA_STAFF], element: <ContractFormPage mode="create" /> },
+      { path: ':id', roles: ALL_ROLES, element: <ContractDetailPage /> },
+      { path: ':id/edit', roles: [MA_STAFF], element: <ContractFormPage mode="edit" /> },
+    ],
+  },
+  {
     path: '/tenders',
     label: 'Tenders',
     roles: [MA_STAFF, EVALUATOR, MANAGEMENT, REPORT_PREPARER], // UC-A2 (ma_staff/evaluator/management) + Calista UC1 step 2 needs to select a tender
@@ -40,6 +62,7 @@ export const routeConfig = [
     // so this scope's route entry carries children - see AppRoutes.jsx for how these nest.
     children: [
       { path: 'new', roles: [MA_STAFF], element: <TenderFormPage mode="create" /> }, // UC-A1
+      { path: 'lookup', roles: [MA_STAFF], element: <TenderRecordLookupPage /> }, // Existing/past record (OCR) entry option from the 'new' mode-selection screen
       { path: ':id', roles: [MA_STAFF, EVALUATOR, MANAGEMENT, REPORT_PREPARER], element: <TenderDetailPage /> }, // UC-A2/UC-A8
       { path: ':id/edit', roles: [MA_STAFF], element: <TenderFormPage mode="edit" /> }, // UC-A3
     ],
@@ -70,11 +93,33 @@ export const routeConfig = [
     element: <EvaluationDetailPage />,
   },
   {
-    path: '/board-papers',
-    label: 'Board Papers',
-    roles: [REPORT_PREPARER, MANAGEMENT], // Calista's "Procurement Officer" / "Manager" actors
-    element: <ComingSoonPage title="Board Papers" description="Board paper & proposal generation (Calista)." />,
-  },
+  path: '/board-papers',
+  label: 'Board Papers',
+  roles: [REPORT_PREPARER, MANAGEMENT, MA_STAFF], // Calista's "Procurement Officer" / "Manager" actors
+  element: <BoardPaperPage />,
+  children: [
+    {
+      path: "result",
+      roles: [REPORT_PREPARER, MANAGEMENT, MA_STAFF],
+      element: <BoardPaperResultPage />
+    },
+    {
+      path: "proposal-generation",
+      roles: [REPORT_PREPARER, MANAGEMENT, MA_STAFF],
+      element: <ProposalGeneratorPage />
+    },
+    {
+      path: "proposal-result",
+      roles: [REPORT_PREPARER, MANAGEMENT, MA_STAFF],
+      element: <ProposalResultPage />
+    },
+    {
+      path: "history",
+      roles: [REPORT_PREPARER, MANAGEMENT, MA_STAFF],
+      element: <HistoryPage />
+    }
+  ]
+},
   {
     path: '/clarifications',
     label: 'Clarifications',

@@ -1,14 +1,36 @@
+import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from './NativeSelect';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { STATUS_VALUES, ELIGIBILITY_STATUS_VALUES, STATUS_LABELS, ELIGIBILITY_STATUS_LABELS } from '../constants';
+import { fetchContracts } from '@/features/contracts/services/contractApi';
 
-const EMPTY_FILTERS = { status: '', eligibility_status: '', vendor_name: '' };
+const EMPTY_FILTERS = { contractId: '', status: '', eligibility_status: '', vendor_name: '' };
 
 function TenderFilters({ filters, onChange, onReset }) {
+  const { data: contracts = [] } = useQuery({ queryKey: ['contracts'], queryFn: fetchContracts });
+
+  const hasActiveFilters = filters.contractId || filters.status || filters.eligibility_status || filters.vendor_name;
+
   return (
     <div className="flex flex-wrap items-end gap-4">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="filter-contract">Contract</Label>
+        <NativeSelect
+          id="filter-contract"
+          className="w-64"
+          value={filters.contractId}
+          onChange={(e) => onChange('contractId', e.target.value)}
+        >
+          <option value="">All contracts</option>
+          {contracts.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.id} — {c.name}
+            </option>
+          ))}
+        </NativeSelect>
+      </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="filter-vendor">Vendor name</Label>
         <Input
@@ -51,7 +73,7 @@ function TenderFilters({ filters, onChange, onReset }) {
           ))}
         </NativeSelect>
       </div>
-      {(filters.status || filters.eligibility_status || filters.vendor_name) && (
+      {hasActiveFilters && (
         <Button type="button" variant="ghost" size="sm" onClick={onReset}>
           Clear filters
         </Button>

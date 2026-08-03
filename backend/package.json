@@ -7,8 +7,9 @@
     "test": "tests"
   },
   "scripts": {
-    "start": "node src/index.js",
-    "test": "jest"
+    "start": "cross-env NODE_ENV=development node src/index.js",
+    "dev":   "cross-env NODE_ENV=development node src/index.js",
+    "test":  "cross-env NODE_ENV=test jest"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +17,7 @@
   "type": "commonjs",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
     "cloudinary": "^2.10.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -25,9 +27,11 @@
     "pg": "^8.22.0",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.8",
+    "uuid": "^11.1.0",
     "yup": "^1.7.1"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "jest": "^30.4.2",
     "sequelize-cli": "^6.6.5",
     "sqlite3": "^6.0.1",

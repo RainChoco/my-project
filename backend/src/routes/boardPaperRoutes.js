@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const boardpaperController = require("../../../../my-project/backend/src/controllers/boardPaperController");
-
+const boardpaperController = require("../controllers/boardPaperController");
 // Calista (Scope C): Board paper generation endpoints.
 // See design/calista/api-documentation.md for the routes to add here.
 
 router.post(
-    "/",
+    "/generate",
     boardpaperController.generateBoardPaper
 );
 

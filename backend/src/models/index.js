@@ -1,5 +1,6 @@
 const sequelize = require('../config/database');
 const ScoringArchive = require('./scoringArchive');
+const Contract = require('./Contract');
 const User = require('./user');
 const Tender = require('./tender');
 const TenderDocument = require('./tenderDocument');
@@ -19,6 +20,12 @@ const JobAdjustmentRequest = require('./jobAdjustmentRequest');
 
 // Associations - defined here (not in the model files) so every model is already
 // required before any association referencing another model is set up.
+
+// --- Kai Xuan: Contract → Tender (Contract Opportunity is the parent of Tenders) ---
+Contract.hasMany(Tender, { foreignKey: 'contractId', as: 'tenders' });
+Tender.belongsTo(Contract, { foreignKey: 'contractId', as: 'contract' });
+
+// --- Zheng Hong: Tender Submission ---
 Tender.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
 Tender.hasMany(TenderDocument, { foreignKey: 'tender_id', as: 'documents', onDelete: 'CASCADE' });
 Tender.hasMany(EligibilityCheck, { foreignKey: 'tender_id', as: 'eligibilityChecks', onDelete: 'CASCADE' });
@@ -31,7 +38,7 @@ EligibilityCheck.belongsTo(User, { foreignKey: 'checked_by', as: 'reviewer' });
 
 EligibilityThreshold.belongsTo(User, { foreignKey: 'updated_by', as: 'updatedByUser' });
 
-// --- Associations (Jerrold: Processing Tender Form w/ Evaluation Criteria, Approval Process) ---
+// --- Jerrold: Processing Tender Form w/ Evaluation Criteria, Approval Process ---
 
 EvaluationCriteria.belongsTo(User, { as: 'creator', foreignKey: 'created_by' });
 User.hasMany(EvaluationCriteria, { as: 'criteriaCreated', foreignKey: 'created_by' });
@@ -55,8 +62,11 @@ EvaluationCriterionScore.belongsTo(Evaluation, { foreignKey: 'evaluation_id' });
 
 EvaluationCriterionScore.belongsTo(EvaluationCriteria, { as: 'criterion', foreignKey: 'evaluation_criteria_id' });
 EvaluationCriteria.hasMany(EvaluationCriterionScore, { foreignKey: 'evaluation_criteria_id' });
+// Evaluation → Tender (FK confirmed: tender_id from 20260101000013-create-evaluations.js)
+Evaluation.belongsTo(Tender, { foreignKey: 'tender_id', as: 'tender' });
+Tender.hasMany(Evaluation, { foreignKey: 'tender_id', as: 'evaluations' });
 
-// --- Associations (Sulaiman: Scope D - Alternate Proposal Communication System) ---
+// --- Sulaiman: Scope D - Alternate Proposal Communication System ---
 
 ClarificationLog.belongsTo(Tender, { foreignKey: 'tender_id', as: 'tender' });
 ClarificationLog.belongsTo(User, { foreignKey: 'escalated_by', as: 'escalatedByUser' });
@@ -83,6 +93,7 @@ JobAdjustmentRequest.belongsTo(User, { foreignKey: 'approved_by', as: 'approver'
 module.exports = {
   sequelize,
   ScoringArchive,
+  Contract,
   User,
   Tender,
   TenderDocument,

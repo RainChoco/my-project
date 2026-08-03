@@ -2,9 +2,10 @@ const dashboardService = require('../services/dashboardService');
 
 const getKPIs = async (req, res) => {
   try {
-    const { status, category, dateFrom, dateTo } = req.query;
-    const kpis = await dashboardService.getKPIs({ status, category, dateFrom, dateTo });
-    
+    // B8: contractId filter added
+    const { status, category, dateFrom, dateTo, contractId } = req.query;
+    const kpis = await dashboardService.getKPIs({ status, category, dateFrom, dateTo, contractId });
+
     res.json({
       status: 'success',
       data: kpis
@@ -18,19 +19,19 @@ const getKPIs = async (req, res) => {
 
 const getRankings = async (req, res) => {
   try {
-    // Validation ensures these are clean and typed
-    const { 
-      status, category, dateFrom, dateTo, 
-      page = 1, pageSize = 10, 
-      sortBy = 'pqmScore', sortOrder = 'desc' 
+    // B8: contractId filter added
+    const {
+      status, category, dateFrom, dateTo, contractId,
+      page = 1, pageSize = 10,
+      sortBy = 'pqmScore', sortOrder = 'desc'
     } = req.query;
 
     const result = await dashboardService.getRankings(
-      { status, category, dateFrom, dateTo },
+      { status, category, dateFrom, dateTo, contractId },
       { page: parseInt(page), pageSize: parseInt(pageSize) },
       { sortBy, sortOrder }
     );
-    
+
     res.json({
       status: 'success',
       data: result.data,
@@ -44,11 +45,22 @@ const getRankings = async (req, res) => {
 
 const archiveRankings = async (req, res) => {
   try {
-    const { tenderReferenceId, archiveReason } = req.body;
-    const userId = req.user.id;
+    // B7: Accept contractId (new) and tenderReferenceId (legacy)
+    const { contractId, tenderReferenceId, archiveReason } = req.body;
+    const referenceId = contractId || tenderReferenceId;
 
-    const archive = await dashboardService.archiveScoringList(tenderReferenceId, archiveReason, userId);
-    
+    if (!referenceId) {
+      return res.status(400).json({ status: 'error', message: 'contractId is required' });
+    }
+
+    // B9: Use real userId from JWT (auth middleware sets req.user)
+    const userId = req.user ? req.user.id : null;
+    if (!userId) {
+      return res.status(401).json({ status: 'error', message: 'Authentication required' });
+    }
+
+    const archive = await dashboardService.archiveScoringList(referenceId, archiveReason, userId);
+
     res.status(201).json({
       status: 'success',
       message: 'Scoring list archived successfully',

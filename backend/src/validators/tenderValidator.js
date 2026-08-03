@@ -13,6 +13,7 @@ const idAndDocumentIdParams = yup.object({
 
 const createTenderSchema = yup.object({
   body: yup.object({
+    contractId: yup.string().trim().required('contractId is required'),
     tender_ref_no: yup.string().trim().required('tender_ref_no is required'),
     vendor_name: yup.string().trim().required('vendor_name is required'),
     submission_date: yup.date().required('submission_date is required'),
@@ -32,6 +33,7 @@ const createTenderSchema = yup.object({
 
 const listTendersSchema = yup.object({
   query: yup.object({
+    contractId: yup.string().optional(),
     status: yup.string().oneOf(STATUS_VALUES, 'invalid status').optional(),
     eligibility_status: yup.string().oneOf(ELIGIBILITY_STATUS_VALUES, 'invalid eligibility_status').optional(),
     vendor_name: yup.string().optional(),

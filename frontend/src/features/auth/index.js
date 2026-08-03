@@ -1,1 +1,2 @@
-// Login/register forms and session-related UI (group-owned).
+// Login/register forms and session-related UI.
+export { default as LoginPage } from './LoginPage';

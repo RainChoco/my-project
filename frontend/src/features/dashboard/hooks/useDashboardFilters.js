@@ -2,8 +2,13 @@ import { useState, useCallback } from 'react';
 
 export default function useDashboardFilters() {
   const [filters, setFilters] = useState({
+    contractId: '',
     status: '',
     category: '',
+    riskLevel: '',
+    supplierSearch: '',
+    pqmMin: '',
+    pqmMax: '',
     dateFrom: '',
     dateTo: '',
     page: 1,
@@ -16,21 +21,26 @@ export default function useDashboardFilters() {
     setFilters(prev => ({
       ...prev,
       [key]: value,
-      ...(key !== 'page' && { page: 1 }) // Reset page on filter change
+      ...(key !== 'page' && { page: 1 })
     }));
   }, []);
 
   const resetFilters = useCallback(() => {
-    setFilters({
+    setFilters(prev => ({
+      contractId: prev.contractId,
       status: '',
       category: '',
+      riskLevel: '',
+      supplierSearch: '',
+      pqmMin: '',
+      pqmMax: '',
       dateFrom: '',
       dateTo: '',
       page: 1,
       pageSize: 10,
       sortBy: 'pqmScore',
       sortOrder: 'desc'
-    });
+    }));
   }, []);
 
   return { filters, updateFilter, resetFilters };

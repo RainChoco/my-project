@@ -1,20 +1,24 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useFormik } from 'formik';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { FileEdit, ScanSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '../components/NativeSelect';
+import TenderImageDropzone from '../components/TenderImageDropzone';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { createTenderSchema, editTenderSchema } from '../schemas';
 import { BCA_GRADES, LOCKED_FOR_EDIT_STATUSES, STATUS_LABELS } from '../constants';
-import { createTender, updateTender, getTender } from '../services/tenderApi';
+import { createTender, updateTender, getTender, uploadTenderImage } from '../services/tenderApi';
+import { fetchContracts } from '@/features/contracts/services/contractApi';
 
 const CREATE_DEFAULTS = {
+  contractId: '',
   tender_ref_no: '',
   vendor_name: '',
   submission_date: '',
@@ -35,13 +39,99 @@ function FieldError({ formik, name }) {
   return <p className="text-xs text-destructive">{formik.errors[name]}</p>;
 }
 
+// Initial step shown at /tenders/new before the manual-entry form - lets the user
+// pick between filling the form in themselves or (eventually) an OCR-based upload.
+function EntryModeSelection({ onSelectManual, onSelectLookup }) {
+  return (
+    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>New Tender Submission</CardTitle>
+          <CardDescription>Choose how you&apos;d like to log this tender.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={onSelectManual}
+            className="flex flex-col items-start gap-2 rounded-xl border border-border p-5 text-left transition-colors hover:border-primary hover:bg-primary/5"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <FileEdit className="h-5 w-5 text-primary" />
+            </div>
+            <span className="font-semibold">New Tender Submission</span>
+            <span className="text-sm text-muted-foreground">
+              Manual entry - fill in Contract Opportunity, vendor, price, and dates yourself.
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onSelectLookup}
+            className="flex flex-col items-start gap-2 rounded-xl border border-border p-5 text-left transition-colors hover:border-primary hover:bg-primary/5"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <ScanSearch className="h-5 w-5 text-primary" />
+            </div>
+            <span className="font-semibold">Existing / Past Record</span>
+            <span className="text-sm text-muted-foreground">
+              OCR upload - look up by reference number or upload an existing document package.
+            </span>
+          </button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Info panel shown when a contract is selected
+function ContractInfoPanel({ contract }) {
+  if (!contract) return null;
+  const closingDate = contract.closingDate ? new Date(contract.closingDate) : null;
+  const isPastDeadline = closingDate && closingDate < new Date();
+  const isBlocked = ['Archived', 'Closed', 'Cancelled'].includes(contract.status);
+
+  return (
+    <div style={{
+      border: isBlocked ? '1px solid #ef4444' : isPastDeadline ? '1px solid #f59e0b' : '1px solid #3b82f6',
+      borderRadius: '10px',
+      padding: '1rem',
+      background: isBlocked ? '#fef2f2' : isPastDeadline ? '#fffbeb' : '#eff6ff',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.5rem'
+    }}>
+      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1e3a5f' }}>{contract.name}</div>
+      <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', fontSize: '0.85rem', color: '#374151' }}>
+        <span><strong>ID:</strong> {contract.id}</span>
+        <span><strong>Category:</strong> {contract.category}</span>
+        <span><strong>Status:</strong> {contract.status}</span>
+        <span><strong>Closing:</strong> {closingDate ? closingDate.toLocaleDateString() : '—'}</span>
+      </div>
+      {isBlocked && (
+        <p style={{ color: '#ef4444', fontSize: '0.82rem', fontWeight: 600 }}>
+          ⚠ This contract is {contract.status}. Tender submission is not allowed.
+        </p>
+      )}
+      {!isBlocked && isPastDeadline && (
+        <p style={{ color: '#b45309', fontSize: '0.82rem', fontWeight: 600 }}>
+          ⚠ The closing date has passed. Contact a procurement officer before submitting.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function TenderFormPage({ mode }) {
   const isEditMode = mode === 'edit';
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [serverError, setServerError] = useState(null);
+  const [tenderImageFile, setTenderImageFile] = useState(null);
+  // null = show the entry-mode selection screen (create mode only); edit mode skips it.
+  const [entryMode, setEntryMode] = useState(isEditMode ? 'manual' : null);
 
   const {
     data: tender,
@@ -54,10 +144,22 @@ function TenderFormPage({ mode }) {
     enabled: isEditMode,
   });
 
+  // Load contracts for the selector (create mode only)
+  const { data: contracts = [], isLoading: isContractsLoading } = useQuery({
+    queryKey: ['contracts'],
+    queryFn: fetchContracts,
+    enabled: !isEditMode,
+  });
+
+  // Pre-fill contractId when arriving from ContractDetailPage's "New Tender" button
+  // (navigate('/tenders/new', { state: { contractId } })).
+  const prefilledContractId = location.state?.contractId ?? '';
+
   const initialValues = useMemo(() => {
-    if (!isEditMode) return CREATE_DEFAULTS;
+    if (!isEditMode) return { ...CREATE_DEFAULTS, contractId: prefilledContractId };
     if (!tender) return EDIT_DEFAULTS;
     return {
+      contractId: tender.contractId ?? '',
       tender_ref_no: tender.tender_ref_no ?? '',
       vendor_name: tender.vendor_name ?? '',
       submission_date: tender.submission_date ?? '',
@@ -68,14 +170,18 @@ function TenderFormPage({ mode }) {
       bca_fm01_grade: tender.bca_fm01_grade ?? '',
       non_debarment_declared: tender.non_debarment_declared ?? false,
     };
-  }, [isEditMode, tender]);
+  }, [isEditMode, tender, prefilledContractId]);
 
   const schema = isEditMode ? editTenderSchema : createTenderSchema;
   const isLocked = isEditMode && tender && LOCKED_FOR_EDIT_STATUSES.includes(tender.status);
 
   const createMutation = useMutation({ mutationFn: createTender });
   const updateMutation = useMutation({ mutationFn: (payload) => updateTender(id, payload) });
-  const isSubmittingMutation = createMutation.isPending || updateMutation.isPending;
+  const uploadImageMutation = useMutation({
+    mutationFn: ({ tenderId, file }) => uploadTenderImage(tenderId, file),
+  });
+  const isSubmittingMutation =
+    createMutation.isPending || updateMutation.isPending || uploadImageMutation.isPending;
 
   const formik = useFormik({
     initialValues,
@@ -86,18 +192,35 @@ function TenderFormPage({ mode }) {
       const payload = schema.cast(values, { stripUnknown: true });
 
       try {
+        let tenderId = id;
         if (isEditMode) {
           const updated = await updateMutation.mutateAsync(payload);
           queryClient.invalidateQueries({ queryKey: ['tenders'] });
           queryClient.invalidateQueries({ queryKey: ['tender', id] });
           toast({ title: 'Tender updated', description: `${updated.tender_ref_no} was saved.`, variant: 'success' });
-          navigate(`/tenders/${id}`);
         } else {
           const created = await createMutation.mutateAsync(payload);
+          tenderId = created.id;
           queryClient.invalidateQueries({ queryKey: ['tenders'] });
+          queryClient.invalidateQueries({ queryKey: ['contract-tenders', payload.contractId] });
           toast({ title: 'Tender created', description: `${created.tender_ref_no} was logged as a draft.`, variant: 'success' });
-          navigate(`/tenders/${created.id}`);
         }
+
+        if (tenderImageFile) {
+          try {
+            await uploadImageMutation.mutateAsync({ tenderId, file: tenderImageFile });
+            queryClient.invalidateQueries({ queryKey: ['tender', String(tenderId)] });
+          } catch (uploadError) {
+            const uploadMessage = uploadError.response?.data?.message ?? 'Image upload failed.';
+            toast({
+              title: 'Tender saved, but image upload failed',
+              description: uploadMessage,
+              variant: 'destructive',
+            });
+          }
+        }
+
+        navigate(`/tenders/${tenderId}`);
       } catch (error) {
         const message = error.response?.data?.message ?? 'Something went wrong. Please try again.';
         if (error.response?.status === 409 && !isEditMode) {
@@ -108,6 +231,22 @@ function TenderFormPage({ mode }) {
       }
     },
   });
+
+  // Derive the selected contract object for the info panel
+  const selectedContract = !isEditMode
+    ? contracts.find((c) => c.id === formik.values.contractId) ?? null
+    : tender?.contract ?? null;
+
+  const isContractBlocked = selectedContract && ['Archived', 'Closed', 'Cancelled'].includes(selectedContract.status);
+
+  if (!isEditMode && entryMode === null) {
+    return (
+      <EntryModeSelection
+        onSelectManual={() => setEntryMode('manual')}
+        onSelectLookup={() => navigate('/tenders/lookup')}
+      />
+    );
+  }
 
   if (isEditMode && isTenderLoading) {
     return (
@@ -145,11 +284,21 @@ function TenderFormPage({ mode }) {
             <CardDescription>
               {isEditMode
                 ? 'Correct declared details before evaluation begins.'
-                : 'Log a vendor tender package into the system.'}
+                : 'Log a vendor tender package into the system. A Contract Opportunity is required.'}
             </CardDescription>
           </CardHeader>
 
           <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label>Tender Document / Image (optional)</Label>
+              <TenderImageDropzone
+                file={tenderImageFile}
+                onFileSelect={setTenderImageFile}
+                onRemove={() => setTenderImageFile(null)}
+                disabled={isLocked || isSubmittingMutation}
+              />
+            </div>
+
             {isLocked && (
               <Alert variant="destructive">
                 <AlertDescription>
@@ -165,6 +314,43 @@ function TenderFormPage({ mode }) {
             )}
 
             <fieldset disabled={isLocked} className="flex flex-col gap-4">
+              {/* ── Contract Selector (create mode) ───────────────────────── */}
+              {!isEditMode && (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="contractId">Contract Opportunity <span style={{ color: '#ef4444' }}>*</span></Label>
+                  {isContractsLoading ? (
+                    <Skeleton className="h-9 w-full" />
+                  ) : (
+                    <NativeSelect
+                      id="contractId"
+                      name="contractId"
+                      value={formik.values.contractId}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                    >
+                      <option value="">— Select a Contract Opportunity —</option>
+                      {contracts.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.id} — {c.name} [{c.status}]
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  )}
+                  {formik.touched.contractId && formik.errors.contractId && (
+                    <p className="text-xs text-destructive">{formik.errors.contractId}</p>
+                  )}
+                  {selectedContract && <ContractInfoPanel contract={selectedContract} />}
+                </div>
+              )}
+
+              {/* ── Edit mode: show linked contract (read-only) ─────────── */}
+              {isEditMode && tender?.contract && (
+                <div className="flex flex-col gap-1.5">
+                  <Label>Linked Contract Opportunity</Label>
+                  <ContractInfoPanel contract={tender.contract} />
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="tender_ref_no">Tender Reference No.</Label>
@@ -310,13 +496,31 @@ function TenderFormPage({ mode }) {
             </fieldset>
           </CardContent>
 
-          <CardFooter className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => navigate(-1)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={formik.isSubmitting || isSubmittingMutation || isLocked}>
-              {formik.isSubmitting || isSubmittingMutation ? 'Saving...' : 'Save Tender'}
-            </Button>
+          <CardFooter className="flex items-center justify-between gap-2">
+            <div>
+              {!isEditMode && (
+                <Button type="button" variant="ghost" onClick={() => setEntryMode(null)}>
+                  ← Back
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  formik.isSubmitting ||
+                  isSubmittingMutation ||
+                  isLocked ||
+                  (!isEditMode && !formik.values.contractId) ||
+                  isContractBlocked
+                }
+              >
+                {formik.isSubmitting || isSubmittingMutation ? 'Saving...' : 'Save Tender'}
+              </Button>
+            </div>
           </CardFooter>
         </form>
       </Card>

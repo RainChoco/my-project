@@ -1,5 +1,2 @@
-const MockTenderRepository = require('./MockTenderRepository');
-// Swap this line when Zheng Hong's DB implementation is ready:
-// const DatabaseTenderRepository = require('./DatabaseTenderRepository');
-
-module.exports = new MockTenderRepository();
+// Swap from Mock to real database implementation
+module.exports = require('./DatabaseTenderRepository');
