@@ -119,7 +119,8 @@ export default function EvaluationCriteriaPage() {
         <div>
           <h1 className="text-2xl font-semibold">Evaluation Criteria</h1>
           <p className="text-sm text-muted-foreground">
-            Weighted price/quality criteria used to compute the PQM score.
+            Configure the weighted price and quality criteria that staff will use
+            when scoring tender submissions.
           </p>
         </div>
         <Button
@@ -139,7 +140,10 @@ export default function EvaluationCriteriaPage() {
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
             <CardTitle className="text-base">Active weight total</CardTitle>
-            <CardDescription>Must reach exactly 100% before evaluations can be scored.</CardDescription>
+            <CardDescription>
+              Active criteria must total exactly 100% before staff can create and
+              score a tender evaluation.
+            </CardDescription>
           </div>
           <Badge
             variant="outline"
