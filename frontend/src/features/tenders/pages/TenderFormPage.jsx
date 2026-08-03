@@ -197,12 +197,17 @@ function TenderFormPage({ mode }) {
   );
 
   // Pre-fill contractId when arriving from ContractDetailPage's "New Tender" button
-  // (navigate('/tenders/new', { state: { contractId } })).
+  // (navigate('/tenders/new', { state: { contractId } })), and/or other fields when
+  // arriving from TenderRecordLookupPage's "Apply to New Tender Form" button
+  // (navigate('/tenders/new', { state: { contractId, prefill: { vendor_name, ... } } })).
   const prefilledContractId = location.state?.contractId ?? '';
+  const prefill = location.state?.prefill ?? {};
   const todayStr = new Date().toISOString().slice(0, 10);
 
   const initialValues = useMemo(() => {
-    if (!isEditMode) return { ...CREATE_DEFAULTS, contractId: prefilledContractId, submission_date: todayStr };
+    if (!isEditMode) {
+      return { ...CREATE_DEFAULTS, contractId: prefilledContractId, submission_date: todayStr, ...prefill };
+    }
     if (!tender) return EDIT_DEFAULTS;
     return {
       contractId: tender.contractId ?? '',
@@ -216,7 +221,7 @@ function TenderFormPage({ mode }) {
       bca_fm01_grade: tender.bca_fm01_grade ?? '',
       non_debarment_declared: tender.non_debarment_declared ?? false,
     };
-  }, [isEditMode, tender, prefilledContractId, todayStr]);
+  }, [isEditMode, tender, prefilledContractId, todayStr, location.state]);
 
   const schema = isEditMode ? editTenderSchema : createTenderSchema;
   const isLocked = isEditMode && tender && LOCKED_FOR_EDIT_STATUSES.includes(tender.status);

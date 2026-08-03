@@ -99,9 +99,9 @@ function TenderStatsOverview({ tenders = [], totalCount = 0, isLoading }) {
               <span className="text-sm">No submission data yet</span>
             </div>
           ) : (
-            <div className="h-64 w-full">
+            <div className="mx-auto h-64 w-full max-w-2xl">
               <ResponsiveContainer>
-                <BarChart data={chartData} margin={{ top: 16, right: 16, left: 4, bottom: 20 }}>
+                <BarChart data={chartData} margin={{ top: 16, right: 16, left: 4, bottom: 20 }} barCategoryGap="20%">
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                   <XAxis
                     dataKey="name"
@@ -114,7 +114,7 @@ function TenderStatsOverview({ tenders = [], totalCount = 0, isLoading }) {
                     label={{ value: 'Submission Count', angle: -90, position: 'insideLeft', fontSize: 12 }}
                   />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))' }} />
-                  <Bar dataKey="count" name="Submissions" fill="#E31E24" radius={[4, 4, 0, 0]} maxBarSize={32}>
+                  <Bar dataKey="count" name="Submissions" fill="#E31E24" radius={[4, 4, 0, 0]} maxBarSize={48}>
                     <LabelList dataKey="count" position="top" style={{ fontSize: '11px', fontWeight: 700, fill: 'hsl(var(--foreground))' }} />
                   </Bar>
                 </BarChart>
