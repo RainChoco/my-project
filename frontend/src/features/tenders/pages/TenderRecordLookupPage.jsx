@@ -8,13 +8,28 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import TenderImageDropzone from '../components/TenderImageDropzone';
 
-// Placeholder destination for the "Existing / Past Record (OCR Upload)" entry option
-// on TenderFormPage's mode-selection screen. No reference lookup or OCR extraction
-// exists in the backend yet, so the inputs below are intentionally non-functional -
-// this just reserves the route/UI shape until that work is scoped.
+// Past tender records may show up as a spreadsheet export, a scanned image, or the
+// original PDF/Word package - so this lookup accepts a broader format set than the
+// New Tender Submission upload, which only takes a fresh PDF/DOCX package.
+const OCR_ACCEPTED_TYPES = [
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/*',
+];
+const OCR_ACCEPT_ATTR =
+  '.xlsx,.xls,.png,.jpg,.jpeg,.webp,.pdf,.docx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,image/*';
+const OCR_HELP_TEXT = 'Excel, PDF, Word, or Scanned Image (PNG, JPG) - up to 20MB';
+const OCR_ERROR_TEXT = 'Only Excel, PDF, Word, or image (PNG/JPG/WEBP) files are supported.';
+
+// Reference lookup by tender number isn't wired up in the backend yet, so that
+// field stays disabled. The upload dropzone below is otherwise fully interactive -
+// selecting a file just stages it locally until OCR/AI extraction is wired up.
 function TenderRecordLookupPage() {
   const navigate = useNavigate();
   const [refNo, setRefNo] = useState('');
+  const [uploadedFile, setUploadedFile] = useState(null);
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
@@ -25,15 +40,16 @@ function TenderRecordLookupPage() {
             <CardTitle>Existing / Past Record Lookup (OCR Upload)</CardTitle>
           </div>
           <CardDescription>
-            Look up a past tender by reference number, or upload an existing document package for OCR extraction.
+            Upload an existing tender package, scanned document, or spreadsheet for OCR / AI data extraction.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="flex flex-col gap-5">
           <Alert>
             <AlertDescription>
-              Coming soon - reference lookup and OCR extraction aren&apos;t wired up yet. Use &quot;New Tender
-              Submission&quot; for manual entry in the meantime.
+              Uploaded files below are staged for OCR / AI data extraction to help pre-fill this tender&apos;s
+              details. Reference number lookup isn&apos;t wired up yet - use &quot;New Tender Submission&quot; for
+              manual entry in the meantime.
             </AlertDescription>
           </Alert>
 
@@ -54,8 +70,16 @@ function TenderRecordLookupPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Upload Document / PDF Package</Label>
-            <TenderImageDropzone file={null} onFileSelect={() => {}} onRemove={() => {}} disabled />
+            <Label>Upload Document / Spreadsheet / Scan</Label>
+            <TenderImageDropzone
+              file={uploadedFile}
+              onFileSelect={setUploadedFile}
+              onRemove={() => setUploadedFile(null)}
+              acceptedTypes={OCR_ACCEPTED_TYPES}
+              acceptAttr={OCR_ACCEPT_ATTR}
+              helpText={OCR_HELP_TEXT}
+              errorText={OCR_ERROR_TEXT}
+            />
           </div>
         </CardContent>
 

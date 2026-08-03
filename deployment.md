@@ -49,7 +49,7 @@ This document covers deploying the Tender Evaluation Platform to production:
 | Variable | Value |
 |---|---|
 | `NODE_ENV` | `production` |
-| `PORT` | `5050` |
+| `PORT` | `5000` |
 | `DATABASE_URL` | Neon connection string |
 | `JWT_SECRET` | A strong random secret (min 32 chars) |
 | `CLOUDINARY_CLOUD_NAME` | Your Cloudinary cloud name |
@@ -131,7 +131,7 @@ const corsOptions = {
 
 ```bash
 # Terminal 1 — Backend
-cd backend && npm run dev     # http://localhost:5050
+cd backend && npm run dev     # http://127.0.0.1:5000
 
 # Terminal 2 — Frontend
 cd frontend && npm run dev    # http://localhost:5173

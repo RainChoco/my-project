@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '../utils/format';
@@ -101,13 +101,23 @@ function TenderStatsOverview({ tenders = [], totalCount = 0, isLoading }) {
           ) : (
             <div className="h-64 w-full">
               <ResponsiveContainer>
-                <LineChart data={chartData} margin={{ top: 16, right: 16, left: -16, bottom: 0 }}>
+                <BarChart data={chartData} margin={{ top: 16, right: 16, left: 4, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="count" stroke="#2563eb" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                </LineChart>
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 12 }}
+                    label={{ value: 'Month', position: 'insideBottom', offset: -12, fontSize: 12 }}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tick={{ fontSize: 12 }}
+                    label={{ value: 'Submission Count', angle: -90, position: 'insideLeft', fontSize: 12 }}
+                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))' }} />
+                  <Bar dataKey="count" name="Submissions" fill="#E31E24" radius={[4, 4, 0, 0]} maxBarSize={32}>
+                    <LabelList dataKey="count" position="top" style={{ fontSize: '11px', fontWeight: 700, fill: 'hsl(var(--foreground))' }} />
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             </div>
           )}

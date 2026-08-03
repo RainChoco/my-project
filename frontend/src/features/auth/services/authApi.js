@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { persistSession } from '../../../utils/auth';
 
-// Use Vite proxy (/api → http://localhost:5050) — no hardcoded host
+// Use Vite proxy (/api → http://127.0.0.1:5000) — no hardcoded host
 const BASE = '/api/auth';
 
 /**
