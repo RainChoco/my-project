@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "../../../components/ui/button";
+import { Badge } from "../../../components/ui/badge";
 
 import {
     Card,
@@ -17,6 +18,12 @@ import {
     TableHeader,
     TableRow,
 } from "../../../components/ui/table";
+
+const STATUS_BADGE_VARIANTS = {
+    Generated: "success",
+    Approved: "success",
+    Pending: "warning",
+};
 
 function HistoryPage() {
 
@@ -62,15 +69,13 @@ function HistoryPage() {
 
                 <div>
 
-                    <h1 className="text-3xl font-bold text-red-700">
+                    <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                         Generation History
                     </h1>
 
-                    <p className="mt-2 text-gray-500">
+                    <p className="mt-1 text-sm text-muted-foreground">
                         View previously generated board papers and proposals.
                     </p>
-
-                    <hr className="mt-6 border-gray-200" />
 
                 </div>
 
@@ -124,7 +129,7 @@ function HistoryPage() {
 
                                         <TableCell
                                             colSpan={5}
-                                            className="text-center text-gray-500 py-10"
+                                            className="text-center text-muted-foreground py-10"
                                         >
 
                                             No board papers or proposals generated yet.
@@ -153,11 +158,9 @@ function HistoryPage() {
 
                                             <TableCell>
 
-                                                <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-
+                                                <Badge variant={STATUS_BADGE_VARIANTS[item.status] ?? "secondary"}>
                                                     {item.status}
-
-                                                </span>
+                                                </Badge>
 
                                             </TableCell>
 

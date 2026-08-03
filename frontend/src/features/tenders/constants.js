@@ -7,6 +7,8 @@ export const ELIGIBILITY_STATUS_VALUES = ['pending', 'eligible', 'flagged', 'rej
 
 export const BCA_GRADES = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6'];
 
+export const BIZSAFE_LEVELS = ['None', 'Level 1', 'Level 2', 'Level 3', 'STAR'];
+
 export const FILE_TYPE_VALUES = ['main_offer', 'alternative_offer', 'license', 'other'];
 
 export const FILE_TYPE_LABELS = {

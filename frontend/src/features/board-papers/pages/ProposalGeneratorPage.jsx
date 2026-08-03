@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "../../../components/ui/button";
+import { Badge } from "../../../components/ui/badge";
 
 import {
     Card,
@@ -52,23 +53,21 @@ function ProposalGeneratorPage() {
 
             <div>
 
-                <h1 className="text-3xl font-bold text-red-700">
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground">
 
                     Proposal Generation
 
                 </h1>
 
-                <p className="text-gray-500 mt-2">
+                <p className="mt-1 text-sm text-muted-foreground">
 
                     Generate a proposal based on the AI-generated board paper.
 
                 </p>
 
-                <div className="mt-3 inline-flex rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-700">
+                <Badge className="mt-3 bg-red-100 text-red-700 hover:bg-red-100">
                     AI Assisted Proposal
-                </div>
-
-                <hr className="mt-6 border-gray-200" />
+                </Badge>
 
             </div>
 
@@ -139,7 +138,7 @@ function ProposalGeneratorPage() {
                             }
                         />
 
-                        <p className="text-right text-sm text-gray-400">
+                        <p className="text-right text-sm text-muted-foreground">
 
                             {proposal.content.length} characters
 
@@ -157,7 +156,6 @@ function ProposalGeneratorPage() {
                         </Button>
 
                         <Button
-                            className="bg-red-700 hover:bg-red-800"
                             onClick={handleGenerate}
                         >
                             Generate Proposal

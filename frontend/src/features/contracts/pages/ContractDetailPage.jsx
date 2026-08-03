@@ -1,111 +1,75 @@
-﻿import React from 'react';
+import { Fragment } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchContractById, fetchContractTenders } from '../services/contractApi';
 import {
   ArrowLeft, Building2, Calendar, DollarSign, Tag, FileText,
-  AlertTriangle, Eye, ClipboardCheck, Users, CheckCircle2,
-  Clock, TrendingUp, Package
+  AlertTriangle, Eye, ClipboardCheck, Users, Clock, TrendingUp,
+  ShieldCheck, Landmark, Wrench, BellRing,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 // ── Status helpers ───────────────────────────────────────────────────────────
-const STATUS_COLORS = {
-  Draft:     { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
-  Open:      { bg: '#f0fdf4', color: '#15803d', border: '#86efac' },
-  Closed:    { bg: '#fef2f2', color: '#b91c1c', border: '#fca5a5' },
-  Archived:  { bg: '#faf5ff', color: '#7c3aed', border: '#c4b5fd' },
-  Cancelled: { bg: '#fff7ed', color: '#c2410c', border: '#fdba74' },
+const CONTRACT_STATUS_BADGE_VARIANTS = {
+  Draft: 'secondary',
+  Open: 'success',
+  Closed: 'destructive',
+  Archived: 'outline',
+  Cancelled: 'warning',
 };
-function StatusBadge({ status }) {
-  const s = STATUS_COLORS[status] ?? STATUS_COLORS.Draft;
-  return (
-    <span style={{
-      background: s.bg, color: s.color, border: `1px solid ${s.border}`,
-      borderRadius: '20px', padding: '0.25rem 0.75rem',
-      fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.02em'
-    }}>
-      {status}
-    </span>
-  );
+function ContractStatusBadge({ status }) {
+  return <Badge variant={CONTRACT_STATUS_BADGE_VARIANTS[status] ?? 'secondary'}>{status}</Badge>;
 }
 
-const TENDER_STATUS_COLORS = {
-  draft:            { bg: '#f1f5f9', color: '#64748b' },
-  submitted:        { bg: '#eff6ff', color: '#1d4ed8' },
-  under_evaluation: { bg: '#fefce8', color: '#854d0e' },
-  approved:         { bg: '#f0fdf4', color: '#166534' },
-  rejected:         { bg: '#fef2f2', color: '#b91c1c' },
-  withdrawn:        { bg: '#f9fafb', color: '#6b7280' },
-};
-function TenderStatusBadge({ status }) {
-  const s = TENDER_STATUS_COLORS[status] ?? TENDER_STATUS_COLORS.draft;
-  return (
-    <span style={{
-      background: s.bg, color: s.color,
-      borderRadius: '6px', padding: '0.2rem 0.6rem',
-      fontSize: '0.76rem', fontWeight: 600, textTransform: 'capitalize'
-    }}>
-      {status?.replace(/_/g, ' ') ?? '—'}
-    </span>
-  );
-}
-
+const RISK_BADGE_VARIANTS = { low: 'success', medium: 'warning', high: 'destructive' };
+const RISK_ICONS = { low: '🟢', medium: '🟠', high: '🔴' };
 function RiskBadge({ risk }) {
-  if (!risk) return <span style={{ color: '#9ca3af', fontSize: '0.82rem' }}>Pending</span>;
-  const colors = {
-    low:    { bg: '#f0fdf4', color: '#166534', icon: '🟢' },
-    medium: { bg: '#fefce8', color: '#854d0e', icon: '🟠' },
-    high:   { bg: '#fef2f2', color: '#b91c1c', icon: '🔴' },
-  };
-  const s = colors[risk?.toLowerCase()] ?? colors.medium;
+  if (!risk) return <span className="text-sm text-muted-foreground">Pending</span>;
+  const key = risk.toLowerCase();
   return (
-    <span style={{
-      background: s.bg, color: s.color, borderRadius: '6px',
-      padding: '0.2rem 0.6rem', fontSize: '0.76rem', fontWeight: 600,
-      display: 'inline-flex', alignItems: 'center', gap: '4px'
-    }}>
-      {s.icon} {risk}
-    </span>
+    <Badge variant={RISK_BADGE_VARIANTS[key] ?? 'warning'}>
+      {RISK_ICONS[key] ?? ''} {risk}
+    </Badge>
   );
 }
 
 // ── KPI Summary Card ─────────────────────────────────────────────────────────
 function SummaryCard({ icon: Icon, iconColor, iconBg, label, value, sub, subColor }) {
   return (
-    <div style={{
-      background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb',
-      padding: '1.1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem',
-      boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
-    }}>
-      <div style={{
-        background: iconBg, borderRadius: '10px', padding: '0.7rem',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-      }}>
-        <Icon size={20} color={iconColor} />
-      </div>
-      <div>
-        <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 500, marginBottom: '2px' }}>{label}</div>
-        <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#111827', lineHeight: 1 }}>{value}</div>
-        {sub && <div style={{ fontSize: '0.72rem', color: subColor || '#6b7280', marginTop: '3px', fontWeight: 500 }}>{sub}</div>}
-      </div>
-    </div>
+    <Card>
+      <CardContent className="flex items-center gap-4 p-5">
+        <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', iconBg)}>
+          <Icon className={cn('h-5 w-5', iconColor)} />
+        </div>
+        <div>
+          <div className="text-xs font-medium text-muted-foreground">{label}</div>
+          <div className="text-xl font-bold leading-tight text-foreground">{value}</div>
+          {sub && <div className={cn('mt-0.5 text-xs font-medium', subColor ?? 'text-muted-foreground')}>{sub}</div>}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
 // ── Progress Bar ─────────────────────────────────────────────────────────────
-function ProgressBar({ value, max, color = '#3b82f6', label }) {
+function ProgressBar({ value, max, colorClass = 'bg-primary', label }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-        <span style={{ fontSize: '0.8rem', color: '#374151', fontWeight: 600 }}>{label}</span>
-        <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>{value} / {max} ({pct}%)</span>
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="text-sm font-semibold text-foreground">{label}</span>
+        <span className="text-sm text-muted-foreground">
+          {value} / {max} ({pct}%)
+        </span>
       </div>
-      <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
-        <div style={{
-          height: '100%', width: `${pct}%`, background: color,
-          borderRadius: '4px', transition: 'width 0.6s ease'
-        }} />
+      <div className="h-2 overflow-hidden rounded-full bg-muted">
+        <div className={cn('h-full rounded-full transition-all', colorClass)} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -118,24 +82,23 @@ const STEP_LABELS = { draft: 'Draft', submitted: 'Submitted', under_evaluation: 
 function TenderWorkflow({ status }) {
   const currentIdx = WORKFLOW_STEPS.indexOf(status ?? 'draft');
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+    <div className="flex items-center gap-1">
       {WORKFLOW_STEPS.map((step, i) => {
-        const isDone    = i < currentIdx;
+        const isDone = i < currentIdx;
         const isCurrent = i === currentIdx;
         return (
-          <React.Fragment key={step}>
-            <div style={{
-              padding: '2px 8px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700,
-              whiteSpace: 'nowrap',
-              background: isCurrent ? '#3b82f6' : isDone ? '#dcfce7' : '#f3f4f6',
-              color: isCurrent ? 'white' : isDone ? '#166534' : '#9ca3af'
-            }}>
-              {isDone ? '✓ ' : ''}{STEP_LABELS[step]}
+          <Fragment key={step}>
+            <div
+              className={cn(
+                'whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold',
+                isCurrent ? 'bg-primary text-primary-foreground' : isDone ? 'bg-emerald-100 text-emerald-800' : 'bg-muted text-muted-foreground'
+              )}
+            >
+              {isDone ? '✓ ' : ''}
+              {STEP_LABELS[step]}
             </div>
-            {i < WORKFLOW_STEPS.length - 1 && (
-              <div style={{ color: '#d1d5db', fontSize: '0.7rem' }}>→</div>
-            )}
-          </React.Fragment>
+            {i < WORKFLOW_STEPS.length - 1 && <div className="text-xs text-muted-foreground">→</div>}
+          </Fragment>
         );
       })}
     </div>
@@ -162,296 +125,336 @@ export default function ContractDetailPage() {
 
   if (contractLoading) {
     return (
-      <div style={{ padding: '2rem', display: 'flex', justifyContent: 'center' }}>
-        <div style={{ color: '#6b7280' }}>Loading contract…</div>
-      </div>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-48" />
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-9 w-full" />
+          ))}
+        </CardContent>
+      </Card>
     );
   }
   if (contractError || !contract) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <div style={{ fontSize: '1.1rem', color: '#b91c1c', fontWeight: 600 }}>Contract not found</div>
-        <button onClick={() => navigate('/contracts')} style={{ marginTop: '1rem', color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
-          ← Back to Contracts
-        </button>
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <p className="text-lg font-semibold text-destructive">Contract not found</p>
+        <Button variant="ghost" onClick={() => navigate('/contracts')}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Contracts
+        </Button>
       </div>
     );
   }
 
   // ── Derived values ──────────────────────────────────────────────────────
-  const closingDate  = contract.closingDate ? new Date(contract.closingDate) : null;
-  const openingDate  = contract.openingDate ? new Date(contract.openingDate) : null;
+  const closingDate = contract.closingDate ? new Date(contract.closingDate) : null;
+  const openingDate = contract.openingDate ? new Date(contract.openingDate) : null;
   const isPastDeadline = closingDate && closingDate < new Date();
-  const daysLeft     = closingDate ? Math.ceil((closingDate - new Date()) / (1000*60*60*24)) : null;
+  const daysLeft = closingDate ? Math.ceil((closingDate - new Date()) / (1000 * 60 * 60 * 24)) : null;
 
-  const evaluatedCount = tenders.filter(t =>
-    t.evaluations && t.evaluations.length > 0 && t.evaluations[0].pqm_score != null
+  const evaluatedCount = tenders.filter(
+    (t) => t.evaluations && t.evaluations.length > 0 && t.evaluations[0].pqm_score != null
   ).length;
 
-  return (
-    <div style={{
-      padding: '1.75rem', maxWidth: '1200px', margin: '0 auto',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      display: 'flex', flexDirection: 'column', gap: '1.5rem'
-    }}>
+  const formatMoney = (value) => (value != null && value !== '' ? `$${parseFloat(value).toLocaleString()}` : null);
+  const insuranceRange = (() => {
+    const min = formatMoney(contract.publicLiabilityInsuranceMin);
+    const max = formatMoney(contract.publicLiabilityInsuranceMax);
+    if (min && max) return min === max ? min : `${min} - ${max}`;
+    return min || max;
+  })();
+  const contractStartDate = contract.contractStartDate ? new Date(contract.contractStartDate) : null;
+  const contractEndDate = contract.contractEndDate ? new Date(contract.contractEndDate) : null;
+  const contractPeriod =
+    contractStartDate && contractEndDate
+      ? `${contractStartDate.toLocaleDateString()} - ${contractEndDate.toLocaleDateString()}`
+      : contractStartDate?.toLocaleDateString() || contractEndDate?.toLocaleDateString();
 
+  return (
+    <div className="flex flex-col gap-6">
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div>
-        <button
-          onClick={() => navigate('/contracts')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#6b7280', fontSize: '0.85rem', padding: 0, marginBottom: '0.75rem' }}
-        >
-          <ArrowLeft size={14} /> Back to Contracts
-        </button>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+        <Button variant="ghost" size="sm" className="mb-2 h-auto px-0 text-muted-foreground hover:bg-transparent hover:text-foreground" onClick={() => navigate('/contracts')}>
+          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to Contracts
+        </Button>
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#111827', margin: 0 }}>{contract.name}</h1>
-            <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: '0.25rem 0 0', fontFamily: 'monospace' }}>{contract.id}</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">{contract.name}</h1>
+            <p className="font-mono text-sm text-muted-foreground">{contract.id}</p>
           </div>
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <StatusBadge status={contract.status} />
-            <button
-              onClick={() => navigate(`/contracts/${id}/edit`)}
-              style={{ background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', padding: '0.55rem 1.1rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}
-            >
-              Edit Contract
-            </button>
+          <div className="flex items-center gap-3">
+            <ContractStatusBadge status={contract.status} />
+            <Button onClick={() => navigate(`/contracts/${id}/edit`)}>Edit Contract</Button>
           </div>
         </div>
       </div>
 
       {/* ── Alert Banner ───────────────────────────────────────────────── */}
       {isPastDeadline && contract.status !== 'Archived' && (
-        <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '10px', padding: '0.875rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <AlertTriangle size={18} color="#b45309" />
-          <span style={{ color: '#92400e', fontWeight: 600, fontSize: '0.875rem' }}>
-            This contract's closing date has passed ({closingDate.toLocaleDateString()}). Consider updating its status.
-          </span>
-        </div>
+        <Alert className="border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertDescription className="font-medium text-amber-900 dark:text-amber-200">
+            This contract&apos;s closing date has passed ({closingDate.toLocaleDateString()}). Consider updating its status.
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* ── Closing Soon notification ────────────────────────────────── */}
       {!isPastDeadline && daysLeft !== null && daysLeft <= 7 && (
-        <div style={{ background: '#fff7ed', border: '1px solid #fdba74', borderRadius: '10px', padding: '0.875rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Clock size={18} color="#c2410c" />
-          <span style={{ color: '#9a3412', fontWeight: 600, fontSize: '0.875rem' }}>
+        <Alert className="border-orange-300 bg-orange-50 text-orange-900 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-200">
+          <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+          <AlertDescription className="font-medium text-orange-900 dark:text-orange-200">
             ⚠ Contract closes in {daysLeft} day{daysLeft !== 1 ? 's' : ''}.
-            {tenders.filter(t => !t.evaluations?.length).length > 0 &&
-              ` ${tenders.filter(t => !t.evaluations?.length).length} supplier(s) still pending evaluation.`}
-          </span>
-        </div>
+            {tenders.filter((t) => !t.evaluations?.length).length > 0 &&
+              ` ${tenders.filter((t) => !t.evaluations?.length).length} supplier(s) still pending evaluation.`}
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* ── KPI Summary Cards ──────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard
           icon={DollarSign}
-          iconColor="#059669" iconBg="#f0fdf4"
+          iconColor="text-emerald-600"
+          iconBg="bg-emerald-100"
           label="Budget Limit"
           value={contract.budgetLimit ? `$${parseFloat(contract.budgetLimit).toLocaleString()}` : '—'}
           sub={contract.category}
         />
         <SummaryCard
           icon={Calendar}
-          iconColor={isPastDeadline ? '#b91c1c' : daysLeft !== null && daysLeft <= 7 ? '#c2410c' : '#3b82f6'}
-          iconBg={isPastDeadline ? '#fef2f2' : daysLeft !== null && daysLeft <= 7 ? '#fff7ed' : '#eff6ff'}
+          iconColor={isPastDeadline ? 'text-destructive' : daysLeft !== null && daysLeft <= 7 ? 'text-orange-600' : 'text-primary'}
+          iconBg={isPastDeadline ? 'bg-destructive/10' : daysLeft !== null && daysLeft <= 7 ? 'bg-orange-100' : 'bg-primary/10'}
           label="Closing Date"
           value={closingDate ? closingDate.toLocaleDateString() : '—'}
           sub={isPastDeadline ? 'Deadline passed' : daysLeft !== null ? `${daysLeft} days remaining` : ''}
-          subColor={isPastDeadline ? '#b91c1c' : daysLeft !== null && daysLeft <= 7 ? '#c2410c' : '#3b82f6'}
+          subColor={isPastDeadline ? 'text-destructive' : daysLeft !== null && daysLeft <= 7 ? 'text-orange-600' : 'text-primary'}
         />
         <SummaryCard
           icon={Users}
-          iconColor="#7c3aed" iconBg="#faf5ff"
+          iconColor="text-violet-600"
+          iconBg="bg-violet-100"
           label="Suppliers"
           value={tendersLoading ? '…' : tenders.length}
           sub={tenders.length === 1 ? '1 submission received' : `${tenders.length} submissions received`}
         />
         <SummaryCard
           icon={ClipboardCheck}
-          iconColor={evaluatedCount === tenders.length && tenders.length > 0 ? '#059669' : '#f59e0b'}
-          iconBg={evaluatedCount === tenders.length && tenders.length > 0 ? '#f0fdf4' : '#fffbeb'}
+          iconColor={evaluatedCount === tenders.length && tenders.length > 0 ? 'text-emerald-600' : 'text-amber-600'}
+          iconBg={evaluatedCount === tenders.length && tenders.length > 0 ? 'bg-emerald-100' : 'bg-amber-100'}
           label="Evaluated"
           value={tendersLoading ? '…' : `${evaluatedCount} / ${tenders.length}`}
           sub={evaluatedCount === tenders.length && tenders.length > 0 ? 'All evaluated' : 'Pending evaluations'}
-          subColor={evaluatedCount === tenders.length && tenders.length > 0 ? '#059669' : '#d97706'}
+          subColor={evaluatedCount === tenders.length && tenders.length > 0 ? 'text-emerald-600' : 'text-amber-600'}
         />
       </div>
 
       {/* ── Contract Details + Progress ────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.25rem', alignItems: 'start' }}>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
         {/* Details card */}
-        <div style={{ background: 'white', borderRadius: '14px', border: '1px solid #e5e7eb', padding: '1.5rem', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', marginBottom: '1.25rem' }}>Contract Details</h2>
-          {contract.description && (
-            <p style={{ color: '#4b5563', fontSize: '0.9rem', marginBottom: '1.25rem', lineHeight: 1.7 }}>{contract.description}</p>
-          )}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.25rem' }}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Contract Details</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {contract.description && <CardDescription className="leading-relaxed">{contract.description}</CardDescription>}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {[
+                { icon: Tag, label: 'Category', value: contract.category },
+                { icon: DollarSign, label: 'Budget Limit', value: contract.budgetLimit ? `$${parseFloat(contract.budgetLimit).toLocaleString()}` : '—' },
+                { icon: Calendar, label: 'Opening Date', value: openingDate?.toLocaleDateString() },
+                { icon: Calendar, label: 'Closing Date', value: closingDate?.toLocaleDateString() },
+                { icon: Building2, label: 'Status', value: contract.status },
+              ].map(({ icon: Icon, label, value }) => (
+                <div key={label} className="flex items-start gap-3">
+                  <div className="flex shrink-0 items-center justify-center rounded-lg bg-primary/10 p-2">
+                    <Icon className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-muted-foreground">{label}</div>
+                    <div className="text-sm font-semibold text-foreground">{value ?? '—'}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Progress panel */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Procurement Progress</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-5">
+            <ProgressBar label="Supplier Submissions" value={tenders.length} max={Math.max(tenders.length, 1)} colorClass="bg-primary" />
+            <ProgressBar
+              label="Evaluations Completed"
+              value={evaluatedCount}
+              max={Math.max(tenders.length, 1)}
+              colorClass={evaluatedCount === tenders.length && tenders.length > 0 ? 'bg-emerald-500' : 'bg-amber-500'}
+            />
+
+            <div className="border-t pt-3">
+              <div className="mb-1 text-xs font-medium text-muted-foreground">Award Status</div>
+              <div className="flex items-center gap-1.5">
+                <div className={cn('h-2 w-2 rounded-full', evaluatedCount > 0 ? 'bg-emerald-500' : 'bg-amber-500')} />
+                <span className="text-sm font-semibold text-foreground">
+                  {evaluatedCount > 0 ? 'Ready for Review' : 'Pending Evaluations'}
+                </span>
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              className="border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+              onClick={() => navigate('/dashboard')}
+            >
+              <TrendingUp className="mr-1.5 h-3.5 w-3.5" /> View on Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── Contract Terms & Legal Framework ─────────────────────────────── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Contract Terms & Legal Framework</CardTitle>
+          <CardDescription>Financial and compliance terms extracted from the tender documents.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { icon: Tag,        label: 'Category',     value: contract.category },
-              { icon: DollarSign, label: 'Budget Limit', value: contract.budgetLimit ? `$${parseFloat(contract.budgetLimit).toLocaleString()}` : '—' },
-              { icon: Calendar,   label: 'Opening Date', value: openingDate?.toLocaleDateString() },
-              { icon: Calendar,   label: 'Closing Date', value: closingDate?.toLocaleDateString() },
-              { icon: Building2,  label: 'Status',       value: contract.status },
-            ].map(({ icon: Icon, label, value }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <div style={{ background: '#eff6ff', borderRadius: '8px', padding: '0.5rem', display: 'flex', flexShrink: 0 }}>
-                  <Icon size={16} color="#3b82f6" />
+              {
+                icon: Landmark,
+                label: 'Security Deposit / Bank Guarantee',
+                value: formatMoney(contract.securityDepositAmount),
+                sub: contract.bankGuaranteeTerms,
+              },
+              {
+                icon: ShieldCheck,
+                label: 'Public Liability Insurance Coverage',
+                value: insuranceRange,
+              },
+              {
+                icon: DollarSign,
+                label: 'Monthly Management Fee Rate / EDU Rate',
+                value: contract.monthlyManagementFeeRate != null ? `${formatMoney(contract.monthlyManagementFeeRate)} / month` : null,
+              },
+              {
+                icon: Calendar,
+                label: 'Contract Period',
+                value: contractPeriod,
+                sub: contract.optionToExtend ? 'Option to extend' : null,
+              },
+              {
+                icon: Wrench,
+                label: 'Defects Liability / Warranty Period',
+                value: contract.defectsLiabilityPeriodMonths != null ? `${contract.defectsLiabilityPeriodMonths} month(s)` : null,
+              },
+              {
+                icon: BellRing,
+                label: 'Termination Notice Period',
+                value: contract.terminationNoticePeriodDays != null ? `${contract.terminationNoticePeriodDays} day(s)` : null,
+              },
+            ].map(({ icon: Icon, label, value, sub }) => (
+              <div key={label} className="flex items-start gap-3">
+                <div className="flex shrink-0 items-center justify-center rounded-lg bg-primary/10 p-2">
+                  <Icon className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 500 }}>{label}</div>
-                  <div style={{ fontSize: '0.9rem', color: '#111827', fontWeight: 600 }}>{value ?? '—'}</div>
+                  <div className="text-xs font-medium text-muted-foreground">{label}</div>
+                  <div className="text-sm font-semibold text-foreground">{value ?? '—'}</div>
+                  {sub && <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div>}
                 </div>
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Progress panel */}
-        <div style={{ background: 'white', borderRadius: '14px', border: '1px solid #e5e7eb', padding: '1.5rem', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', margin: 0 }}>Procurement Progress</h2>
-
-          <ProgressBar
-            label="Supplier Submissions"
-            value={tenders.length}
-            max={Math.max(tenders.length, 1)}
-            color="#3b82f6"
-          />
-          <ProgressBar
-            label="Evaluations Completed"
-            value={evaluatedCount}
-            max={Math.max(tenders.length, 1)}
-            color={evaluatedCount === tenders.length && tenders.length > 0 ? '#059669' : '#f59e0b'}
-          />
-
-          {/* Award Status */}
-          <div style={{ paddingTop: '0.75rem', borderTop: '1px solid #f3f4f6' }}>
-            <div style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 500, marginBottom: '4px' }}>Award Status</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{
-                width: '8px', height: '8px', borderRadius: '50%',
-                background: evaluatedCount > 0 ? '#059669' : '#f59e0b'
-              }} />
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>
-                {evaluatedCount > 0 ? 'Ready for Review' : 'Pending Evaluations'}
-              </span>
-            </div>
-          </div>
-
-          {/* View on Dashboard button */}
-          <button
-            onClick={() => navigate('/dashboard')}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
-              padding: '0.55rem 1rem', background: '#f0fdf4', color: '#166534',
-              border: '1px solid #86efac', borderRadius: '8px', cursor: 'pointer',
-              fontWeight: 600, fontSize: '0.85rem', width: '100%'
-            }}
-          >
-            <TrendingUp size={14} /> View on Dashboard
-          </button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* ── Submitted Tenders ──────────────────────────────────────────── */}
-      <div style={{ background: 'white', borderRadius: '14px', border: '1px solid #e5e7eb', padding: '1.5rem', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
-            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', margin: 0 }}>Submitted Tenders</h2>
-            <p style={{ color: '#6b7280', fontSize: '0.8rem', margin: '0.2rem 0 0' }}>
-              {tenders.length} tender(s) linked to this contract
-            </p>
+            <CardTitle className="text-base">Submitted Tenders</CardTitle>
+            <CardDescription>{tenders.length} tender(s) linked to this contract</CardDescription>
           </div>
-          <button
-            onClick={() => navigate('/tenders/new', { state: { contractId: contract.id } })}
-            style={{ background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-          >
-            <FileText size={14} /> New Tender
-          </button>
-        </div>
-
-        {tendersLoading ? (
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af' }}>Loading tenders…</div>
-        ) : tenders.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem 1rem', background: '#f9fafb', borderRadius: '10px', border: '1px dashed #d1d5db' }}>
-            <FileText size={32} color="#d1d5db" style={{ margin: '0 auto 0.75rem' }} />
-            <p style={{ color: '#6b7280', fontWeight: 600, marginBottom: '0.25rem' }}>No tenders submitted yet</p>
-            <p style={{ color: '#9ca3af', fontSize: '0.85rem', marginBottom: '1.25rem' }}>Be the first to submit a tender for this contract.</p>
-            <button
-              onClick={() => navigate('/tenders/new', { state: { contractId: contract.id } })}
-              style={{ background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', padding: '0.5rem 1.25rem', cursor: 'pointer', fontWeight: 600 }}
-            >
-              Submit First Tender
-            </button>
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #f1f5f9', background: '#f9fafb' }}>
-                  {['Ref No.', 'Supplier / Vendor', 'Submission Date', 'Workflow', 'PQM Score', 'Risk', 'Actions'].map(h => (
-                    <th key={h} style={{ padding: '0.7rem 0.85rem', textAlign: 'left', color: '#6b7280', fontWeight: 600, fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
+          <Button size="sm" onClick={() => navigate('/tenders/new', { state: { contractId: contract.id } })}>
+            <FileText className="mr-1.5 h-3.5 w-3.5" /> New Tender
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {tendersLoading ? (
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Skeleton key={index} className="h-10 w-full" />
+              ))}
+            </div>
+          ) : tenders.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-12 text-center">
+              <FileText className="h-8 w-8 text-muted-foreground" />
+              <div>
+                <p className="font-semibold text-foreground">No tenders submitted yet</p>
+                <p className="text-sm text-muted-foreground">Be the first to submit a tender for this contract.</p>
+              </div>
+              <Button onClick={() => navigate('/tenders/new', { state: { contractId: contract.id } })}>Submit First Tender</Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Ref No.</TableHead>
+                  <TableHead>Supplier / Vendor</TableHead>
+                  <TableHead>Submission Date</TableHead>
+                  <TableHead>Workflow</TableHead>
+                  <TableHead>PQM Score</TableHead>
+                  <TableHead>Risk</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {tenders.map((t) => {
                   const latestEval = t.evaluations?.[0];
                   return (
-                    <tr key={t.id}
-                      style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.1s' }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                    >
-                      <td style={{ padding: '0.8rem 0.85rem', fontWeight: 600, color: '#1e3a5f', fontFamily: 'monospace' }}>{t.tender_ref_no}</td>
-                      <td style={{ padding: '0.8rem 0.85rem', color: '#374151', fontWeight: 500 }}>{t.vendor_name}</td>
-                      <td style={{ padding: '0.8rem 0.85rem', color: '#6b7280' }}>
+                    <TableRow key={t.id}>
+                      <TableCell className="font-mono text-xs font-medium text-foreground">{t.tender_ref_no}</TableCell>
+                      <TableCell className="font-medium">{t.vendor_name}</TableCell>
+                      <TableCell className="text-muted-foreground">
                         {t.submission_date ? new Date(t.submission_date).toLocaleDateString() : '—'}
-                      </td>
-                      <td style={{ padding: '0.8rem 0.85rem' }}>
+                      </TableCell>
+                      <TableCell>
                         <TenderWorkflow status={t.status} />
-                      </td>
-                      <td style={{ padding: '0.8rem 0.85rem' }}>
+                      </TableCell>
+                      <TableCell>
                         {latestEval?.pqm_score != null ? (
-                          <span style={{
-                            background: latestEval.pqm_score >= 80 ? '#eff6ff' : '#fff7ed',
-                            color: latestEval.pqm_score >= 80 ? '#1d4ed8' : '#c2410c',
-                            borderRadius: '6px', padding: '0.2rem 0.6rem',
-                            fontSize: '0.82rem', fontWeight: 700
-                          }}>
-                            {latestEval.pqm_score.toFixed(1)}
-                          </span>
+                          <Badge variant={latestEval.pqm_score >= 80 ? 'default' : 'warning'}>{latestEval.pqm_score.toFixed(1)}</Badge>
                         ) : (
-                          <span style={{ color: '#9ca3af', fontSize: '0.82rem', fontStyle: 'italic' }}>Pending</span>
+                          <span className="text-sm italic text-muted-foreground">Pending</span>
                         )}
-                      </td>
-                      <td style={{ padding: '0.8rem 0.85rem' }}><RiskBadge risk={latestEval?.risk_level} /></td>
-                      <td style={{ padding: '0.8rem 0.85rem' }}>
-                        <div style={{ display: 'flex', gap: '0.4rem' }}>
-                          <button
-                            onClick={() => navigate(`/tenders/${t.id}`)}
-                            style={{ background: '#eff6ff', border: 'none', borderRadius: '6px', padding: '0.35rem 0.7rem', cursor: 'pointer', color: '#1d4ed8', display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600, fontSize: '0.78rem' }}
-                          >
-                            <Eye size={12} /> View
-                          </button>
-                          <button
-                            onClick={() => navigate(`/evaluations?tenderId=${t.id}`)}
-                            style={{ background: '#f0fdf4', border: 'none', borderRadius: '6px', padding: '0.35rem 0.7rem', cursor: 'pointer', color: '#166534', display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600, fontSize: '0.78rem' }}
-                          >
-                            <ClipboardCheck size={12} /> Evaluate
-                          </button>
+                      </TableCell>
+                      <TableCell>
+                        <RiskBadge risk={latestEval?.risk_level} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => navigate(`/tenders/${t.id}`)}>
+                            <Eye className="mr-1 h-3.5 w-3.5" /> View
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => navigate(`/evaluations?tenderId=${t.id}`)}>
+                            <ClipboardCheck className="mr-1 h-3.5 w-3.5" /> Evaluate
+                          </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

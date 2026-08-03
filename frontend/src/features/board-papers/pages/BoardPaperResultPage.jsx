@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 
 import { Button } from "../../../components/ui/button";
+import { Badge } from "../../../components/ui/badge";
 
 import {
     Card,
@@ -39,15 +40,13 @@ function BoardPaperResultPage() {
 
             <div>
 
-                <h1 className="text-3xl font-bold text-red-700">
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                     AI Generated Board Paper
                 </h1>
 
-                <p className="text-gray-500 mt-2">
+                <p className="mt-1 text-sm text-muted-foreground">
                     Review the AI-generated board paper before exporting or submitting.
                 </p>
-
-                <hr className="mt-6 border-gray-200" />
 
             </div>
 
@@ -67,7 +66,7 @@ function BoardPaperResultPage() {
 
                     <div>
 
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                             Tender
                         </p>
 
@@ -79,7 +78,7 @@ function BoardPaperResultPage() {
 
                     <div>
 
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                             Board Paper Title
                         </p>
 
@@ -91,7 +90,7 @@ function BoardPaperResultPage() {
 
                     <div>
 
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                             Purpose
                         </p>
 
@@ -103,7 +102,7 @@ function BoardPaperResultPage() {
 
                     <div>
 
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                             Prepared By
                         </p>
 
@@ -115,7 +114,7 @@ function BoardPaperResultPage() {
 
                     <div>
 
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                             Generated Date
                         </p>
 
@@ -127,15 +126,11 @@ function BoardPaperResultPage() {
 
                     <div>
 
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                             Status
                         </p>
 
-                        <span className="rounded-full bg-green-100 px-3 py-1 text-green-700 text-sm font-semibold">
-
-                            Generated
-
-                        </span>
+                        <Badge variant="success">Generated</Badge>
 
                     </div>
 
@@ -180,37 +175,27 @@ function BoardPaperResultPage() {
 
                 <CardContent>
 
-                    <div className="text-4xl font-bold text-green-600">
+                    <div className="space-y-3">
 
-                        <div className="space-y-3">
+                        <div className="text-5xl font-bold text-emerald-600">
 
-                            <div className="text-5xl font-bold text-green-600">
-
-                                94%
-
-                            </div>
-
-                            <div className="h-3 rounded-full bg-gray-200">
-
-                                <div className="h-3 w-[94%] rounded-full bg-green-600"></div>
-
-                            </div>
-
-                            <p className="text-gray-500">
-
-                                High confidence based on AI evaluation.
-
-                            </p>
+                            94%
 
                         </div>
 
+                        <div className="h-3 rounded-full bg-muted">
+
+                            <div className="h-3 w-[94%] rounded-full bg-emerald-600"></div>
+
+                        </div>
+
+                        <p className="text-muted-foreground">
+
+                            High confidence based on AI evaluation.
+
+                        </p>
+
                     </div>
-
-                    <p className="text-gray-500 mt-2">
-
-                        High confidence based on evaluation criteria.
-
-                    </p>
 
                 </CardContent>
 
@@ -254,11 +239,7 @@ function BoardPaperResultPage() {
 
                 <CardContent>
 
-                    <div className="inline-flex rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-700">
-
-                        Medium Risk
-
-                    </div>
+                    <Badge variant="warning">Medium Risk</Badge>
 
                     <ul className="list-disc ml-6 mt-4 space-y-2">
 
@@ -328,7 +309,6 @@ function BoardPaperResultPage() {
                 </Button>
 
                 <Button
-                    className="bg-red-700 hover:bg-red-800"
                     onClick={() => navigate("/board-papers/proposal-generation")}
                 >
                     Generate Proposal

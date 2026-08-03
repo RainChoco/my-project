@@ -4,6 +4,7 @@ const STATUS_VALUES = ['draft', 'submitted', 'under_evaluation', 'approved', 're
 const ELIGIBILITY_STATUS_VALUES = ['pending', 'eligible', 'flagged', 'rejected'];
 const FILE_TYPE_VALUES = ['main_offer', 'alternative_offer', 'license', 'other'];
 const BCA_GRADES = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6'];
+const BIZSAFE_LEVELS = ['None', 'Level 1', 'Level 2', 'Level 3', 'STAR'];
 
 const idParams = yup.object({ id: yup.number().integer().required() });
 const idAndDocumentIdParams = yup.object({
@@ -27,7 +28,32 @@ const createTenderSchema = yup.object({
       .typeError('alternative_offer_price must be a number')
       .positive('alternative_offer_price must be a positive number')
       .nullable()
-      .optional()
+      .optional(),
+    // Manual-creation entry point only offers the pre-evaluation subset of each enum -
+    // approved/rejected/withdrawn (status) and rejected (eligibility_status) are only
+    // reached via the evaluation/eligibility-check workflow, not picked at intake.
+    status: yup.string().oneOf(['draft', 'submitted', 'under_evaluation'], 'invalid status').optional(),
+    eligibility_status: yup.string().oneOf(['eligible', 'flagged', 'pending'], 'invalid eligibility_status').optional(),
+    // -- Additional Vendor & Compliance Information (all optional) --
+    vendor_uen: yup.string().trim().nullable().optional(),
+    contact_person_name: yup.string().trim().nullable().optional(),
+    contact_person_email: yup.string().trim().email('contact_person_email must be a valid email').nullable().optional(),
+    proposed_completion_months: yup
+      .number()
+      .typeError('proposed_completion_months must be a number')
+      .integer('proposed_completion_months must be a whole number')
+      .positive('proposed_completion_months must be a positive number')
+      .nullable()
+      .optional(),
+    tender_validity_days: yup
+      .number()
+      .typeError('tender_validity_days must be a number')
+      .integer('tender_validity_days must be a whole number')
+      .positive('tender_validity_days must be a positive number')
+      .nullable()
+      .optional(),
+    bizsafe_level: yup.string().oneOf(BIZSAFE_LEVELS, 'invalid bizsafe_level').nullable().optional(),
+    conflict_of_interest_declared: yup.boolean().optional()
   })
 });
 
@@ -115,6 +141,7 @@ module.exports = {
   ELIGIBILITY_STATUS_VALUES,
   FILE_TYPE_VALUES,
   BCA_GRADES,
+  BIZSAFE_LEVELS,
   createTenderSchema,
   listTendersSchema,
   tenderIdParamsSchema,

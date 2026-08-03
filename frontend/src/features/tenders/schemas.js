@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { BCA_GRADES } from './constants';
+import { BCA_GRADES, BIZSAFE_LEVELS } from './constants';
 
 // Mirrors backend/src/validators/tenderValidator.js's createTenderSchema/updateTenderSchema
 // (body portion) so client-side validation never drifts from what the API will accept.
@@ -35,6 +35,30 @@ export const createTenderSchema = Yup.object({
     .typeError('Alternative offer price must be a number')
     .positive('Alternative offer price must be a positive number')
     .nullable(),
+  status: Yup.string()
+    .oneOf(['draft', 'submitted', 'under_evaluation'], 'Invalid submission status')
+    .required('Submission status is required'),
+  eligibility_status: Yup.string()
+    .oneOf(['eligible', 'flagged', 'pending'], 'Invalid eligibility status')
+    .required('Initial eligibility status is required'),
+  // -- Additional Vendor & Compliance Information (all optional) --
+  vendor_uen: Yup.string().transform(blankToNull).trim().nullable(),
+  contact_person_name: Yup.string().transform(blankToNull).trim().nullable(),
+  contact_person_email: Yup.string().transform(blankToNull).trim().email('Enter a valid email').nullable(),
+  proposed_completion_months: Yup.number()
+    .transform(blankToNull)
+    .typeError('Must be a number')
+    .integer('Must be a whole number')
+    .positive('Must be a positive number')
+    .nullable(),
+  tender_validity_days: Yup.number()
+    .transform(blankToNull)
+    .typeError('Must be a number')
+    .integer('Must be a whole number')
+    .positive('Must be a positive number')
+    .nullable(),
+  bizsafe_level: Yup.string().oneOf(BIZSAFE_LEVELS, 'Invalid bizSAFE level'),
+  conflict_of_interest_declared: Yup.boolean(),
 });
 
 export const editTenderSchema = Yup.object({
