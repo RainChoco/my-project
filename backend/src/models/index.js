@@ -58,13 +58,10 @@ Evaluation.belongsTo(Tender, { foreignKey: 'tender_id', as: 'tender' });
 Tender.hasMany(Evaluation, { foreignKey: 'tender_id' });
 
 Evaluation.hasMany(EvaluationCriterionScore, { as: 'criterionScores', foreignKey: 'evaluation_id', onDelete: 'CASCADE' });
-EvaluationCriterionScore.belongsTo(Evaluation, { foreignKey: 'evaluation_id' });
+EvaluationCriterionScore.belongsTo(Evaluation, { foreignKey: 'evaluation_id', as: 'evaluations' });
 
 EvaluationCriterionScore.belongsTo(EvaluationCriteria, { as: 'criterion', foreignKey: 'evaluation_criteria_id' });
 EvaluationCriteria.hasMany(EvaluationCriterionScore, { foreignKey: 'evaluation_criteria_id' });
-// Evaluation → Tender (FK confirmed: tender_id from 20260101000013-create-evaluations.js)
-Evaluation.belongsTo(Tender, { foreignKey: 'tender_id', as: 'tender' });
-Tender.hasMany(Evaluation, { foreignKey: 'tender_id', as: 'evaluations' });
 
 // --- Sulaiman: Scope D - Alternate Proposal Communication System ---
 
