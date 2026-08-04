@@ -36,6 +36,38 @@ const Contract = sequelize.define('Contract', {
   isDeleted: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
+  },
+  // -- Contract Terms & Legal Framework --
+  securityDepositAmount: {
+    type: DataTypes.DECIMAL(12, 2),
+  },
+  bankGuaranteeTerms: {
+    type: DataTypes.TEXT,
+  },
+  publicLiabilityInsuranceMin: {
+    type: DataTypes.DECIMAL(12, 2),
+  },
+  publicLiabilityInsuranceMax: {
+    type: DataTypes.DECIMAL(12, 2),
+  },
+  monthlyManagementFeeRate: {
+    type: DataTypes.DECIMAL(10, 2),
+  },
+  contractStartDate: {
+    type: DataTypes.DATE,
+  },
+  contractEndDate: {
+    type: DataTypes.DATE,
+  },
+  optionToExtend: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  defectsLiabilityPeriodMonths: {
+    type: DataTypes.INTEGER,
+  },
+  terminationNoticePeriodDays: {
+    type: DataTypes.INTEGER,
   }
 }, {
   timestamps: true,

@@ -1,16 +1,18 @@
 import React from 'react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList
 } from 'recharts';
 import styles from '../styles/dashboard.module.css';
+
+const COLOR_SUBMISSIONS = '#E31E24'; // brand red
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.75rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
         <p style={{ margin: '0 0 0.25rem 0', fontWeight: 600, color: '#374151' }}>{label}</p>
-        <p style={{ margin: 0, color: '#2563eb', fontWeight: 700 }}>
-          Avg PQM: {payload[0].value.toFixed(1)}
+        <p style={{ margin: 0, color: COLOR_SUBMISSIONS, fontWeight: 700, fontSize: '0.85rem' }}>
+          Submissions: {payload[0].value}
         </p>
       </div>
     );
@@ -19,64 +21,62 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function TrendChart({ rankings = [] }) {
-  // Filter for evaluated tenders only
-  const evaluated = rankings.filter(r => r.pqmScore != null);
-
-  // Aggregate average score by submission month
+  // Aggregate submission totals by month
   const monthData = {};
-  evaluated.forEach(r => {
+  rankings.forEach(r => {
     if (!r.submissionDate) return;
     const d = new Date(r.submissionDate);
     if (isNaN(d)) return;
     const month = d.toLocaleString('default', { month: 'short' });
     if (!monthData[month]) {
-      monthData[month] = { total: 0, count: 0, time: d.getTime() };
+      monthData[month] = { submissions: 0, time: new Date(d.getFullYear(), d.getMonth(), 1).getTime() };
     }
-    monthData[month].total += r.pqmScore;
-    monthData[month].count += 1;
+    monthData[month].submissions += 1;
   });
 
   const data = Object.entries(monthData)
     .sort((a, b) => a[1].time - b[1].time)
     .map(([month, stats]) => ({
       name: month,
-      Score: stats.total / stats.count
+      Submissions: stats.submissions
     }));
 
   const isEmpty = data.length === 0;
 
-  // Empty state timeline
-  const emptyData = [
-    { name: 'Jun', Score: null },
-    { name: 'Jul', Score: null },
-    { name: 'Aug', Score: null }
-  ];
-
   return (
     <div className={styles.chartCard} style={{ gridColumn: 'span 2' }}>
-      <h3 className={styles.cardTitle}>Average PQM Score Over Time <span style={{ fontWeight: 400, color: '#9ca3af', fontSize: '0.8rem' }}>per submission period</span></h3>
+      <h3 className={styles.cardTitle}>Tender Submissions Over Time</h3>
       <div style={{ height: 260, width: '100%', position: 'relative' }}>
-        {isEmpty && (
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.7)', zIndex: 10 }}>
-            <div style={{ color: '#9ca3af', fontWeight: 600 }}>Waiting for evaluations...</div>
+        {isEmpty ? (
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ color: '#9ca3af', fontWeight: 600 }}>Waiting for submissions...</div>
           </div>
+        ) : (
+          <ResponsiveContainer>
+            <BarChart data={data} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+              <XAxis
+                dataKey="name"
+                label={{ value: 'Month', position: 'insideBottom', offset: -5, fontSize: 12, fill: '#6b7280' }}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#6b7280' }}
+                dy={5}
+              />
+              <YAxis
+                allowDecimals={false}
+                label={{ value: 'Submission Count', angle: -90, position: 'insideLeft', fontSize: 12, fill: '#6b7280' }}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#6b7280' }}
+              />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9' }} />
+              <Bar dataKey="Submissions" name="Submissions" fill={COLOR_SUBMISSIONS} radius={[4, 4, 0, 0]} maxBarSize={32}>
+                <LabelList dataKey="Submissions" position="top" style={{ fontSize: '11px', fontWeight: 700, fill: '#374151' }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         )}
-        <ResponsiveContainer>
-          <AreaChart data={isEmpty ? emptyData : data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={isEmpty ? 0.1 : 0.8}/>
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
-            <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
-            {!isEmpty && <Tooltip content={<CustomTooltip />} />}
-            <ReferenceLine y={80} stroke="#10b981" strokeDasharray="3 3" label={{ position: 'insideTopLeft', value: 'Target (80)', fill: '#10b981', fontSize: 11 }} />
-            <Area type="monotone" dataKey="Score" stroke={isEmpty ? '#d1d5db' : '#3b82f6'} strokeWidth={3} fillOpacity={1} fill="url(#colorScore)" />
-          </AreaChart>
-        </ResponsiveContainer>
       </div>
     </div>
   );

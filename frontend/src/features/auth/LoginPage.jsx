@@ -26,7 +26,7 @@ export default function LoginPage() {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        'Unable to connect to server — make sure the backend is running on port 5050.'
+        'Unable to connect to server — make sure the backend is running on port 5000.'
       );
     } finally {
       setLoading(false);

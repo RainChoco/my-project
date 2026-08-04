@@ -11,7 +11,12 @@ const LOCKED_FOR_DELETE_STATUSES = ['under_evaluation', 'approved', 'rejected'];
 
 const createTender = async (req, res) => {
   try {
-    const { contractId, tender_ref_no, vendor_name, submission_date, main_offer_price, alternative_offer_price } = req.body;
+    const {
+      contractId, tender_ref_no, vendor_name, submission_date, main_offer_price, alternative_offer_price,
+      status, eligibility_status,
+      vendor_uen, contact_person_name, contact_person_email,
+      proposed_completion_months, tender_validity_days, bizsafe_level, conflict_of_interest_declared
+    } = req.body;
 
     // Validate contract exists
     const contract = await Contract.findByPk(contractId);
@@ -36,6 +41,20 @@ const createTender = async (req, res) => {
       submission_date,
       main_offer_price,
       alternative_offer_price: alternative_offer_price ?? null,
+      // Left undefined (not defaulted here) when omitted, so callers that don't send
+      // these - e.g. existing tests/scripts - still get the model's own defaults
+      // ('draft' / 'pending') instead of silently changing behaviour underneath them.
+      status,
+      eligibility_status,
+      // Additional Vendor & Compliance Information - all optional, same reasoning:
+      // left undefined when omitted so the model's own defaults (e.g. tender_validity_days: 90) apply.
+      vendor_uen: vendor_uen ?? null,
+      contact_person_name: contact_person_name ?? null,
+      contact_person_email: contact_person_email ?? null,
+      proposed_completion_months: proposed_completion_months ?? null,
+      tender_validity_days,
+      bizsafe_level,
+      conflict_of_interest_declared,
       created_by: req.user.id
     });
 

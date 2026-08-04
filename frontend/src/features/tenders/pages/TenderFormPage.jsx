@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useFormik } from 'formik';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileEdit, ScanSearch } from 'lucide-react';
+import { FileEdit, ScanSearch, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,8 +13,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { createTenderSchema, editTenderSchema } from '../schemas';
-import { BCA_GRADES, LOCKED_FOR_EDIT_STATUSES, STATUS_LABELS } from '../constants';
-import { createTender, updateTender, getTender, uploadTenderImage } from '../services/tenderApi';
+import { BCA_GRADES, BIZSAFE_LEVELS, LOCKED_FOR_EDIT_STATUSES, STATUS_LABELS, ELIGIBILITY_STATUS_LABELS } from '../constants';
+import { createTender, updateTender, getTender, uploadTenderImage, listTenders } from '../services/tenderApi';
 import { fetchContracts } from '@/features/contracts/services/contractApi';
 
 const CREATE_DEFAULTS = {
@@ -24,7 +24,36 @@ const CREATE_DEFAULTS = {
   submission_date: '',
   main_offer_price: '',
   alternative_offer_price: '',
+  status: 'submitted',
+  eligibility_status: 'eligible',
+  // -- Additional Vendor & Compliance Information (optional) --
+  vendor_uen: '',
+  contact_person_name: '',
+  contact_person_email: '',
+  proposed_completion_months: '',
+  tender_validity_days: 90,
+  bizsafe_level: 'None',
+  conflict_of_interest_declared: false,
 };
+
+// Manual-entry subset of the full status/eligibility_status enums - the rest
+// (approved/rejected/withdrawn, rejected) are only reached via the evaluation
+// and eligibility-check workflow, not picked when first logging a tender.
+const CREATE_STATUS_OPTIONS = ['draft', 'submitted', 'under_evaluation'];
+const CREATE_ELIGIBILITY_OPTIONS = ['eligible', 'flagged', 'pending'];
+
+// Auto-generates the next "TC-<year>-<seq>" reference number from whatever tenders
+// already exist for the current year - still just a default; the field stays editable.
+function computeNextTenderRefNo(existingTenders) {
+  const year = new Date().getFullYear();
+  const pattern = new RegExp(`^TC-${year}-(\\d+)$`);
+  let maxSeq = 0;
+  existingTenders.forEach((t) => {
+    const match = pattern.exec(t.tender_ref_no || '');
+    if (match) maxSeq = Math.max(maxSeq, parseInt(match[1], 10));
+  });
+  return `TC-${year}-${String(maxSeq + 1).padStart(3, '0')}`;
+}
 
 const EDIT_DEFAULTS = {
   ...CREATE_DEFAULTS,
@@ -37,6 +66,10 @@ const EDIT_DEFAULTS = {
 function FieldError({ formik, name }) {
   if (!formik.touched[name] || !formik.errors[name]) return null;
   return <p className="text-xs text-destructive">{formik.errors[name]}</p>;
+}
+
+function Required() {
+  return <span className="text-destructive"> *</span>;
 }
 
 // Initial step shown at /tenders/new before the manual-entry form - lets the user
@@ -151,12 +184,30 @@ function TenderFormPage({ mode }) {
     enabled: !isEditMode,
   });
 
+  // Fetch existing tenders once (create mode only) purely to compute the next
+  // auto-generated tender_ref_no below - not rendered anywhere itself.
+  const { data: existingTendersData } = useQuery({
+    queryKey: ['tenders-for-ref-no'],
+    queryFn: () => listTenders({ limit: 100 }),
+    enabled: !isEditMode,
+  });
+  const autoTenderRefNo = useMemo(
+    () => computeNextTenderRefNo(existingTendersData?.data ?? []),
+    [existingTendersData]
+  );
+
   // Pre-fill contractId when arriving from ContractDetailPage's "New Tender" button
-  // (navigate('/tenders/new', { state: { contractId } })).
+  // (navigate('/tenders/new', { state: { contractId } })), and/or other fields when
+  // arriving from TenderRecordLookupPage's "Apply to New Tender Form" button
+  // (navigate('/tenders/new', { state: { contractId, prefill: { vendor_name, ... } } })).
   const prefilledContractId = location.state?.contractId ?? '';
+  const prefill = location.state?.prefill ?? {};
+  const todayStr = new Date().toISOString().slice(0, 10);
 
   const initialValues = useMemo(() => {
-    if (!isEditMode) return { ...CREATE_DEFAULTS, contractId: prefilledContractId };
+    if (!isEditMode) {
+      return { ...CREATE_DEFAULTS, contractId: prefilledContractId, submission_date: todayStr, ...prefill };
+    }
     if (!tender) return EDIT_DEFAULTS;
     return {
       contractId: tender.contractId ?? '',
@@ -170,7 +221,7 @@ function TenderFormPage({ mode }) {
       bca_fm01_grade: tender.bca_fm01_grade ?? '',
       non_debarment_declared: tender.non_debarment_declared ?? false,
     };
-  }, [isEditMode, tender, prefilledContractId]);
+  }, [isEditMode, tender, prefilledContractId, todayStr, location.state]);
 
   const schema = isEditMode ? editTenderSchema : createTenderSchema;
   const isLocked = isEditMode && tender && LOCKED_FOR_EDIT_STATUSES.includes(tender.status);
@@ -232,6 +283,17 @@ function TenderFormPage({ mode }) {
     },
   });
 
+  // Auto-fill tender_ref_no once the next-number lookup resolves. Done via a targeted
+  // setFieldValue (not folded into initialValues above) so it can't clobber whatever
+  // else the user has already typed if this resolves after they've started the form -
+  // enableReinitialize would otherwise reset the whole form back to initialValues.
+  useEffect(() => {
+    if (!isEditMode && autoTenderRefNo && !formik.values.tender_ref_no) {
+      formik.setFieldValue('tender_ref_no', autoTenderRefNo);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoTenderRefNo, isEditMode]);
+
   // Derive the selected contract object for the info panel
   const selectedContract = !isEditMode
     ? contracts.find((c) => c.id === formik.values.contractId) ?? null
@@ -290,7 +352,7 @@ function TenderFormPage({ mode }) {
 
           <CardContent className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label>Tender Document / Image (optional)</Label>
+              <Label>Tender Document Package (optional)</Label>
               <TenderImageDropzone
                 file={tenderImageFile}
                 onFileSelect={setTenderImageFile}
@@ -317,7 +379,7 @@ function TenderFormPage({ mode }) {
               {/* ── Contract Selector (create mode) ───────────────────────── */}
               {!isEditMode && (
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="contractId">Contract Opportunity <span style={{ color: '#ef4444' }}>*</span></Label>
+                  <Label htmlFor="contractId">Contract Opportunity<Required /></Label>
                   {isContractsLoading ? (
                     <Skeleton className="h-9 w-full" />
                   ) : (
@@ -353,7 +415,7 @@ function TenderFormPage({ mode }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="tender_ref_no">Tender Reference No.</Label>
+                  <Label htmlFor="tender_ref_no">Tender Reference No.<Required /></Label>
                   <Input
                     id="tender_ref_no"
                     name="tender_ref_no"
@@ -362,10 +424,13 @@ function TenderFormPage({ mode }) {
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                   />
+                  {!isEditMode && (
+                    <p className="text-xs text-muted-foreground">Auto-generated - edit if you need a different reference.</p>
+                  )}
                   <FieldError formik={formik} name="tender_ref_no" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="vendor_name">Vendor Name</Label>
+                  <Label htmlFor="vendor_name">Vendor Name<Required /></Label>
                   <Input
                     id="vendor_name"
                     name="vendor_name"
@@ -379,7 +444,7 @@ function TenderFormPage({ mode }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="submission_date">Submission Date</Label>
+                  <Label htmlFor="submission_date">Submission Date<Required /></Label>
                   <Input
                     id="submission_date"
                     name="submission_date"
@@ -395,7 +460,7 @@ function TenderFormPage({ mode }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="main_offer_price">Main Offer Price (SGD)</Label>
+                  <Label htmlFor="main_offer_price">Main Offer Price (SGD)<Required /></Label>
                   <Input
                     id="main_offer_price"
                     name="main_offer_price"
@@ -422,6 +487,166 @@ function TenderFormPage({ mode }) {
                   <FieldError formik={formik} name="alternative_offer_price" />
                 </div>
               </div>
+
+              {/* ── Submission Status / Initial Eligibility (create mode) ─────── */}
+              {!isEditMode && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="status">Submission Status</Label>
+                    <NativeSelect
+                      id="status"
+                      name="status"
+                      value={formik.values.status}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                    >
+                      {CREATE_STATUS_OPTIONS.map((value) => (
+                        <option key={value} value={value}>
+                          {STATUS_LABELS[value]}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                    <FieldError formik={formik} name="status" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="eligibility_status">Initial Eligibility Status</Label>
+                    <NativeSelect
+                      id="eligibility_status"
+                      name="eligibility_status"
+                      value={formik.values.eligibility_status}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                    >
+                      {CREATE_ELIGIBILITY_OPTIONS.map((value) => (
+                        <option key={value} value={value}>
+                          {ELIGIBILITY_STATUS_LABELS[value]}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                    <FieldError formik={formik} name="eligibility_status" />
+                  </div>
+                </div>
+              )}
+
+              {/* ── Additional Vendor & Compliance Information (create mode) ──── */}
+              {!isEditMode && (
+                <details className="group rounded-lg border border-border">
+                  <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold select-none">
+                    Additional Vendor & Compliance Information (Optional)
+                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+                  </summary>
+                  <div className="flex flex-col gap-4 border-t border-border px-4 py-4">
+                    <div>
+                      <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Vendor Verification</h4>
+                      <div className="mt-2 grid grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <Label htmlFor="vendor_uen">Vendor UEN</Label>
+                          <Input
+                            id="vendor_uen"
+                            name="vendor_uen"
+                            placeholder="201234567A"
+                            value={formik.values.vendor_uen}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                          />
+                          <FieldError formik={formik} name="vendor_uen" />
+                        </div>
+                        <div />
+                        <div className="flex flex-col gap-1.5">
+                          <Label htmlFor="contact_person_name">Contact Person Name</Label>
+                          <Input
+                            id="contact_person_name"
+                            name="contact_person_name"
+                            value={formik.values.contact_person_name}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                          />
+                          <FieldError formik={formik} name="contact_person_name" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <Label htmlFor="contact_person_email">Contact Person Email</Label>
+                          <Input
+                            id="contact_person_email"
+                            name="contact_person_email"
+                            type="email"
+                            value={formik.values.contact_person_email}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                          />
+                          <FieldError formik={formik} name="contact_person_email" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Commercial Terms</h4>
+                      <div className="mt-2 grid grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <Label htmlFor="proposed_completion_months">Proposed Completion Period (Months)</Label>
+                          <Input
+                            id="proposed_completion_months"
+                            name="proposed_completion_months"
+                            type="number"
+                            step="1"
+                            value={formik.values.proposed_completion_months}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                          />
+                          <FieldError formik={formik} name="proposed_completion_months" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <Label htmlFor="tender_validity_days">Tender Validity Period (Days)</Label>
+                          <Input
+                            id="tender_validity_days"
+                            name="tender_validity_days"
+                            type="number"
+                            step="1"
+                            value={formik.values.tender_validity_days}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                          />
+                          <FieldError formik={formik} name="tender_validity_days" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Compliance &amp; Accreditations</h4>
+                      <div className="mt-2 grid grid-cols-2 gap-4 items-start">
+                        <div className="flex flex-col gap-1.5">
+                          <Label htmlFor="bizsafe_level">bizSAFE Level</Label>
+                          <NativeSelect
+                            id="bizsafe_level"
+                            name="bizsafe_level"
+                            value={formik.values.bizsafe_level}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                          >
+                            {BIZSAFE_LEVELS.map((level) => (
+                              <option key={level} value={level}>
+                                {level}
+                              </option>
+                            ))}
+                          </NativeSelect>
+                          <FieldError formik={formik} name="bizsafe_level" />
+                        </div>
+                        <div className="flex items-center gap-2 pt-6">
+                          <input
+                            id="conflict_of_interest_declared"
+                            name="conflict_of_interest_declared"
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-input"
+                            checked={formik.values.conflict_of_interest_declared}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                          />
+                          <Label htmlFor="conflict_of_interest_declared">Conflict of Interest Declaration</Label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+              )}
 
               {isEditMode && (
                 <>

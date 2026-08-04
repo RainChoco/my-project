@@ -75,6 +75,39 @@ const Tender = sequelize.define('Tender', {
   image_public_id: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  // -- Additional Vendor & Compliance Information (optional, create-form only) --
+  vendor_uen: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  contact_person_name: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  contact_person_email: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    validate: { isEmail: true }
+  },
+  proposed_completion_months: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  tender_validity_days: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 90
+  },
+  bizsafe_level: {
+    type: DataTypes.ENUM('None', 'Level 1', 'Level 2', 'Level 3', 'STAR'),
+    allowNull: true,
+    defaultValue: 'None'
+  },
+  conflict_of_interest_declared: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   }
 }, {
   tableName: 'tenders',

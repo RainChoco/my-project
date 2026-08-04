@@ -67,7 +67,7 @@ Edit `backend/.env`:
 
 ```env
 NODE_ENV=development
-PORT=5050
+PORT=5000
 
 # Auth — generate a strong secret for production
 JWT_SECRET=your-strong-secret-here
@@ -88,7 +88,7 @@ Start the backend:
 
 ```bash
 npm run dev
-# Server running on port 5050
+# Server running on port 5000
 ```
 
 To seed a demo user for testing:
@@ -106,7 +106,7 @@ npm run dev
 # Frontend running on http://localhost:5173
 ```
 
-The Vite dev server proxies all `/api/*` requests to `http://localhost:5050`, so no frontend environment variables are required for local development.
+The Vite dev server proxies all `/api/*` requests to `http://127.0.0.1:5000`, so no frontend environment variables are required for local development.
 
 ---
 
@@ -117,7 +117,7 @@ The Vite dev server proxies all `/api/*` requests to `http://localhost:5050`, so
 | Variable | Required | Description |
 |---|---|---|
 | `NODE_ENV` | Yes | `development` or `production` |
-| `PORT` | Yes | Port for the Express server (default `5050`) |
+| `PORT` | Yes | Port for the Express server (default `5000`) |
 | `JWT_SECRET` | Yes (prod) | Secret key for signing JWTs |
 | `DEV_JWT_SECRET` | No | Fallback secret for local dev |
 | `DATABASE_URL` | Prod only | PostgreSQL connection string (Neon) |

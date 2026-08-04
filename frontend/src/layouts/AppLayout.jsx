@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, Bell } from 'lucide-react';
+import { ChevronDown, Bell, FileCheck2, UserPlus, ClipboardCheck, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../context';
 import { routeConfig } from '../routes/routeConfig';
 import { Button } from '../components/ui/button';
@@ -14,12 +14,54 @@ import {
 } from '../components/ui/dropdown-menu';
 import { cn } from '../lib';
 
-// Sample notifications - static placeholder data until a real notifications API exists.
-const SAMPLE_NOTIFICATIONS = [
-  { id: 1, message: 'New tender submitted by MegaWorks' },
-  { id: 2, message: 'Evaluation pending manager approval' },
-  { id: 3, message: 'Clarification response received' },
+// Town Council operational alerts - static placeholder data until a real
+// notifications API exists. `minutesAgo` is relative to load time; `link`
+// routes to the relevant tender/contract/report when the notification is clicked.
+const NOTIFICATION_TYPES = {
+  tender: { icon: FileCheck2, color: 'text-blue-600 dark:text-blue-400' },
+  submission: { icon: UserPlus, color: 'text-emerald-600 dark:text-emerald-400' },
+  approval: { icon: ClipboardCheck, color: 'text-amber-600 dark:text-amber-400' },
+  compliance: { icon: ShieldAlert, color: 'text-red-600 dark:text-red-400' },
+};
+
+const TOWN_COUNCIL_NOTIFICATIONS = [
+  {
+    id: 1,
+    type: 'tender',
+    message: 'Tender TC-2026-008 closed for evaluation',
+    minutesAgo: 10,
+    link: '/tenders/8',
+  },
+  {
+    id: 2,
+    type: 'submission',
+    message: 'New submission received from CPG Facilities Management',
+    minutesAgo: 60,
+    link: '/tenders/1',
+  },
+  {
+    id: 3,
+    type: 'approval',
+    message: 'Pending approval: Managing Agent Tender Board Paper #4',
+    minutesAgo: 120,
+    link: '/board-papers',
+  },
+  {
+    id: 4,
+    type: 'compliance',
+    message: 'Compliance Alert: bizSAFE Level 3 expiring for Vendor ABC',
+    minutesAgo: 1440,
+    link: '/tenders/config',
+  },
 ];
+
+function formatRelativeTime(minutesAgo) {
+  if (minutesAgo < 60) return `${minutesAgo} min ago`;
+  const hours = Math.round(minutesAgo / 60);
+  if (hours < 24) return `${hours} hr${hours !== 1 ? 's' : ''} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days !== 1 ? 's' : ''} ago`;
+}
 
 // Groups the 9 top-level routeConfig entries into the 4 feature-owner categories
 // used by the nav bar. Paths must match routeConfig.jsx's route.path exactly -
@@ -67,7 +109,7 @@ function AppLayout() {
   const location = useLocation();
 
   const [notifications, setNotifications] = useState(
-    SAMPLE_NOTIFICATIONS.map((n) => ({ ...n, read: false }))
+    TOWN_COUNCIL_NOTIFICATIONS.map((n) => ({ ...n, read: false }))
   );
   const unreadCount = notifications.filter((n) => !n.read).length;
   const markAllAsRead = () => setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -167,21 +209,31 @@ function AppLayout() {
               {notifications.length === 0 ? (
                 <div className="px-2 py-4 text-center text-sm text-slate-500">No notifications</div>
               ) : (
-                notifications.map((n) => (
-                  <DropdownMenuItem
-                    key={n.id}
-                    onSelect={() => markAsRead(n.id)}
-                    className={cn(
-                      'flex items-start gap-2 whitespace-normal py-2 cursor-pointer',
-                      !n.read && 'bg-red-50 dark:bg-red-900/20'
-                    )}
-                  >
-                    {!n.read && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-600" />}
-                    <span className={cn('text-sm', !n.read ? 'font-medium text-slate-900 dark:text-slate-100' : 'text-slate-500')}>
-                      {n.message}
-                    </span>
-                  </DropdownMenuItem>
-                ))
+                notifications.map((n) => {
+                  const { icon: TypeIcon, color } = NOTIFICATION_TYPES[n.type] ?? {};
+                  return (
+                    <DropdownMenuItem
+                      key={n.id}
+                      onSelect={() => {
+                        markAsRead(n.id);
+                        if (n.link) navigate(n.link);
+                      }}
+                      className={cn(
+                        'flex items-start gap-2 whitespace-normal py-2 cursor-pointer',
+                        !n.read && 'bg-red-50 dark:bg-red-900/20'
+                      )}
+                    >
+                      {!n.read && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-600" aria-hidden="true" />}
+                      {TypeIcon && <TypeIcon className={cn('mt-0.5 h-4 w-4 shrink-0', color)} aria-hidden="true" />}
+                      <span className="flex flex-1 flex-col gap-0.5">
+                        <span className={cn('text-sm leading-snug', !n.read ? 'font-medium text-slate-900 dark:text-slate-100' : 'text-slate-500')}>
+                          {n.message}
+                        </span>
+                        <span className="text-xs text-slate-400">{formatRelativeTime(n.minutesAgo)}</span>
+                      </span>
+                    </DropdownMenuItem>
+                  );
+                })
               )}
             </DropdownMenuContent>
           </DropdownMenu>

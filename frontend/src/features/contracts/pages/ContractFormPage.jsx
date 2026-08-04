@@ -1,13 +1,35 @@
-﻿import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
 import { fetchContractById, createContract, updateContract } from '../services/contractApi';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { NativeSelect } from '@/features/tenders/components/NativeSelect';
 
-export default function ContractFormPage() {
+const CATEGORY_OPTIONS = ['Cleaning', 'Maintenance', 'Landscaping', 'Lift Maintenance', 'Pest Control'];
+const STATUS_OPTIONS = ['Draft', 'Open', 'Evaluating', 'Awarded'];
+
+function Required() {
+  return <span className="text-destructive"> *</span>;
+}
+
+function FieldErrorText({ children }) {
+  if (!children) return null;
+  return <p className="text-xs text-destructive">{children}</p>;
+}
+
+function ContractFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState({
@@ -17,16 +39,24 @@ export default function ContractFormPage() {
     budgetLimit: '',
     openingDate: '',
     closingDate: '',
-    status: 'Draft'
+    status: 'Draft',
+    securityDepositAmount: '',
+    bankGuaranteeTerms: '',
+    publicLiabilityInsuranceMin: '',
+    publicLiabilityInsuranceMax: '',
+    monthlyManagementFeeRate: '',
+    contractStartDate: '',
+    contractEndDate: '',
+    optionToExtend: false,
+    defectsLiabilityPeriodMonths: '',
+    terminationNoticePeriodDays: '',
   });
-
   const [errors, setErrors] = useState({});
-  const [toast, setToast] = useState(null);
 
   const { data: contract, isLoading } = useQuery({
     queryKey: ['contract', id],
     queryFn: () => fetchContractById(id),
-    enabled: isEditing
+    enabled: isEditing,
   });
 
   useEffect(() => {
@@ -38,21 +68,37 @@ export default function ContractFormPage() {
         budgetLimit: contract.budgetLimit,
         openingDate: contract.openingDate.split('T')[0],
         closingDate: contract.closingDate.split('T')[0],
-        status: contract.status
+        status: contract.status,
+        securityDepositAmount: contract.securityDepositAmount ?? '',
+        bankGuaranteeTerms: contract.bankGuaranteeTerms || '',
+        publicLiabilityInsuranceMin: contract.publicLiabilityInsuranceMin ?? '',
+        publicLiabilityInsuranceMax: contract.publicLiabilityInsuranceMax ?? '',
+        monthlyManagementFeeRate: contract.monthlyManagementFeeRate ?? '',
+        contractStartDate: contract.contractStartDate ? contract.contractStartDate.split('T')[0] : '',
+        contractEndDate: contract.contractEndDate ? contract.contractEndDate.split('T')[0] : '',
+        optionToExtend: contract.optionToExtend ?? false,
+        defectsLiabilityPeriodMonths: contract.defectsLiabilityPeriodMonths ?? '',
+        terminationNoticePeriodDays: contract.terminationNoticePeriodDays ?? '',
       });
     }
   }, [contract]);
 
   const saveMutation = useMutation({
-    mutationFn: (data) => isEditing ? updateContract(id, data) : createContract(data),
+    mutationFn: (data) => (isEditing ? updateContract(id, data) : createContract(data)),
     onSuccess: () => {
-      setToast('Contract saved successfully.');
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
-      setTimeout(() => navigate('/contracts'), 1500);
+      toast({
+        title: isEditing ? 'Contract updated' : 'Contract created',
+        description: `${formData.name} was saved.`,
+        variant: 'success',
+      });
+      navigate('/contracts');
     },
-    onError: () => {
-      setErrors({ form: 'An error occurred while saving. Please try again.' });
-    }
+    onError: (err) => {
+      const message = err.response?.data?.message ?? 'An error occurred while saving. Please try again.';
+      setErrors((prev) => ({ ...prev, form: message }));
+      toast({ title: 'Save failed', description: message, variant: 'destructive' });
+    },
   });
 
   const validate = () => {
@@ -68,169 +114,308 @@ export default function ContractFormPage() {
     } else {
       newErrors.dates = 'Both opening and closing dates are required.';
     }
+    if (
+      formData.publicLiabilityInsuranceMin &&
+      formData.publicLiabilityInsuranceMax &&
+      parseFloat(formData.publicLiabilityInsuranceMin) > parseFloat(formData.publicLiabilityInsuranceMax)
+    ) {
+      newErrors.publicLiabilityInsurance = 'Minimum insurance coverage must not exceed the maximum.';
+    }
+    if (
+      formData.contractStartDate &&
+      formData.contractEndDate &&
+      new Date(formData.contractStartDate) >= new Date(formData.contractEndDate)
+    ) {
+      newErrors.contractPeriod = 'Contract end date must be after the contract start date.';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validate()) {
-      saveMutation.mutate(formData);
-    }
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: null }));
   };
 
-  if (isEditing && isLoading) return <div style={{ padding: '2rem' }}>Loading...</div>;
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (validate()) saveMutation.mutate(formData);
+  };
+
+  if (isEditing && isLoading) {
+    return (
+      <Card className="mx-auto max-w-2xl">
+        <CardHeader>
+          <Skeleton className="h-6 w-48" />
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Skeleton key={index} className="h-9 w-full" />
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' }}>
-      <button onClick={() => navigate('/contracts')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', marginBottom: '2rem', fontSize: '1rem' }}>
-        <ArrowLeft size={20} /> Back to Contracts
-      </button>
+    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+      <Button type="button" variant="ghost" className="self-start" onClick={() => navigate('/contracts')}>
+        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Contracts
+      </Button>
 
-      {toast && (
-        <div style={{ padding: '1rem', marginBottom: '2rem', background: '#dcfce7', color: '#166534', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #bbf7d0' }}>
-          <CheckCircle2 size={20} />
-          <span style={{ fontWeight: 500 }}>{toast}</span>
-        </div>
-      )}
+      <Card>
+        <form noValidate onSubmit={handleSubmit}>
+          <CardHeader>
+            <CardTitle>{isEditing ? 'Edit Contract' : 'Create New Contract Opportunity'}</CardTitle>
+            <CardDescription>
+              {isEditing
+                ? 'Update the details of this contract opportunity.'
+                : 'Set up a new Town Council contract opportunity for tender submissions.'}
+            </CardDescription>
+          </CardHeader>
 
-      <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem', color: '#111827' }}>
-          {isEditing ? 'Edit Contract' : 'Create New Contract Opportunity'}
-        </h1>
+          <CardContent className="flex flex-col gap-4">
+            {errors.form && (
+              <Alert variant="destructive">
+                <AlertDescription>{errors.form}</AlertDescription>
+              </Alert>
+            )}
 
-        {errors.form && <div style={{ color: '#ef4444', marginBottom: '1rem', fontWeight: 500 }}>{errors.form}</div>}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="name">
+                  Contract Name<Required />
+                </Label>
+                <Input
+                  id="name"
+                  placeholder="e.g. Zone A Cleaning Services 2026"
+                  value={formData.name}
+                  onChange={(e) => handleChange('name', e.target.value)}
+                />
+                <FieldErrorText>{errors.name}</FieldErrorText>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="category">
+                  Category<Required />
+                </Label>
+                <NativeSelect id="category" value={formData.category} onChange={(e) => handleChange('category', e.target.value)}>
+                  {CATEGORY_OPTIONS.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
+            </div>
 
-        <form noValidate onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>
-                Contract Name <span style={{ color: '#ef4444' }}>*</span>
-              </label>
-              <input 
-                type="text" 
-                placeholder="e.g. Zone A Cleaning Services 2026"
-                value={formData.name} 
-                onChange={e => {
-                  setFormData({...formData, name: e.target.value});
-                  if(errors.name) setErrors({...errors, name: null});
-                }} 
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: `1px solid ${errors.name ? '#ef4444' : '#d1d5db'}`, boxSizing: 'border-box' }} 
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="Routine cleaning services for residential blocks in Zone A..."
+                className="min-h-24"
+                value={formData.description}
+                onChange={(e) => handleChange('description', e.target.value)}
               />
-              {errors.name && <span style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>{errors.name}</span>}
             </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>
-                Category <span style={{ color: '#ef4444' }}>*</span>
-              </label>
-              <select 
-                value={formData.category} 
-                onChange={e => setFormData({...formData, category: e.target.value})} 
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #d1d5db', boxSizing: 'border-box', background: 'white' }}
-              >
-                <option value="Cleaning">Cleaning</option>
-                <option value="Maintenance">Maintenance</option>
-                <option value="Landscaping">Landscaping</option>
-                <option value="Lift Maintenance">Lift Maintenance</option>
-                <option value="Pest Control">Pest Control</option>
-              </select>
-            </div>
-          </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>Description</label>
-            <textarea 
-              placeholder="Routine cleaning services for residential blocks in Zone A..."
-              value={formData.description} 
-              onChange={e => setFormData({...formData, description: e.target.value})} 
-              style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #d1d5db', boxSizing: 'border-box', minHeight: '100px', resize: 'vertical' }} 
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>
-                Budget Limit (SGD) <span style={{ color: '#ef4444' }}>*</span>
-              </label>
-              <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#6b7280', fontWeight: 500 }}>$</span>
-                <input 
-                  type="number" 
+            <div className="grid grid-cols-3 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="budgetLimit">
+                  Budget Limit (SGD)<Required />
+                </Label>
+                <Input
+                  id="budgetLimit"
+                  type="number"
                   step="0.01"
                   placeholder="0.00"
-                  value={formData.budgetLimit} 
-                  onChange={e => {
-                    setFormData({...formData, budgetLimit: e.target.value});
-                    if(errors.budgetLimit) setErrors({...errors, budgetLimit: null});
-                  }} 
-                  style={{ width: '100%', padding: '0.75rem 0.75rem 0.75rem 1.75rem', borderRadius: '6px', border: `1px solid ${errors.budgetLimit ? '#ef4444' : '#d1d5db'}`, boxSizing: 'border-box' }} 
+                  value={formData.budgetLimit}
+                  onChange={(e) => handleChange('budgetLimit', e.target.value)}
+                />
+                <FieldErrorText>{errors.budgetLimit}</FieldErrorText>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="openingDate">
+                  Opening Date<Required />
+                </Label>
+                <Input
+                  id="openingDate"
+                  type="date"
+                  value={formData.openingDate}
+                  onChange={(e) => handleChange('openingDate', e.target.value)}
                 />
               </div>
-              {errors.budgetLimit && <span style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>{errors.budgetLimit}</span>}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="closingDate">
+                  Closing Date<Required />
+                </Label>
+                <Input
+                  id="closingDate"
+                  type="date"
+                  value={formData.closingDate}
+                  onChange={(e) => handleChange('closingDate', e.target.value)}
+                />
+              </div>
             </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>
-                Opening Date <span style={{ color: '#ef4444' }}>*</span>
-              </label>
-              <input 
-                type="date" 
-                value={formData.openingDate} 
-                onChange={e => {
-                  setFormData({...formData, openingDate: e.target.value});
-                  if(errors.dates) setErrors({...errors, dates: null});
-                }} 
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: `1px solid ${errors.dates ? '#ef4444' : '#d1d5db'}`, boxSizing: 'border-box' }} 
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>
-                Closing Date <span style={{ color: '#ef4444' }}>*</span>
-              </label>
-              <input 
-                type="date" 
-                value={formData.closingDate} 
-                onChange={e => {
-                  setFormData({...formData, closingDate: e.target.value});
-                  if(errors.dates) setErrors({...errors, dates: null});
-                }} 
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: `1px solid ${errors.dates ? '#ef4444' : '#d1d5db'}`, boxSizing: 'border-box' }} 
-              />
-            </div>
-          </div>
-          {errors.dates && <span style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: '-1rem', display: 'block' }}>{errors.dates}</span>}
+            <FieldErrorText>{errors.dates}</FieldErrorText>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#374151' }}>
-                Status <span style={{ color: '#ef4444' }}>*</span>
-              </label>
-              <select 
-                value={formData.status} 
-                onChange={e => setFormData({...formData, status: e.target.value})} 
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="status">
+                Status<Required />
+              </Label>
+              <NativeSelect
+                id="status"
+                className="w-full sm:w-1/3"
+                value={formData.status}
+                onChange={(e) => handleChange('status', e.target.value)}
                 disabled={!isEditing}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #d1d5db', boxSizing: 'border-box', background: !isEditing ? '#f3f4f6' : 'white', color: !isEditing ? '#6b7280' : '#111827' }}
               >
-                <option value="Draft">Draft</option>
-                <option value="Open">Open</option>
-                <option value="Evaluating">Evaluating</option>
-                <option value="Awarded">Awarded</option>
-              </select>
-              {!isEditing && <span style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem', display: 'block' }}>New contracts start as Drafts.</span>}
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </NativeSelect>
+              {!isEditing && <p className="text-xs text-muted-foreground">New contracts start as Drafts.</p>}
             </div>
-          </div>
 
-          <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-            <button type="button" onClick={() => navigate('/contracts')} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-            <button type="submit" disabled={saveMutation.isPending || !!toast} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#2563eb', color: 'white', fontWeight: 600, cursor: 'pointer', opacity: (saveMutation.isPending || !!toast) ? 0.7 : 1 }}>
+            <div className="mt-2 border-t pt-4">
+              <h3 className="text-sm font-semibold text-foreground">Contract Terms & Legal Framework</h3>
+              <p className="mb-4 text-xs text-muted-foreground">Financial and compliance terms extracted from the tender documents (optional).</p>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="securityDepositAmount">Security Deposit Amount (SGD)</Label>
+                  <Input
+                    id="securityDepositAmount"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.securityDepositAmount}
+                    onChange={(e) => handleChange('securityDepositAmount', e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="bankGuaranteeTerms">Bank Guarantee Terms</Label>
+                  <Input
+                    id="bankGuaranteeTerms"
+                    placeholder="e.g. 5% of contract sum, valid till end of DLP"
+                    value={formData.bankGuaranteeTerms}
+                    onChange={(e) => handleChange('bankGuaranteeTerms', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="publicLiabilityInsuranceMin">Public Liability Insurance - Min (SGD)</Label>
+                  <Input
+                    id="publicLiabilityInsuranceMin"
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 1000000"
+                    value={formData.publicLiabilityInsuranceMin}
+                    onChange={(e) => handleChange('publicLiabilityInsuranceMin', e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="publicLiabilityInsuranceMax">Public Liability Insurance - Max (SGD)</Label>
+                  <Input
+                    id="publicLiabilityInsuranceMax"
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 2000000"
+                    value={formData.publicLiabilityInsuranceMax}
+                    onChange={(e) => handleChange('publicLiabilityInsuranceMax', e.target.value)}
+                  />
+                </div>
+              </div>
+              <FieldErrorText>{errors.publicLiabilityInsurance}</FieldErrorText>
+
+              <div className="mt-4 grid grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="monthlyManagementFeeRate">Monthly Management Fee / EDU Rate (SGD)</Label>
+                  <Input
+                    id="monthlyManagementFeeRate"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.monthlyManagementFeeRate}
+                    onChange={(e) => handleChange('monthlyManagementFeeRate', e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="defectsLiabilityPeriodMonths">Defects Liability / Warranty Period (months)</Label>
+                  <Input
+                    id="defectsLiabilityPeriodMonths"
+                    type="number"
+                    step="1"
+                    placeholder="e.g. 12"
+                    value={formData.defectsLiabilityPeriodMonths}
+                    onChange={(e) => handleChange('defectsLiabilityPeriodMonths', e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="terminationNoticePeriodDays">Termination Notice Period (days)</Label>
+                  <Input
+                    id="terminationNoticePeriodDays"
+                    type="number"
+                    step="1"
+                    placeholder="e.g. 14"
+                    value={formData.terminationNoticePeriodDays}
+                    onChange={(e) => handleChange('terminationNoticePeriodDays', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="contractStartDate">Contract Start Date</Label>
+                  <Input
+                    id="contractStartDate"
+                    type="date"
+                    value={formData.contractStartDate}
+                    onChange={(e) => handleChange('contractStartDate', e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="contractEndDate">Contract End Date</Label>
+                  <Input
+                    id="contractEndDate"
+                    type="date"
+                    value={formData.contractEndDate}
+                    onChange={(e) => handleChange('contractEndDate', e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <input
+                    id="optionToExtend"
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-input"
+                    checked={formData.optionToExtend}
+                    onChange={(e) => handleChange('optionToExtend', e.target.checked)}
+                  />
+                  <Label htmlFor="optionToExtend" className="cursor-pointer">
+                    Option to extend
+                  </Label>
+                </div>
+              </div>
+              <FieldErrorText>{errors.contractPeriod}</FieldErrorText>
+            </div>
+          </CardContent>
+
+          <CardFooter className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => navigate('/contracts')}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saveMutation.isPending}>
               {saveMutation.isPending ? 'Saving...' : 'Save Contract'}
-            </button>
-          </div>
-
+            </Button>
+          </CardFooter>
         </form>
-      </div>
+      </Card>
     </div>
   );
 }
 
-
+export default ContractFormPage;

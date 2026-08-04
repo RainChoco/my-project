@@ -137,11 +137,11 @@ function BoardPaperPage() {
 
             <div>
 
-                <h1 className="text-3xl font-bold text-red-700">
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                     Board Paper Generation
                 </h1>
 
-                <p className="text-gray-500 mt-2">
+                <p className="mt-1 text-sm text-muted-foreground">
                     Generate AI-assisted board papers for management approval.
                 </p>
 
@@ -162,7 +162,7 @@ function BoardPaperPage() {
                     <div className="space-y-2">
 
                         <Label>
-                            Select Tender <span className="text-red-600">*</span>
+                            Select Tender <span className="text-destructive">*</span>
                         </Label>
 
                         <Select
@@ -172,7 +172,7 @@ function BoardPaperPage() {
                         >
 
                             <SelectTrigger
-                                className={errors.tender ? "border-red-500 focus:ring-red-500" : ""}>
+                                className={errors.tender ? "border-destructive focus:ring-destructive" : ""}>
 
                                 <SelectValue placeholder="Select Tender" />
 
@@ -197,7 +197,7 @@ function BoardPaperPage() {
                         </Select>
 
                         {errors.tender && (
-                            <p className="text-sm text-red-600">
+                            <p className="text-sm text-destructive">
                                 Please select a tender.
                             </p>
                         )}
@@ -207,11 +207,11 @@ function BoardPaperPage() {
                     <div className="space-y-2">
 
                         <Label>
-                            Board Paper Title <span className="text-red-600">*</span>
+                            Board Paper Title <span className="text-destructive">*</span>
                         </Label>
 
                         <Input
-                            className={errors.title ? "border-red-500 focus-visible:ring-red-500" : ""}
+                            className={errors.title ? "border-destructive focus-visible:ring-destructive" : ""}
                             value={formData.title}
                             placeholder="Enter board paper title"
                             onChange={(e) =>
@@ -220,7 +220,7 @@ function BoardPaperPage() {
                         />
 
                         {errors.title && (
-                            <p className="text-sm text-red-600">
+                            <p className="text-sm text-destructive">
                                 Board Paper Title is required.
                             </p>
                         )}
@@ -230,7 +230,7 @@ function BoardPaperPage() {
                     <div className="space-y-2">
 
                         <Label>
-                            Purpose <span className="text-red-600">*</span>
+                            Purpose <span className="text-destructive">*</span>
                         </Label>
 
                         <Select
@@ -241,7 +241,7 @@ function BoardPaperPage() {
                             <SelectTrigger
                                 className={
                                     errors.purpose
-                                        ? "border-red-500"
+                                        ? "border-destructive"
                                         : ""
                                 }
                             >
@@ -267,7 +267,7 @@ function BoardPaperPage() {
                         </Select>
 
                         {errors.purpose && (
-                            <p className="text-sm text-red-600">
+                            <p className="text-sm text-destructive">
                                 Purpose is required.
                             </p>
                         )}
@@ -277,11 +277,11 @@ function BoardPaperPage() {
                     <div className="space-y-2">
 
                         <Label>
-                            Prepared By <span className="text-red-600">*</span>
+                            Prepared By <span className="text-destructive">*</span>
                         </Label>
 
                         <Input
-                            className={errors.preparedBy ? "border-red-500 focus-visible:ring-red-500" : ""}
+                            className={errors.preparedBy ? "border-destructive focus-visible:ring-destructive" : ""}
                             value={formData.preparedBy}
                             placeholder="Enter your name"
                             onChange={(e) =>
@@ -290,7 +290,7 @@ function BoardPaperPage() {
                         />
 
                         {errors.preparedBy && (
-                            <p className="text-sm text-red-600">
+                            <p className="text-sm text-destructive">
                                 Prepared By is required.
                             </p>
                         )}
@@ -300,7 +300,6 @@ function BoardPaperPage() {
                     <div className="flex justify-end">
 
                         <Button
-                            className="bg-red-700 hover:bg-red-800"
                             onClick={handleGenerate}
                             disabled={loading}
                         >

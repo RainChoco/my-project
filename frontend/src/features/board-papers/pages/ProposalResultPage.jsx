@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "../../../components/ui/button";
+import { Badge } from "../../../components/ui/badge";
 
 import {
     Card,
@@ -18,19 +19,17 @@ function ProposalResultPage() {
 
             <div>
 
-                <h1 className="text-3xl font-bold text-red-700">
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                     Proposal Result
                 </h1>
 
-                <p className="mt-2 text-gray-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                     Review the AI-generated proposal before submission.
                 </p>
 
-                <div className="mt-3 inline-flex rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-700">
+                <Badge className="mt-3 bg-red-100 text-red-700 hover:bg-red-100">
                     AI Generated Proposal
-                </div>
-
-                <hr className="mt-6 border-gray-200" />
+                </Badge>
 
             </div>
 
@@ -113,13 +112,13 @@ function ProposalResultPage() {
 
                 <CardContent>
 
-                    <div className="text-4xl font-bold text-green-600">
+                    <div className="text-4xl font-bold text-emerald-600">
 
                         $1,250,000
 
                     </div>
 
-                    <p className="mt-2 text-gray-500">
+                    <p className="mt-2 text-sm text-muted-foreground">
 
                         Within Approved Budget
 
@@ -141,11 +140,7 @@ function ProposalResultPage() {
 
                 <CardContent>
 
-                    <div className="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700">
-
-                        Recommended
-
-                    </div>
+                    <Badge variant="success">Recommended</Badge>
 
                     <p className="mt-4">
 
@@ -172,13 +167,9 @@ function ProposalResultPage() {
 
                 <CardContent>
 
-                    <div className="inline-flex rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-700">
+                    <Badge variant="warning">Awaiting Management Approval</Badge>
 
-                        Awaiting Management Approval
-
-                    </div>
-
-                    <p className="mt-4 text-gray-500">
+                    <p className="mt-4 text-sm text-muted-foreground">
 
                         This proposal is ready for submission to management.
 
@@ -205,7 +196,6 @@ function ProposalResultPage() {
                 </Button>
 
                 <Button
-                    className="bg-red-700 hover:bg-red-800"
                     onClick={() => navigate("/board-papers/history")}
                 >
                     Generation History
