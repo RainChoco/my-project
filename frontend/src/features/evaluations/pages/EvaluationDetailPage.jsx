@@ -16,6 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../../../components/ui/alert-dialog';
+import { Badge } from '../../../components/ui/badge';
 import { EvaluationStatusBadge, DecisionBadge } from '../components/StatusBadge';
 import { CriterionScoreForm } from '../components/CriterionScoreForm';
 import { ApprovalForm } from '../components/ApprovalForm';
@@ -76,7 +77,13 @@ export default function EvaluationDetailPage() {
     onError: (err) => {
       if (err?.response?.status === 422) {
         invalidateEvaluation();
-        setSubmitError('Every criterion needs a staff score before this evaluation can be submitted.');
+        const missing = err.response.data?.missing_criteria ?? [];
+        const names = missing.map((m) => m.criteria_name).join(', ');
+        setSubmitError(
+          names
+            ? `Still need a score for: ${names}.`
+            : 'Every criterion needs a staff score before this evaluation can be submitted.'
+        );
         return;
       }
       setSubmitError(getErrorMessage(err));
@@ -128,6 +135,7 @@ export default function EvaluationDetailPage() {
   }
 
   const evaluation = evaluationQuery.data;
+  const totalActiveWeight = evaluation.criterion_scores.reduce((sum, c) => sum + Number(c.weight_percentage), 0);
   const canScore = role === ROLES.EVALUATOR && evaluation.status === 'processing';
   const canReprocess = role === ROLES.EVALUATOR && evaluation.status === 'rejected';
   const canDecide = role === ROLES.MANAGEMENT && evaluation.status === 'scored';
@@ -179,13 +187,24 @@ export default function EvaluationDetailPage() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Criterion scores</CardTitle>
-          <CardDescription>
-            {canScore
-              ? 'Enter a score (0-100) and optional remarks for every criterion, then submit to compute the PQM score.'
-              : 'Criteria, weights, and scores as recorded on this evaluation attempt - unaffected by any later change to the criteria configuration.'}
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle className="text-base">Criterion scores</CardTitle>
+            <CardDescription>
+              {canScore
+                ? 'Enter a score (0-100) and optional remarks for every criterion, then submit to compute the PQM score.'
+                : 'Criteria, weights, and scores as recorded on this evaluation attempt - unaffected by any later change to the criteria configuration.'}
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Total active weight</span>
+            <Badge
+              variant="outline"
+              className={totalActiveWeight === 100 ? 'border-green-500 text-green-700 dark:text-green-400' : 'border-amber-500 text-amber-700 dark:text-amber-400'}
+            >
+              {totalActiveWeight}%
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent>
           {canScore ? (
