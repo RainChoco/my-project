@@ -1,7 +1,13 @@
 import { DashboardPage } from '../features/dashboard';
 import { ContractListPage, ContractFormPage } from '../features/contracts';
 import ContractDetailPage from '../features/contracts/pages/ContractDetailPage';
-import { TendersDashboardPage, TenderFormPage, TenderDetailPage, TenderRecordLookupPage } from '../features/tenders';
+import {
+  TendersDashboardPage,
+  TenderFormPage,
+  TenderDetailPage,
+  TenderRecordLookupPage,
+  EligibilityConfigPage,
+} from '../features/tenders';
 import { EvaluationCriteriaPage, EvaluationsPage, EvaluationDetailPage } from '../features/evaluations';
 import {
   BoardPaperPage,
@@ -13,7 +19,6 @@ import {
 import ClarificationLogsPage from '../features/clarifications/pages/ClarificationLogsPage';
 import ClarificationLogDetailPage from '../features/clarifications/pages/ClarificationLogDetailPage';
 import JobAdjustmentRequestsPage from '../features/clarifications/pages/JobAdjustmentRequestsPage';
-import { ComingSoonPage } from '../pages';
 
 // Matches backend/src/models/user.js's `role` ENUM and design/test-tokens.md.
 export const ROLES = {
@@ -71,7 +76,7 @@ export const routeConfig = [
     path: '/tenders/config',
     label: 'Eligibility Config',
     roles: [MA_STAFF], // UC-A9/UC-A10, explicitly "admin function"
-    element: <ComingSoonPage title="Eligibility Configuration" description="BCA grade limits & eligibility thresholds (Zheng Hong)." />,
+    element: <EligibilityConfigPage />,
   },
   {
     path: '/evaluations/criteria',
