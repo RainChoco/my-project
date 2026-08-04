@@ -1,7 +1,35 @@
 const yup = require('yup');
 
-const CATEGORY_VALUES = ['Cleaning', 'Maintenance', 'Landscaping', 'Lift Maintenance', 'Pest Control', 'Repair & Redecoration (R&R)', 'Upgrading Works'];
-const STATUS_VALUES = ['Draft', 'Open', 'Evaluating', 'Awarded', 'Closed', 'Archived', 'Cancelled'];
+const CATEGORY_VALUES = [
+  'Cleaning',
+  'Conservancy',
+  'Maintenance',
+  'Landscaping',
+  'Horticulture',
+  'Lift Maintenance',
+  'Mechanical & Electrical (M&E) Works',
+  'Pest Control',
+  'Repair & Redecoration (R&R)',
+  'Upgrading Works'
+];
+// 'Active'/'Pending Award'/'Under Evaluation'/'Completed' describe an already-awarded
+// contract's own execution lifecycle (see 20260806000000-demo-more-real-contracts.js) -
+// additive alongside the original Draft/Open/.../Cancelled tender-opportunity statuses
+// so existing contracts and code paths reading the old values are unaffected.
+const STATUS_VALUES = [
+  'Draft',
+  'Open',
+  'Evaluating',
+  'Awarded',
+  'Closed',
+  'Archived',
+  'Cancelled',
+  'Active',
+  'Pending Award',
+  'Under Evaluation',
+  'Completed'
+];
+const BIZSAFE_LEVELS = ['None', 'Level 1', 'Level 2', 'Level 3', 'STAR'];
 
 const idParams = yup.object({ id: yup.string().trim().required() });
 
@@ -66,7 +94,54 @@ const contractTermsFields = {
     .integer('terminationNoticePeriodDays must be a whole number')
     .positive('terminationNoticePeriodDays must be a positive number')
     .nullable()
-    .optional()
+    .optional(),
+
+  // -- Contract Identification & Scope (all optional) --
+  contractRefNo: yup.string().trim().nullable().optional(),
+  townCouncilName: yup.string().trim().nullable().optional(),
+  estateZoneScope: yup.string().trim().nullable().optional(),
+
+  // -- Duration & Extension detail (all optional) --
+  contractDurationMonths: yup
+    .number()
+    .typeError('contractDurationMonths must be a number')
+    .integer('contractDurationMonths must be a whole number')
+    .positive('contractDurationMonths must be a positive number')
+    .nullable()
+    .optional(),
+  extensionTerms: yup.string().trim().nullable().optional(),
+
+  // -- Commercial & Payment Terms (all optional) --
+  awardedContractSum: yup
+    .number()
+    .typeError('awardedContractSum must be a number')
+    .positive('awardedContractSum must be a positive number')
+    .nullable()
+    .optional(),
+  paymentMilestones: yup.string().trim().nullable().optional(),
+  liquidatedDamagesRate: yup
+    .number()
+    .typeError('liquidatedDamagesRate must be a number')
+    .positive('liquidatedDamagesRate must be a positive number')
+    .nullable()
+    .optional(),
+
+  // -- Insurance, Security Deposit & Legal Framework (all optional) --
+  performanceGuaranteePercent: yup
+    .number()
+    .typeError('performanceGuaranteePercent must be a number')
+    .min(0, 'performanceGuaranteePercent cannot be negative')
+    .max(100, 'performanceGuaranteePercent cannot exceed 100')
+    .nullable()
+    .optional(),
+  wicaInsuranceCap: yup
+    .number()
+    .typeError('wicaInsuranceCap must be a number')
+    .positive('wicaInsuranceCap must be a positive number')
+    .nullable()
+    .optional(),
+  minBizsafeLevel: yup.string().oneOf([...BIZSAFE_LEVELS, null], 'invalid minBizsafeLevel').nullable().optional(),
+  governingLawFramework: yup.string().trim().nullable().optional()
 };
 
 const createContractSchema = yup.object({
@@ -105,6 +180,7 @@ const contractIdParamsSchema = yup.object({ params: idParams });
 module.exports = {
   CATEGORY_VALUES,
   STATUS_VALUES,
+  BIZSAFE_LEVELS,
   createContractSchema,
   updateContractSchema,
   contractIdParamsSchema
