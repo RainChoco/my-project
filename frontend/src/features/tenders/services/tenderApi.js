@@ -70,3 +70,23 @@ export async function overrideEligibilityCheck(checkId, payload) {
   const { data } = await apiClient.patch(`/eligibility-checks/${checkId}`, payload);
   return data;
 }
+
+export async function listBcaGradeLimits() {
+  const { data } = await apiClient.get('/config/bca-grade-limits');
+  return data.data;
+}
+
+export async function updateBcaGradeLimit(grade, payload) {
+  const { data } = await apiClient.put(`/config/bca-grade-limits/${grade}`, payload);
+  return data;
+}
+
+export async function listEligibilityThresholds() {
+  const { data } = await apiClient.get('/config/eligibility-thresholds');
+  return data.data;
+}
+
+export async function updateEligibilityThreshold(criterionKey, payload) {
+  const { data } = await apiClient.put(`/config/eligibility-thresholds/${criterionKey}`, payload);
+  return data;
+}

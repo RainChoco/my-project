@@ -68,6 +68,46 @@ const Contract = sequelize.define('Contract', {
   },
   terminationNoticePeriodDays: {
     type: DataTypes.INTEGER,
+  },
+  // -- Contract Identification & Scope --
+  contractRefNo: {
+    type: DataTypes.STRING,
+  },
+  townCouncilName: {
+    type: DataTypes.STRING,
+  },
+  estateZoneScope: {
+    type: DataTypes.TEXT,
+  },
+  // -- Duration & Extension detail --
+  contractDurationMonths: {
+    type: DataTypes.INTEGER,
+  },
+  extensionTerms: {
+    type: DataTypes.STRING,
+  },
+  // -- Commercial & Payment Terms --
+  awardedContractSum: {
+    type: DataTypes.DECIMAL(14, 2),
+  },
+  paymentMilestones: {
+    type: DataTypes.TEXT,
+  },
+  liquidatedDamagesRate: {
+    type: DataTypes.DECIMAL(10, 2),
+  },
+  // -- Insurance, Security Deposit & Legal Framework --
+  performanceGuaranteePercent: {
+    type: DataTypes.DECIMAL(5, 2),
+  },
+  wicaInsuranceCap: {
+    type: DataTypes.DECIMAL(12, 2),
+  },
+  minBizsafeLevel: {
+    type: DataTypes.STRING,
+  },
+  governingLawFramework: {
+    type: DataTypes.TEXT,
   }
 }, {
   timestamps: true,

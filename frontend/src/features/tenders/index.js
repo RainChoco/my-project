@@ -3,3 +3,4 @@ export { default as TendersDashboardPage } from './pages/TendersDashboardPage';
 export { default as TenderFormPage } from './pages/TenderFormPage';
 export { default as TenderDetailPage } from './pages/TenderDetailPage';
 export { default as TenderRecordLookupPage } from './pages/TenderRecordLookupPage';
+export { default as EligibilityConfigPage } from './pages/EligibilityConfigPage';

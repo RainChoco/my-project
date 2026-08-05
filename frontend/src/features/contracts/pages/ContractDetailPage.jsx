@@ -5,7 +5,7 @@ import { fetchContractById, fetchContractTenders } from '../services/contractApi
 import {
   ArrowLeft, Building2, Calendar, DollarSign, Tag, FileText,
   AlertTriangle, Eye, ClipboardCheck, Users, Clock, TrendingUp,
-  ShieldCheck, Landmark, Wrench, BellRing,
+  ShieldCheck, Landmark, Wrench, BellRing, MapPin, Scale, HardHat,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,17 +14,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { STATUS_BADGE_VARIANTS } from '../constants';
 
 // ── Status helpers ───────────────────────────────────────────────────────────
-const CONTRACT_STATUS_BADGE_VARIANTS = {
-  Draft: 'secondary',
-  Open: 'success',
-  Closed: 'destructive',
-  Archived: 'outline',
-  Cancelled: 'warning',
-};
 function ContractStatusBadge({ status }) {
-  return <Badge variant={CONTRACT_STATUS_BADGE_VARIANTS[status] ?? 'secondary'}>{status}</Badge>;
+  return <Badge variant={STATUS_BADGE_VARIANTS[status] ?? 'secondary'}>{status}</Badge>;
 }
 
 const RISK_BADGE_VARIANTS = { low: 'success', medium: 'warning', high: 'destructive' };
@@ -171,6 +165,14 @@ export default function ContractDetailPage() {
     contractStartDate && contractEndDate
       ? `${contractStartDate.toLocaleDateString()} - ${contractEndDate.toLocaleDateString()}`
       : contractStartDate?.toLocaleDateString() || contractEndDate?.toLocaleDateString();
+  const extensionValue = contract.optionToExtend
+    ? contract.extensionTerms && contract.extensionTerms !== 'None'
+      ? contract.extensionTerms
+      : 'Yes'
+    : 'No';
+  const guaranteePercent = contract.performanceGuaranteePercent != null ? `${parseFloat(contract.performanceGuaranteePercent)}%` : null;
+  const guaranteeAmount = formatMoney(contract.securityDepositAmount);
+  const guaranteeValue = guaranteePercent && guaranteeAmount ? `${guaranteePercent} (${guaranteeAmount})` : guaranteePercent || guaranteeAmount;
 
   return (
     <div className="flex flex-col gap-6">
@@ -251,18 +253,20 @@ export default function ContractDetailPage() {
         />
       </div>
 
-      {/* ── Contract Details + Progress ────────────────────────────────── */}
+      {/* ── Card 1: Basic Information & Estate Scope + Progress ─────────── */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
         {/* Details card */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Contract Details</CardTitle>
+            <CardTitle className="text-base">Basic Information & Estate Scope</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             {contract.description && <CardDescription className="leading-relaxed">{contract.description}</CardDescription>}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {[
-                { icon: Tag, label: 'Category', value: contract.category },
+                { icon: FileText, label: 'Contract Reference No.', value: contract.contractRefNo },
+                { icon: Building2, label: 'Town Council', value: contract.townCouncilName },
+                { icon: Tag, label: 'Service Type', value: contract.category },
                 { icon: DollarSign, label: 'Budget Limit', value: contract.budgetLimit ? `$${parseFloat(contract.budgetLimit).toLocaleString()}` : '—' },
                 { icon: Calendar, label: 'Opening Date', value: openingDate?.toLocaleDateString() },
                 { icon: Calendar, label: 'Closing Date', value: closingDate?.toLocaleDateString() },
@@ -279,6 +283,17 @@ export default function ContractDetailPage() {
                 </div>
               ))}
             </div>
+            {contract.estateZoneScope && (
+              <div className="flex items-start gap-3 border-t pt-4">
+                <div className="flex shrink-0 items-center justify-center rounded-lg bg-primary/10 p-2">
+                  <MapPin className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-muted-foreground">Estate / Zone Scope</div>
+                  <div className="text-sm font-semibold leading-relaxed text-foreground">{contract.estateZoneScope}</div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -317,46 +332,91 @@ export default function ContractDetailPage() {
         </Card>
       </div>
 
-      {/* ── Contract Terms & Legal Framework ─────────────────────────────── */}
+      {/* ── Card 2: Duration, Extensions & DLP ────────────────────────────── */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Contract Terms & Legal Framework</CardTitle>
-          <CardDescription>Financial and compliance terms extracted from the tender documents.</CardDescription>
+          <CardTitle className="text-base">Duration, Extensions & DLP</CardTitle>
+          <CardDescription>Contract period, defects liability, extension options, and termination notice.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
+              { icon: Calendar, label: 'Contract Period', value: contractPeriod },
+              { icon: Clock, label: 'Duration', value: contract.contractDurationMonths != null ? `${contract.contractDurationMonths} month(s)` : null },
+              { icon: Wrench, label: 'Defects Liability Period (DLP)', value: contract.defectsLiabilityPeriodMonths != null ? `${contract.defectsLiabilityPeriodMonths} month(s)` : null },
+              { icon: TrendingUp, label: 'Option to Extend', value: extensionValue },
+              { icon: BellRing, label: 'Termination Notice Period', value: contract.terminationNoticePeriodDays != null ? `${contract.terminationNoticePeriodDays} day(s)` : null },
+            ].map(({ icon: Icon, label, value, sub }) => (
+              <div key={label} className="flex items-start gap-3">
+                <div className="flex shrink-0 items-center justify-center rounded-lg bg-primary/10 p-2">
+                  <Icon className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-muted-foreground">{label}</div>
+                  <div className="text-sm font-semibold text-foreground">{value ?? '—'}</div>
+                  {sub && <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Card 3: Commercial & Payment Terms ────────────────────────────── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Commercial & Payment Terms</CardTitle>
+          <CardDescription>Awarded sum, service fee, payment milestones, and liquidated damages.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { icon: DollarSign, label: 'Awarded Contract Sum', value: formatMoney(contract.awardedContractSum) },
+              { icon: DollarSign, label: 'Monthly Service Fee Rate', value: contract.monthlyManagementFeeRate != null ? `${formatMoney(contract.monthlyManagementFeeRate)} / month` : null },
+              { icon: AlertTriangle, label: 'Liquidated Damages (LD) Rate', value: contract.liquidatedDamagesRate != null ? `${formatMoney(contract.liquidatedDamagesRate)} / day` : null },
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="flex items-start gap-3">
+                <div className="flex shrink-0 items-center justify-center rounded-lg bg-primary/10 p-2">
+                  <Icon className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-muted-foreground">{label}</div>
+                  <div className="text-sm font-semibold text-foreground">{value ?? '—'}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {contract.paymentMilestones && (
+            <div className="flex items-start gap-3 border-t pt-4">
+              <div className="flex shrink-0 items-center justify-center rounded-lg bg-primary/10 p-2">
+                <HardHat className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <div className="text-xs font-medium text-muted-foreground">Payment Milestones</div>
+                <div className="text-sm font-semibold leading-relaxed text-foreground">{contract.paymentMilestones}</div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── Card 4: Insurance, Security Deposit & Legal Framework ─────────── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Insurance, Security Deposit & Legal Framework</CardTitle>
+          <CardDescription>Compliance limits, performance guarantee, and the governing legal framework.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { icon: ShieldCheck, label: 'WICA Insurance Cap', value: formatMoney(contract.wicaInsuranceCap) },
+              { icon: ShieldCheck, label: 'Public Liability Insurance Limit', value: insuranceRange },
+              { icon: ShieldCheck, label: 'Minimum bizSAFE Level', value: contract.minBizsafeLevel },
               {
                 icon: Landmark,
-                label: 'Security Deposit / Bank Guarantee',
-                value: formatMoney(contract.securityDepositAmount),
+                label: 'Performance Guarantee / Security Deposit',
+                value: guaranteeValue,
                 sub: contract.bankGuaranteeTerms,
-              },
-              {
-                icon: ShieldCheck,
-                label: 'Public Liability Insurance Coverage',
-                value: insuranceRange,
-              },
-              {
-                icon: DollarSign,
-                label: 'Monthly Management Fee Rate / EDU Rate',
-                value: contract.monthlyManagementFeeRate != null ? `${formatMoney(contract.monthlyManagementFeeRate)} / month` : null,
-              },
-              {
-                icon: Calendar,
-                label: 'Contract Period',
-                value: contractPeriod,
-                sub: contract.optionToExtend ? 'Option to extend' : null,
-              },
-              {
-                icon: Wrench,
-                label: 'Defects Liability / Warranty Period',
-                value: contract.defectsLiabilityPeriodMonths != null ? `${contract.defectsLiabilityPeriodMonths} month(s)` : null,
-              },
-              {
-                icon: BellRing,
-                label: 'Termination Notice Period',
-                value: contract.terminationNoticePeriodDays != null ? `${contract.terminationNoticePeriodDays} day(s)` : null,
               },
             ].map(({ icon: Icon, label, value, sub }) => (
               <div key={label} className="flex items-start gap-3">
@@ -371,6 +431,17 @@ export default function ContractDetailPage() {
               </div>
             ))}
           </div>
+          {contract.governingLawFramework && (
+            <div className="flex items-start gap-3 border-t pt-4">
+              <div className="flex shrink-0 items-center justify-center rounded-lg bg-primary/10 p-2">
+                <Scale className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <div className="text-xs font-medium text-muted-foreground">Governing Law Framework</div>
+                <div className="text-sm font-semibold leading-relaxed text-foreground">{contract.governingLawFramework}</div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
