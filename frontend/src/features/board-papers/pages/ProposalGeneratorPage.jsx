@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 import { Button } from "../../../components/ui/button";
+import { Badge } from "../../../components/ui/badge";
 
 import {
     Card,
@@ -281,23 +282,21 @@ function ProposalGeneratorPage() {
 
             <div>
 
-                <h1 className="text-3xl font-bold text-red-700">
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground">
 
                     Proposal Generation
 
                 </h1>
 
-                <p className="text-gray-500 mt-2">
+                <p className="mt-1 text-sm text-muted-foreground">
 
                     Generate a proposal report directly from the selected board paper.
 
                 </p>
 
-                <div className="mt-3 inline-flex rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-700">
+                <Badge className="mt-3 bg-red-100 text-red-700 hover:bg-red-100">
                     AI Assisted Proposal
-                </div>
-
-                <hr className="mt-6 border-gray-200" />
+                </Badge>
 
             </div>
 
@@ -397,6 +396,20 @@ function ProposalGeneratorPage() {
                                 </label>
                             ))}
                         </div>
+                        <Textarea
+                            rows={10}
+                            value={proposal.content}
+                            placeholder="AI generated proposal..."
+                            onChange={(e) =>
+                                handleChange("content", e.target.value)
+                            }
+                        />
+
+                        <p className="text-right text-sm text-muted-foreground">
+
+                            {proposal.content.length} characters
+
+                        </p>
 
                     </div>
 
@@ -421,7 +434,6 @@ function ProposalGeneratorPage() {
                         </Button>
 
                         <Button
-                            className="bg-red-700 hover:bg-red-800"
                             onClick={handleGenerate}
                             disabled={loading}
                         >

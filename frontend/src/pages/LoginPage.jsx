@@ -45,21 +45,21 @@ function LoginPage() {
 
   return (
     <div className="flex min-h-screen">
-      <div className="relative hidden w-1/2 flex-col justify-center bg-[#E31E24] px-16 text-white lg:flex">
-        <p className="absolute top-8 left-8 text-xl font-bold tracking-wide text-white">EM SERVICES</p>
-        <h1 className="text-4xl font-bold tracking-tight">Streamlining Town Council Tenders</h1>
-        <p className="mt-4 max-w-md text-lg text-red-100">
+      <div className="relative hidden w-1/2 flex-col justify-center border-r-2 border-[#E31E24] bg-white px-16 text-slate-900 lg:flex">
+        <img src="/em-services-logo.png" alt="EM Services" className="absolute top-8 left-8 h-9 w-auto" />
+        <h1 className="text-4xl font-bold tracking-tight text-slate-900">Streamlining Town Council Tenders</h1>
+        <p className="mt-4 max-w-md text-lg text-[#E31E24]">
           AI-assisted tender intake, eligibility checks, and evaluation - built for Town Council procurement teams.
         </p>
       </div>
 
-      <div className="relative flex w-full flex-col items-center bg-background p-8 lg:w-1/2">
+      <div className="relative flex w-full flex-col items-center bg-[#E31E24] p-8 lg:w-1/2">
         <div className="flex flex-1 flex-col items-center justify-center">
-          <p className="mb-6 text-2xl font-bold text-gray-700">Welcome back!</p>
-          <Card className="w-full max-w-sm">
+          <p className="mb-6 text-2xl font-bold text-white">Welcome back!</p>
+          <Card className="w-full max-w-sm border-2 border-white/40 shadow-xl">
             <form onSubmit={formik.handleSubmit} noValidate>
               <CardContent className="flex flex-col gap-6 pt-8">
-                <p className="mb-4 text-xl font-semibold text-gray-800">Login</p>
+                <p className="mb-4 text-xl font-semibold text-[#E31E24]">Login</p>
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="email" className="text-sm font-medium">Email</label>
                   <input
@@ -67,7 +67,7 @@ function LoginPage() {
                     name="email"
                     type="email"
                     autoComplete="username"
-                    className="h-10 rounded-md border border-input bg-background px-3 text-sm shadow-sm"
+                    className="h-10 rounded-md border border-input bg-white px-3 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#E31E24]"
                     value={formik.values.email}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
@@ -83,7 +83,7 @@ function LoginPage() {
                     name="password"
                     type="password"
                     autoComplete="current-password"
-                    className="h-10 rounded-md border border-input bg-background px-3 text-sm shadow-sm"
+                    className="h-10 rounded-md border border-input bg-white px-3 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#E31E24]"
                     value={formik.values.password}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
@@ -99,11 +99,11 @@ function LoginPage() {
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                      className="h-4 w-4 rounded border-input text-[#E31E24] focus:ring-[#E31E24]"
                     />
                     Remember me
                   </label>
-                  <button type="button" className="text-sm font-medium text-blue-600 hover:underline">
+                  <button type="button" className="text-sm font-medium text-[#E31E24] hover:underline">
                     Forgot password?
                   </button>
                 </div>
@@ -112,7 +112,7 @@ function LoginPage() {
               <CardFooter className="flex flex-col gap-2">
                 <Button
                   type="submit"
-                  className="w-full transition-colors hover:bg-gray-800"
+                  className="w-full bg-[#E31E24] text-white transition-colors hover:bg-[#c01a1f]"
                   disabled={formik.isSubmitting}
                 >
                   {formik.isSubmitting ? 'Signing in...' : 'Sign in'}
@@ -121,7 +121,7 @@ function LoginPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full"
+                    className="w-full border-[#E31E24] text-[#E31E24] hover:bg-red-50 hover:text-[#c01a1f]"
                     onClick={() => {
                       login(DEV_MA_STAFF_TOKEN);
                       const redirectTo = location.state?.from?.pathname ?? '/';
@@ -136,10 +136,10 @@ function LoginPage() {
           </Card>
         </div>
 
-        <div className="flex items-center justify-center gap-3 pb-4 text-xs text-gray-400">
-          <a href="#" className="hover:underline">Privacy Policy</a>
+        <div className="flex items-center justify-center gap-3 pb-4 text-xs text-red-100">
+          <a href="#" className="hover:text-white hover:underline">Privacy Policy</a>
           <span aria-hidden="true">&middot;</span>
-          <a href="#" className="hover:underline">Contact Support</a>
+          <a href="#" className="hover:text-white hover:underline">Contact Support</a>
         </div>
       </div>
     </div>

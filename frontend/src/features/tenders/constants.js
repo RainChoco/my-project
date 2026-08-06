@@ -7,6 +7,28 @@ export const ELIGIBILITY_STATUS_VALUES = ['pending', 'eligible', 'flagged', 'rej
 
 export const BCA_GRADES = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6'];
 
+export const BIZSAFE_LEVELS = ['None', 'Level 1', 'Level 2', 'Level 3', 'STAR'];
+
+// Numeric encoding used by the 'min_bizsafe_level' eligibility_thresholds row
+// (backend/src/seeders/20260804000000-demo-bizsafe-threshold.js), since
+// threshold_value is a DECIMAL column - array index doubles as the encoded value.
+export const BIZSAFE_LEVEL_TO_NUMBER = Object.fromEntries(BIZSAFE_LEVELS.map((level, index) => [level, index]));
+export const NUMBER_TO_BIZSAFE_LEVEL = BIZSAFE_LEVELS;
+
+// Seeded defaults (backend/src/seeders/20260101000002-demo-bca-grade-limits.js and
+// .../20260101000003-demo-eligibility-thresholds.js + .../20260804000000-demo-bizsafe-threshold.js) -
+// what "Reset to Standard Rules" restores the form to before the user hits Save Rules.
+export const STANDARD_BCA_GRADE_LIMITS = {
+  L1: 1500000,
+  L2: 6000000,
+  L3: 16000000,
+  L4: 40000000,
+  L5: 85000000,
+  L6: null,
+};
+export const STANDARD_MIN_PAID_UP_CAPITAL = 2000000;
+export const STANDARD_MIN_BIZSAFE_LEVEL = 'Level 3';
+
 export const FILE_TYPE_VALUES = ['main_offer', 'alternative_offer', 'license', 'other'];
 
 export const FILE_TYPE_LABELS = {

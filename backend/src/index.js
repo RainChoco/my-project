@@ -5,11 +5,11 @@ const routes = require('./routes');
 const { sequelize } = require('./models');
 
 const app = express();
-const PORT = process.env.PORT || 5050;
+const PORT = process.env.PORT || 5000;
 
 const corsOptions = {
   origin: ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 };
@@ -28,7 +28,7 @@ sequelize.sync().then(() => {
   console.log('Database synced');
 
   if (process.env.NODE_ENV !== 'test') {
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
     });
 

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Use Vite proxy (/api → http://localhost:5050) so this works in all envs
+// Use Vite proxy (/api → http://127.0.0.1:5000) so this works in all envs
 const API_BASE_URL = '/api/v1/contracts';
 
 // Helper: inject JWT token from localStorage
