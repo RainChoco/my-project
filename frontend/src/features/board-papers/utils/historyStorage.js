@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL ?? "/api";
-const HISTORY_ENDPOINTS = [`${API_URL}/history`, `${API_URL}/proposals/history`];
+const HISTORY_ENDPOINT = `${API_URL}/history`;
 
 const buildEntry = (entry) => {
     if (!entry) {
@@ -46,30 +46,23 @@ export const getHistoryEntries = async () => {
         return [];
     }
 
-    for (const endpoint of HISTORY_ENDPOINTS) {
-        try {
-            const response = await fetch(endpoint, { credentials: "include" });
+    try {
+        const response = await fetch(HISTORY_ENDPOINT, { credentials: "include" });
 
-            if (!response.ok) {
-                continue;
-            }
-
-            const historyResponse = await response.json();
-            const entries = Array.isArray(historyResponse)
-                ? historyResponse.map(buildEntry).filter(Boolean)
-                : [];
-
-            return entries
-                .sort((left, right) => new Date(right.createdAt || 0) - new Date(left.createdAt || 0))
-                .slice(0, 30);
-        } catch (error) {
-            console.error(`Unable to read history entries from ${endpoint}`, error);
+        if (!response.ok) {
+            return [];
         }
+
+        const historyResponse = await response.json();
+        const entries = Array.isArray(historyResponse)
+            ? historyResponse.map(buildEntry).filter(Boolean)
+            : [];
+
+        return entries
+            .sort((left, right) => new Date(right.createdAt || 0) - new Date(left.createdAt || 0))
+            .slice(0, 30);
+    } catch (error) {
+        console.error(`Unable to read history entries from ${HISTORY_ENDPOINT}`, error);
+        return [];
     }
-
-    return [];
-};
-
-export const saveHistoryEntry = async (entry) => {
-    return entry;
 };

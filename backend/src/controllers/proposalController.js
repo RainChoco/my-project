@@ -136,34 +136,6 @@ exports.getAllProposals = async (req, res) => {
 
 
 
-exports.getHistoryEntries = async (req, res) => {
-
-    try {
-
-        const historyEntries = await HistoryEntry.findAll({
-            order: [["createdAt", "DESC"]]
-        });
-
-        res.json(historyEntries);
-
-    }
-
-    catch (error) {
-
-        console.error(error);
-
-        res.status(500).json({
-
-            message: "Unable to retrieve history entries."
-
-        });
-
-    }
-
-};
-
-
-
 exports.getProposalById = async (req, res) => {
 
     try {
@@ -300,27 +272,6 @@ exports.deleteProposal = async (req, res) => {
 
     }
 
-};
-
-
-exports.deleteHistoryEntry = async (req, res) => {
-    try {
-        const entryId = req.params.id;
-
-        const historyEntry = await HistoryEntry.findByPk(entryId);
-
-        if (!historyEntry) {
-            return res.status(404).json({ message: "History entry not found." });
-        }
-
-        await HistoryEntry.destroy({ where: { id: historyEntry.id } });
-
-        res.json({ message: "History entry deleted successfully." });
-    }
-    catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Unable to delete history entry." });
-    }
 };
 
 

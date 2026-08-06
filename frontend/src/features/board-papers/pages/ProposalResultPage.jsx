@@ -1,5 +1,5 @@
-﻿import { useNavigate, useLocation } from "react-router-dom";
-import { useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
@@ -8,6 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui
 function ProposalResultPage() {
     const navigate = useNavigate();
     const location = useLocation();
+
+    useEffect(() => {
+        if (!location.state) {
+            navigate("/history", { replace: true });
+        }
+    }, [location.state, navigate]);
 
     const proposal = location.state || {
         proposalTitle: "Managing Agent Services Proposal",

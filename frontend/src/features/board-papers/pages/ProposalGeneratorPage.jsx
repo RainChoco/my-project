@@ -12,6 +12,7 @@ import {
 } from "../../../components/ui/card";
 
 import { Input } from "../../../components/ui/input";
+import { Textarea } from "../../../components/ui/textarea";
 
 import { Label } from "../../../components/ui/label";
 
@@ -396,21 +397,6 @@ function ProposalGeneratorPage() {
                                 </label>
                             ))}
                         </div>
-                        <Textarea
-                            rows={10}
-                            value={proposal.content}
-                            placeholder="AI generated proposal..."
-                            onChange={(e) =>
-                                handleChange("content", e.target.value)
-                            }
-                        />
-
-                        <p className="text-right text-sm text-muted-foreground">
-
-                            {proposal.content.length} characters
-
-                        </p>
-
                     </div>
 
                     <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">

@@ -21,8 +21,6 @@ import {
 } from "../../../components/ui/table";
 
 import { getHistoryEntries } from "../utils/historyStorage";
-import { deleteBoardPaper } from "../services/boardPaperApi";
-import { deleteProposal } from "../services/proposalApi";
 import { deleteHistoryEntry } from "../services/historyApi";
 import { getHistoryEntryTargetId } from "../utils/historyEntryUtils";
 const STATUS_BADGE_VARIANTS = {
@@ -96,7 +94,10 @@ function HistoryPage() {
         try {
             setDeletingId(idToDelete);
 
-            // Delete only the history entry instead of the underlying resource.
+            // Deletes the history entry and, server-side, the underlying
+            // Board Paper/Proposal it points to (see historyController.js) -
+            // so this also disappears from places like the Proposal
+            // Generator's "Select Board Paper" dropdown.
             await deleteHistoryEntry(item.id || idToDelete);
 
             window.dispatchEvent(new Event("history-updated"));

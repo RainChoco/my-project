@@ -16,7 +16,7 @@ function formatCurrency(value) {
   const normalizedValue = Number(value);
 
   if (Number.isFinite(normalizedValue)) {
-    return `£${normalizedValue.toLocaleString('en-GB')}`;
+    return `SGD ${normalizedValue.toLocaleString('en-SG')}`;
   }
 
   return String(value);

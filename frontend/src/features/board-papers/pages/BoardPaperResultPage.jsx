@@ -337,12 +337,19 @@ function BoardPaperResultPage() {
                     {summarySections.map((section) => {
                         const isBulletList = section.lines.some((line) => line.trim().startsWith("- "));
                         const isRecommendation = section.title === "AI Recommendation";
+                        const isRiskAssessment = section.title === "Risk Assessment";
+                        const riskBadgeVariant = riskLevelText === "Low" ? "success" : riskLevelText === "High" ? "destructive" : "warning";
 
                         return (
                             <div key={section.title} className={`rounded-xl border border-gray-200 bg-gray-50 p-5 shadow-sm ${isRecommendation ? "border-green-300 bg-green-50" : ""}`}>
-                                <h3 className={`mb-3 text-lg font-semibold ${isRecommendation ? "text-green-700" : "text-red-700"}`}>
-                                    {section.title}
-                                </h3>
+                                <div className="mb-3 flex items-center justify-between">
+                                    <h3 className={`text-lg font-semibold ${isRecommendation ? "text-green-700" : "text-red-700"}`}>
+                                        {section.title}
+                                    </h3>
+                                    {isRiskAssessment && (
+                                        <Badge variant={riskBadgeVariant}>{riskLevelText} Risk</Badge>
+                                    )}
+                                </div>
                                 {section.lines.length > 0 ? (
                                     isBulletList ? (
                                         <ul className="ml-5 list-disc space-y-2 text-sm text-gray-700">
@@ -383,40 +390,15 @@ function BoardPaperResultPage() {
 
                     <div className="space-y-3">
 
-                        <div className="text-5xl font-bold text-emerald-600">
-
-                            <div className="text-5xl font-bold text-green-600">
-
-                                {confidenceScore}%
-
-                            </div>
-
-                            <div className="h-3 rounded-full bg-gray-200">
-
-                                <div className="h-3 rounded-full bg-green-600" style={{ width: `${Math.min(confidenceScore, 100)}%` }}></div>
-
-                            </div>
-
-                            <p className="text-gray-500">
-
-                                {confidenceText}
-
-                            </p>
-                            94%
-
+                        <div className="text-3xl font-bold text-emerald-600">
+                            {confidenceScore}%
                         </div>
 
                         <div className="h-3 rounded-full bg-muted">
 
-                            <div className="h-3 w-[94%] rounded-full bg-emerald-600"></div>
+                            <div className="h-3 rounded-full bg-emerald-600" style={{ width: `${Math.min(confidenceScore, 100)}%` }}></div>
 
                         </div>
-
-                        <p className="text-muted-foreground">
-
-                            High confidence based on AI evaluation.
-
-                        </p>
 
                     </div>
 
@@ -425,94 +407,6 @@ function BoardPaperResultPage() {
                         {confidenceText}
 
                     </p>
-
-                </CardContent>
-
-            </Card>
-
-            <Card>
-
-                <CardHeader>
-
-                    <CardTitle>
-                        Financial Analysis
-                    </CardTitle>
-
-                </CardHeader>
-
-                <CardContent>
-
-                    <ul className="list-disc ml-6 space-y-2">
-
-                        <li>Competitive pricing.</li>
-
-                        <li>Within approved budget.</li>
-
-                        <li>No abnormal pricing detected.</li>
-
-                    </ul>
-
-                </CardContent>
-
-            </Card>
-
-            <Card>
-
-                <CardHeader>
-
-                    <CardTitle>
-                        Risk Assessment
-                    </CardTitle>
-
-                </CardHeader>
-
-                <CardContent>
-
-                    <Badge variant="warning">Medium Risk</Badge>
-
-                    <ul className="list-disc ml-6 mt-4 space-y-2">
-
-                        <li>Supplier has relevant experience.</li>
-
-                        <li>No major compliance issues.</li>
-
-                        <li>Minor clarification required.</li>
-
-                    </ul>
-
-                </CardContent>
-
-            </Card>
-
-            <Card>
-
-                <CardHeader>
-
-                    <CardTitle>
-                        AI Recommendation
-                    </CardTitle>
-
-                </CardHeader>
-
-                <CardContent>
-
-                    <div className="rounded-lg border border-green-300 bg-green-50 p-5">
-
-                        <h3 className="font-bold text-green-700">
-
-                            AI Recommendation
-
-                        </h3>
-
-                        <p className="mt-2">
-
-                            Proceed to Management Approval.
-                            The tender satisfies the required financial,
-                            technical and operational evaluation criteria.
-
-                        </p>
-
-                    </div>
 
                 </CardContent>
 
@@ -571,7 +465,7 @@ function BoardPaperResultPage() {
                 <Button
                     onClick={() => navigate("/board-papers/proposal-generation")}
                 >
-                    Generate Proposal
+                    Proposal Report
                 </Button>
 
             </div>

@@ -10,6 +10,7 @@ const evaluationCriteriaRoutes = require('./evaluationCriteriaRoutes');
 const boardPaperRoutes        = require('./boardPaperRoutes');
 const clarificationRoutes     = require('./clarificationRoutes');
 const proposalRoutes          = require('./proposalRoutes');
+const historyRoutes           = require('./historyRoutes');
 const dashboardRoutes         = require('./dashboardRoutes');
 // Kai Xuan: Contract Opportunity CRUD
 const contractRoutes          = require('./contractRoutes');
@@ -30,6 +31,7 @@ router.use('/evaluation-criteria', evaluationCriteriaRoutes);
 router.use('/boardpapers', boardPaperRoutes);
 router.use('/clarifications', clarificationRoutes);
 router.use('/proposals', proposalRoutes);
+router.use('/history', historyRoutes);
 
 // ── Kai Xuan's modules under /v1 ─────────────────────────────────────────────
 // Contract CRUD and Dashboard are namespaced under /v1 to avoid collisions
