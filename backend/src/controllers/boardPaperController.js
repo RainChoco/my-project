@@ -1,26 +1,25 @@
 const BoardPaper = require("../models/BoardPaper");
+const HistoryEntry = require("../models/HistoryEntry");
+const { calculateBoardPaperConfidence } = require("../services/confidenceService");
+const { generateBoardPaperNarrative } = require("../services/aiBoardPaperService");
 
 exports.generateBoardPaper = async (req, res) => {
     try {
         const {
-            tender,
+            tenderId,
             title,
             purpose,
             preparedBy
         } = req.body;
 
-        if (!tender) {
+        if (!tenderId) {
             return res.status(400).json({
                 message: "Tender is required."
             });
         }
 
-        const tenderId =
-            tender === "Managing Agent Services"
-                ? 1
-                : tender === "Lift Maintenance Contract"
-                    ? 2
-                    : 3;
+        const { confidence, tender } = await calculateBoardPaperConfidence(tenderId);
+        const narrative = await generateBoardPaperNarrative({ tender, confidence, title, purpose });
 
         const boardPaper = await BoardPaper.create({
             tenderId,
@@ -33,12 +32,31 @@ exports.generateBoardPaper = async (req, res) => {
             financialAnalysis: true,
             riskAssessment: true,
             recommendation: true,
-            confidence: 94,
-            score: "91 / 100",
-            finalRecommendation: "Proceed to Management Approval.",
+            confidence,
+            score: `${confidence} / 100`,
+            finalRecommendation: narrative.aiRecommendation || "Proceed to Management Approval.",
+            aiSummary: narrative.aiSummary,
+            aiFinancialAnalysis: narrative.aiFinancialAnalysis,
+            aiRiskAssessment: narrative.aiRiskAssessment,
+            aiRecommendation: narrative.aiRecommendation,
+            aiConfidenceText: narrative.aiConfidenceText,
+            aiRiskLevel: narrative.aiRiskLevel,
             preparedBy,
             generatedBy: "EM Services AI Platform",
             status: "Generated"
+        });
+
+        await HistoryEntry.create({
+            type: "Board Paper",
+            title: boardPaper.title || "Untitled Board Paper",
+            createdAt: boardPaper.createdAt || new Date(),
+            entryData: {
+                boardPaperId: boardPaper.id,
+                report: {
+                    ...(boardPaper.toJSON ? boardPaper.toJSON() : boardPaper),
+                    tenderLabel: tender.tender_ref_no
+                }
+            }
         });
 
         return res.status(201).json({
@@ -48,7 +66,7 @@ exports.generateBoardPaper = async (req, res) => {
     }
     catch (error) {
         console.error('BoardPaper generate error:', error);
-        res.status(500).json({
+        res.status(error.status || 500).json({
             message: error.message || "Unable to generate board paper."
         });
     }

@@ -95,7 +95,9 @@ const NAV_GROUPS = [
   {
     label: 'Reports & Communication',
     items: [
-      { label: 'Board Papers / Slides & Reports', path: '/board-papers' },
+      { label: 'Board Papers', path: '/board-papers' },
+      { label: 'History', path: '/history' },
+      { label: 'Proposal Reports', path: '/proposal-report' },
       { label: 'Clarifications & Alternate Proposals', path: '/clarifications' },
       { label: 'Job Adjustments', path: '/job-adjustment-requests' },
     ],

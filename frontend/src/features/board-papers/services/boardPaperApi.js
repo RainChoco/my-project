@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000/api/boardpapers";
+const API_BASE_URL = "/api/boardpapers";
 /*
 ==========================================
 Generate AI Board Paper
@@ -59,7 +59,7 @@ export async function getBoardPaper(id) {
 /*
 ==========================================
 Save Board Paper
-POST /api/boardpaper
+POST /api/boardpapers/generate
 ==========================================
 */
 
@@ -110,7 +110,7 @@ export async function updateBoardPaper(id, reportData) {
     try {
 
         const response = await fetch(
-            `${API_BASE_URL}/generate/${id}`,
+            `${API_BASE_URL}/${id}`,
             {
                 method: "PUT",
                 headers: {
@@ -143,16 +143,25 @@ export async function updateBoardPaper(id, reportData) {
 /*
 ==========================================
 Download PDF
-GET /api/boardpaper/pdf/:id
+GET /api/boardpapers/pdf/:id
 ==========================================
 */
 
-export async function downloadBoardPaperPDF(id) {
+export async function downloadBoardPaperPDF(id, metadata = {}) {
 
     try {
 
+        const params = new URLSearchParams();
+
+        Object.entries(metadata).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+                params.append(key, String(value));
+            }
+        });
+
+        const queryString = params.toString();
         const response = await fetch(
-            `${API_BASE_URL}/pdf/${id}`,
+            `${API_BASE_URL}/pdf/${id}${queryString ? `?${queryString}` : ""}`,
             {
                 credentials: "include"
             }
@@ -216,7 +225,7 @@ export async function deleteBoardPaper(id) {
 /*
 ==========================================
 Board Paper History
-GET /api/boardpaper/history
+GET /api/boardpapers
 ==========================================
 */
 
@@ -225,7 +234,7 @@ export async function getBoardPaperHistory() {
     try {
 
         const response = await fetch(
-            `${API_BASE_URL}/history`,
+            `${API_BASE_URL}`,
             {
                 credentials: "include"
             }
