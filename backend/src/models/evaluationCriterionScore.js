@@ -1,10 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-// Manual per-criterion staff scoring (replaces the AI-extraction PQM flow).
-// The *_snapshot columns freeze the criterion's name/category/weight as they
-// were when this evaluation was created, so a later edit to evaluation_criteria
-// never alters a historical record.
 const EvaluationCriterionScore = sequelize.define('EvaluationCriterionScore', {
   id: {
     type: DataTypes.INTEGER,
@@ -48,7 +44,14 @@ const EvaluationCriterionScore = sequelize.define('EvaluationCriterionScore', {
   tableName: 'evaluation_criterion_scores',
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  updatedAt: 'updated_at',
+  indexes: [
+    {
+      unique: true,
+      fields: ['evaluation_id', 'evaluation_criteria_id'],
+      name: 'evaluation_criterion_scores_evaluation_criteria_unique'
+    }
+  ]
 });
 
 module.exports = EvaluationCriterionScore;
