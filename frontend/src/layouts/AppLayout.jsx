@@ -66,9 +66,9 @@ function formatRelativeTime(minutesAgo) {
 // Groups the 9 top-level routeConfig entries into the 4 feature-owner categories
 // used by the nav bar. Paths must match routeConfig.jsx's route.path exactly -
 // role visibility per item is still resolved from routeConfig, not hardcoded here.
-// "Strategic Rankings Dashboard" and "Approvals / Manager Decision" don't have
-// dedicated pages yet, so they point at the existing Dashboard / Evaluations
-// routes that host those sections until Kai Xuan / Jerrold split them out.
+// "Strategic Rankings Dashboard" doesn't have a dedicated page yet, so it points
+// at the existing Dashboard route that hosts that section until Kai Xuan splits
+// it out.
 const NAV_GROUPS = [
   {
     label: 'Setup & Submissions',
@@ -89,7 +89,7 @@ const NAV_GROUPS = [
     items: [
       { label: 'Evaluation Criteria', path: '/evaluations/criteria' },
       { label: 'Evaluations', path: '/evaluations' },
-      { label: 'Approvals / Manager Decision', path: '/evaluations' },
+      { label: 'Approvals / Manager Decision', path: '/evaluations/pending-approvals' },
     ],
   },
   {

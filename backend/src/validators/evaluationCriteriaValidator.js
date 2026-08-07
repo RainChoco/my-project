@@ -1,6 +1,6 @@
 const yup = require('yup');
 
-const CATEGORIES = ['price', 'quality'];
+const CATEGORIES = ['price', 'quality', 'experience', 'capability', 'compliance', 'other'];
 
 const idOnlySchema = yup.object({
   params: yup.object({
@@ -20,6 +20,10 @@ const createCriteriaSchema = yup.object({
     category: yup.string()
       .oneOf(CATEGORIES, 'category must be one of: ' + CATEGORIES.join(', '))
       .required('category is required'),
+    description: yup.string().trim()
+      .min(10, 'description should explain what evaluators should assess (at least 10 characters)')
+      .max(500, 'description must be 500 characters or fewer')
+      .optional(),
     weight_percentage: yup.number()
       .moreThan(0, 'weight_percentage must be greater than 0')
       .max(100, 'weight_percentage must not exceed 100')
@@ -33,6 +37,9 @@ const updateCriteriaSchema = yup.object({
   }),
   body: yup.object({
     criteria_name: yup.string().trim().optional(),
+    description: yup.string().trim()
+      .max(500, 'description must be 500 characters or fewer')
+      .optional(),
     weight_percentage: yup.number()
       .moreThan(0, 'weight_percentage must be greater than 0')
       .max(100, 'weight_percentage must not exceed 100')

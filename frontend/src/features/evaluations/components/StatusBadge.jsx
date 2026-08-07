@@ -5,7 +5,7 @@ import { cn } from '../../../lib';
 const EVALUATION_STATUS_STYLES = {
   processing: 'bg-secondary text-secondary-foreground',
   incomplete: 'border-amber-500 text-amber-700 dark:text-amber-400',
-  scored: 'bg-blue-600 text-white border-transparent',
+  scored: 'bg-orange-500 text-white border-transparent',
   approved: 'bg-green-600 text-white border-transparent',
   rejected: 'bg-destructive text-destructive-foreground border-transparent',
 };
@@ -20,7 +20,7 @@ const DECISION_STATUS_STYLES = {
 const LABELS = {
   processing: 'Processing',
   incomplete: 'Incomplete',
-  scored: 'Scored',
+  scored: 'Pending Manager Approval',
   approved: 'Approved',
   rejected: 'Rejected',
   revision_requested: 'Revision requested',

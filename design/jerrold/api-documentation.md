@@ -1,6 +1,6 @@
 # API Documentation - Jerrold (Scope B: Evaluation, Processing & Risk Framework)
 
-> Note on scope: this document covers the endpoints for my scope - Evaluation Criteria, Processing Tender Form / PQM scoring, the Risk Assessment & Mitigation Matrix, and the Approval Process - per `design/jerrold/use-cases.md` and `design/jerrold/database-schema.md`. There is no "Order Management" feature or "farm staff / host / buyer" roles in this project (that looks like boilerplate from a different template); roles below use this project's actual `users.role` values seeded in `backend/src/seeders/20260101000001-demo-users.js`: `ma_staff`, `evaluator`, `management`.
+> Note on scope: this document covers the endpoints for my scope - Evaluation Criteria, manual per-criterion PQM scoring, the Risk Assessment & Mitigation Matrix, and the Approval Process - per `design/jerrold/use-cases.md` and `design/jerrold/database-schema.md`. There is no "Order Management" feature or "farm staff / host / buyer" roles in this project (that looks like boilerplate from a different template); roles below use this project's actual `users.role` values seeded in `backend/src/seeders/20260101000001-demo-users.js`: `ma_staff`, `evaluator`, `management`.
 
 Base path: `/api`. All request/response bodies are JSON. All endpoints require `Authorization: Bearer <JWT>` unless marked "Auth required: No".
 
@@ -59,7 +59,7 @@ Base path: `/api`. All request/response bodies are JSON. All endpoints require `
   - `404 Not Found` - no criterion with that `id`.
   - `409 Conflict` - resulting active weight sum != 100%.
   - `401 Unauthorized` / `403 Forbidden`.
-- **Note:** editing a criterion never rewrites `ai_extracted_inputs`/`pqm_score` on past `evaluations` rows scored under the old weight - those keep their original values (UC-B2 edge case).
+- **Note:** editing a criterion never rewrites the `weight_percentage_snapshot`/`pqm_score` on past `evaluations` rows scored under the old weight - those keep their original values via `evaluation_criterion_scores`'s snapshot columns (UC-B2 edge case).
 
 ### 4. `DELETE /api/evaluation-criteria/:id`
 
@@ -76,25 +76,28 @@ Base path: `/api`. All request/response bodies are JSON. All endpoints require `
 
 ---
 
-## Processing Tender Form / PQM Evaluations
+## Manual Criterion Scoring / PQM Evaluations
+
+> **Corrected:** this section previously described an AI-document-extraction scoring
+> flow (`document_ids` -> `ai_extracted_inputs` -> `PATCH .../confirm-inputs`). Per
+> lecturer feedback, that flow never had a real ChatGPT integration behind it (the
+> stub always returned nulls) and has been fully replaced with manual per-criterion
+> staff scoring - see `design/jerrold/use-cases.md` UC-B4/UC-B5 and
+> `design/jerrold/database-schema.md`'s `evaluation_criterion_scores` table.
 
 ### 5. `POST /api/tenders/:tenderId/evaluations`
 
-- **Purpose:** Open the Processing Tender Form and kick off AI extraction of price/quality inputs for a tender (UC-B4). Creates a new `evaluations` row with `status: 'processing'`.
+- **Purpose:** Create an evaluation from an existing tender (UC-B4). Creates a new `evaluations` row with `status: 'processing'` and one unscored `evaluation_criterion_scores` row per active criterion.
 - **Auth required:** Yes - `role: 'evaluator'`.
-- **Request body:**
-  ```json
-  { "document_ids": [9, 10, 11, 12] }
-  ```
-  `document_ids` are the `tender_documents.id` values (Zheng Hong's Scope A) ChatGPT should read - typically the latest main offer, alternative offer, and license.
-- **Example success response** - `202 Accepted` (AI extraction is async):
+- **Request body:** none.
+- **Example success response** - `201 Created`:
   ```json
   { "id": 6, "tender_id": 5, "status": "processing", "evaluated_by": 2, "created_at": "2026-07-10T09:30:00.000Z" }
   ```
 - **Error responses:**
   - `404 Not Found` - no tender with that id.
-  - `409 Conflict` - tender's `eligibility_status` is `'rejected'`; the Processing Tender Form is blocked entirely for a debarred/rejected tender (UC-B4 edge case). Body: `{ "error": "tender_ineligible", "eligibility_status": "rejected" }`.
-  - `502 Bad Gateway` - ChatGPT API call failed/timed out; no `evaluations` row is created.
+  - `409 Conflict` - tender's `eligibility_status` is `'rejected'` (UC-B4 edge case). Body: `{ "error": "tender_ineligible", "eligibility_status": "rejected" }`.
+  - `409 Conflict` - active `evaluation_criteria` don't sum to exactly 100%. Body: `{ "active_weight_total": 85 }`.
   - `401 Unauthorized` / `403 Forbidden`.
 
 ### 6. `GET /api/tenders/:tenderId/evaluations`
@@ -116,21 +119,22 @@ Base path: `/api`. All request/response bodies are JSON. All endpoints require `
 
 ### 7. `GET /api/evaluations/:id`
 
-- **Purpose:** View the full PQM score breakdown for one evaluation attempt (UC-B6): scores, weights used, and raw AI extraction.
+- **Purpose:** View the full PQM score breakdown for one evaluation attempt (UC-B6): the tender it's for, and every criterion's snapshotted name/category/weight alongside its staff score, weighted contribution, and remarks.
 - **Auth required:** Yes - any authenticated role.
 - **Example success response** - `200 OK`:
   ```json
   {
     "id": 4,
     "tender_id": 5,
-    "price_score": "52.00",
-    "quality_score": "38.00",
-    "pqm_score": "90.00",
+    "tender_ref_no": "TC-2026-005",
+    "vendor_name": "MegaWorks Holdings Pte Ltd",
+    "price_score": "48.00",
+    "quality_score": "36.00",
+    "pqm_score": "84.00",
     "status": "scored",
-    "ai_extracted_inputs": { "main_offer_price": 92000000, "alternative_offer_price": 88000000, "price_deviation_flagged": false, "technical_proposal_score_raw": 95 },
-    "criteria_used": [
-      { "criteria_name": "Price Competitiveness", "category": "price", "weight_percentage": "60.00" },
-      { "criteria_name": "Technical Quality & Track Record", "category": "quality", "weight_percentage": "40.00" }
+    "criterion_scores": [
+      { "id": 7, "evaluation_criteria_id": 1, "criteria_name": "Price Competitiveness", "category": "price", "weight_percentage": "60.00", "staff_score": "80.00", "weighted_score": "48.00", "remarks": "Competitive pricing" },
+      { "id": 8, "evaluation_criteria_id": 2, "criteria_name": "Technical Quality & Track Record", "category": "quality", "weight_percentage": "40.00", "staff_score": "90.00", "weighted_score": "36.00", "remarks": "Strong track record" }
     ],
     "evaluated_by": 2,
     "evaluation_date": "2026-07-08"
@@ -139,44 +143,71 @@ Base path: `/api`. All request/response bodies are JSON. All endpoints require `
 - **Error responses:**
   - `404 Not Found`.
   - `401 Unauthorized`.
-- **Note:** when `status: 'incomplete'`, the response includes a `missing_fields` array (from `ai_extracted_inputs`) instead of a `pqm_score` of `0`, so the UI can distinguish "not enough data to score" from "genuinely scored low" (UC-B6 edge case).
+- **Note:** while `status: 'processing'`, `criterion_scores[].staff_score`/`weighted_score` are `null` until the evaluator saves a draft for that criterion; `price_score`/`quality_score`/`pqm_score` stay `null` until the evaluation is submitted (endpoint #8a).
 
-### 8. `PATCH /api/evaluations/:id/confirm-inputs`
+### 8. `PATCH /api/evaluations/:id/scores`
 
-- **Purpose:** Evaluator reviews/corrects the AI-extracted inputs and confirms them, which triggers deterministic PQM computation (UC-B4 step 5 -> UC-B5). The score is calculated in the backend, not by the LLM.
+- **Purpose:** Save or update draft criterion scores (UC-B5 step 1). Can be called any number of times while the evaluation is still `status: 'processing'`; partial submissions are allowed.
 - **Auth required:** Yes - `role: 'evaluator'`.
 - **Request body:**
   ```json
-  { "ai_extracted_inputs": { "main_offer_price": 92000000, "alternative_offer_price": 88000000, "technical_proposal_score_raw": 95 } }
+  { "scores": [ { "evaluation_criteria_id": 1, "staff_score": 80, "remarks": "Competitive pricing" } ] }
   ```
+  `staff_score` must be between 0 and 100; `remarks` is optional.
+- **Example success response** - `200 OK`: the full evaluation detail shape from endpoint #7, reflecting the updated draft.
+- **Error responses:**
+  - `404 Not Found` - no evaluation with that id.
+  - `400 Bad Request` - `staff_score` out of range, or an `evaluation_criteria_id` that isn't part of this evaluation.
+  - `409 Conflict` - evaluation `status` is not `'processing'` (already scored, approved, or rejected - only a fresh re-evaluation attempt (#9) can be rescored).
+  - `401 Unauthorized` / `403 Forbidden`.
+
+### 8a. `POST /api/evaluations/:id/submit`
+
+- **Purpose:** Evaluator submits the evaluation once every active criterion has a staff score, triggering the backend-calculated weighted PQM total (UC-B5 steps 2-4). The frontend never submits a `pqm_score` directly - it is always derived here from `staff_score / 100 * weight_percentage_snapshot` per criterion.
+- **Auth required:** Yes - `role: 'evaluator'`.
+- **Request body:** none.
 - **Example success response** - `200 OK`:
   ```json
-  { "id": 4, "status": "scored", "price_score": "52.00", "quality_score": "38.00", "pqm_score": "90.00", "evaluation_date": "2026-07-08" }
+  { "id": 4, "status": "scored", "price_score": "48.00", "quality_score": "36.00", "pqm_score": "84.00", "evaluation_date": "2026-07-08" }
   ```
 - **Error responses:**
   - `404 Not Found` - no evaluation with that id, or it isn't `status: 'processing'`.
-  - `422 Unprocessable Entity` - a required input for the active criteria set is still missing after confirmation; response sets `status: 'incomplete'` instead of computing a partial score, and lists `missing_fields` (UC-B5 edge case):
+  - `422 Unprocessable Entity` - one or more criteria are still unscored; response lists `missing_criteria` instead of computing a partial total (UC-B5 edge case):
     ```json
-    { "id": 6, "status": "incomplete", "missing_fields": ["technical_proposal_score_raw"] }
+    { "id": 6, "status": "processing", "missing_criteria": [{ "evaluation_criteria_id": 2, "criteria_name": "Technical Quality & Track Record" }] }
     ```
   - `401 Unauthorized` / `403 Forbidden`.
 
 ### 9. `POST /api/evaluations/:id/reprocess`
 
-- **Purpose:** Re-evaluate a rejected tender after new information becomes available - e.g. a resolved pricing-deviation clarification from Sulaiman's Scope D (UC-B11). Creates a **new** `evaluations` row rather than mutating the rejected one.
+- **Purpose:** Re-evaluate a rejected tender - e.g. a resolved pricing-deviation clarification from Sulaiman's Scope D (UC-B11). Creates a **new** `evaluations` row (not a mutation of the rejected one), with a fresh set of unscored `evaluation_criterion_scores` snapshotted from the currently active criteria.
 - **Auth required:** Yes - `role: 'evaluator'`.
-- **Request body:**
-  ```json
-  { "document_ids": [9, 10, 11, 12] }
-  ```
+- **Request body:** none.
 - **Example success response** - `201 Created`:
   ```json
-  { "id": 4, "tender_id": 5, "status": "processing", "evaluated_by": 2, "created_at": "2026-07-06T09:00:00.000Z" }
+  { "id": 9, "tender_id": 5, "status": "processing", "evaluated_by": 2, "created_at": "2026-07-06T09:00:00.000Z" }
   ```
 - **Error responses:**
   - `404 Not Found`.
-  - `409 Conflict` - source evaluation's `status` is not `'rejected'` (only a rejected evaluation can be reprocessed).
+  - `409 Conflict` - source evaluation's `status` is not `'rejected'` (only a rejected evaluation can be reprocessed), or active criteria don't sum to 100% (same check as endpoint #5).
   - `401 Unauthorized` / `403 Forbidden`.
+
+### 9a. `GET /api/evaluations`
+
+- **Purpose:** List every evaluation that has been through backend PQM calculation at least once, for the cross-tender comparison table (UC-B6).
+- **Auth required:** Yes - any authenticated role.
+- **Query params:** `tender_id` (optional) - restrict the comparison to one tender's attempts.
+- **Example success response** - `200 OK`:
+  ```json
+  {
+    "data": [
+      { "id": 4, "tender_id": 5, "tender_ref_no": "TC-2026-005", "vendor_name": "MegaWorks Holdings Pte Ltd", "status": "approved", "price_score": "48.00", "quality_score": "36.00", "pqm_score": "84.00", "evaluation_date": "2026-07-08" }
+    ]
+  }
+  ```
+  Only evaluations with `status` in `'scored'`, `'approved'`, or `'rejected'` are included - a still-`'processing'` draft never appears here.
+- **Error responses:**
+  - `401 Unauthorized`.
 
 ---
 

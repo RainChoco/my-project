@@ -9,6 +9,7 @@ import {
 } from '../../../components/ui/dialog';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
+import { Textarea } from '../../../components/ui/textarea';
 import {
   Select,
   SelectTrigger,
@@ -19,32 +20,55 @@ import {
 import { FormField } from './FormField';
 import {
   CATEGORIES,
+  CATEGORY_LABELS,
   createCriteriaSchema,
   updateCriteriaSchema,
 } from '../schemas/evaluationCriteriaSchema';
+import { cn } from '../../../lib';
+
+const round2 = (n) => Math.round(n * 100) / 100;
 
 // One dialog handles both create (ma_staff, UC-B1) and edit (UC-B2) - category
 // is fixed once created, matching PUT /api/evaluation-criteria/:id which only
-// accepts criteria_name/weight_percentage.
-export function CriteriaFormDialog({ open, onOpenChange, mode, criterion, onSubmit, isSubmitting, submitError }) {
+// accepts criteria_name/description/weight_percentage.
+// `prefill` optionally seeds the create form from a suggested-criteria quick-add
+// card - the user still has to review and press Save, nothing is inserted for them.
+export function CriteriaFormDialog({ open, onOpenChange, mode, criterion, prefill, activeWeightTotal = 0, onSubmit, isSubmitting, submitError }) {
   const isEdit = mode === 'edit';
 
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: {
-      criteria_name: criterion?.criteria_name ?? '',
-      category: criterion?.category ?? '',
+      criteria_name: criterion?.criteria_name ?? prefill?.criteria_name ?? '',
+      category: criterion?.category ?? prefill?.category ?? '',
+      description: criterion?.description ?? prefill?.description ?? '',
       weight_percentage: criterion?.weight_percentage ?? '',
     },
     validationSchema: isEdit ? updateCriteriaSchema : createCriteriaSchema,
     onSubmit: async (values, { setSubmitting }) => {
       try {
-        await onSubmit(isEdit ? { criteria_name: values.criteria_name, weight_percentage: values.weight_percentage } : values);
+        await onSubmit(
+          isEdit
+            ? { criteria_name: values.criteria_name, description: values.description, weight_percentage: values.weight_percentage }
+            : values
+        );
       } finally {
         setSubmitting(false);
       }
     },
   });
+
+  // Live preview only - the backend remains the source of truth for the 100% rule
+  // (create: reject if it would push the total over 100%; edit: must land on
+  // exactly 100% when the criterion being edited is active).
+  const otherActiveTotal = round2(
+    activeWeightTotal - (isEdit && criterion?.is_active ? Number(criterion.weight_percentage) : 0)
+  );
+  const enteredWeight = Number(formik.values.weight_percentage);
+  const hasValidWeight = formik.values.weight_percentage !== '' && !Number.isNaN(enteredWeight);
+  const projectedTotal = hasValidWeight ? round2(otherActiveTotal + enteredWeight) : null;
+  const projectsOver100 = projectedTotal !== null && projectedTotal > 100;
+  const wouldExceedOnCreate = !isEdit && projectsOver100;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -64,6 +88,7 @@ export function CriteriaFormDialog({ open, onOpenChange, mode, criterion, onSubm
               <Input
                 id="criteria_name"
                 name="criteria_name"
+                placeholder="e.g. Relevant Experience"
                 value={formik.values.criteria_name}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
@@ -82,12 +107,29 @@ export function CriteriaFormDialog({ open, onOpenChange, mode, criterion, onSubm
                 <SelectContent>
                   {CATEGORIES.map((category) => (
                     <SelectItem key={category} value={category}>
-                      {category}
+                      {CATEGORY_LABELS[category] ?? category}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {isEdit && <p className="text-xs text-muted-foreground">Category can't be changed after creation.</p>}
+            </FormField>
+
+            <FormField
+              label="Description"
+              htmlFor="description"
+              error={formik.errors.description}
+              touched={formik.touched.description}
+            >
+              <Textarea
+                id="description"
+                name="description"
+                rows={3}
+                placeholder="Explain what evaluators should assess, e.g. checks whether the vendor has completed similar projects."
+                value={formik.values.description}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+              />
             </FormField>
 
             <FormField
@@ -107,6 +149,12 @@ export function CriteriaFormDialog({ open, onOpenChange, mode, criterion, onSubm
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
               />
+              {hasValidWeight && (!isEdit || criterion?.is_active) && (
+                <p className={cn('text-xs', wouldExceedOnCreate ? 'text-destructive' : 'text-muted-foreground')}>
+                  Active weight total after saving: {projectedTotal}%
+                  {wouldExceedOnCreate && ' - this exceeds the 100% limit and will be rejected.'}
+                </p>
+              )}
             </FormField>
 
             {submitError && <p className="text-sm text-destructive">{submitError}</p>}
@@ -116,7 +164,7 @@ export function CriteriaFormDialog({ open, onOpenChange, mode, criterion, onSubm
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || formik.isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || formik.isSubmitting || wouldExceedOnCreate}>
               {isSubmitting ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>

@@ -24,7 +24,7 @@ Covers every function this scope owns, per `design/er-diagram.md` (`EVALUATION_C
   3. System re-validates that all active weights still sum to 100%.
   4. System saves the change; only future evaluations use the new weighting.
 - **Edge Case / Alternative Flow:**
-  - **Criterion is already referenced by a completed `evaluations` row:** system does not retroactively rescore past evaluations - `evaluations.ai_extracted_inputs` and `pqm_score` for those rows keep their original values, preserving the audit trail.
+  - **Criterion is already referenced by a completed `evaluations` row:** system does not retroactively rescore past evaluations - that evaluation's `evaluation_criterion_scores` snapshot (`criteria_name_snapshot`/`category_snapshot`/`weight_percentage_snapshot`) and `pqm_score` keep their original values, preserving the audit trail.
 
 ## UC-B3: View Evaluation Criteria List
 
@@ -37,41 +37,43 @@ Covers every function this scope owns, per `design/er-diagram.md` (`EVALUATION_C
 - **Edge Case / Alternative Flow:**
   - **No active criteria configured yet:** UI shows an empty state prompting an admin to set up weights, since evaluation processing (UC-B4) cannot proceed without them.
 
-## UC-B4: Process Tender for Evaluation (AI Input Extraction)
+## UC-B4: Create Evaluation from an Existing Tender
 
-- **Actor:** Evaluator, triggered after a tender passes eligibility (Scope A, `eligibility_status: 'eligible'` or `'flagged'` with override)
-- **Trigger:** Evaluator opens the "Process Tender" form for a tender ready to be scored.
+- **Actor:** Evaluator
+- **Trigger:** A tender is ready to be scored (Scope A, `eligibility_status: 'eligible'` or `'flagged'` with override).
 - **Main Flow:**
-  1. Evaluator selects a tender and opens the Processing Tender Form.
-  2. Evaluator confirms/selects which uploaded documents (main offer, alternative offer) ChatGPT should read.
-  3. System sends the tender's documents plus the active `evaluation_criteria` to ChatGPT to extract structured price and quality inputs.
-  4. System writes the extracted values to `evaluations.ai_extracted_inputs` (JSONB) and creates the `evaluations` row with `status: 'processing'`, `tender_id`, and `evaluated_by`.
-  5. Evaluator reviews the extracted inputs on the form before confirming, then submits to trigger PQM computation (UC-B5).
+  1. Evaluator selects a tender from the existing `tenders` list by its `tender_ref_no` / `vendor_name` - the internal numeric `tender_id` is never something a user has to know.
+  2. System checks the tender's `eligibility_status` is not `'rejected'`.
+  3. System loads the active `evaluation_criteria` and validates the set sums to exactly 100%.
+  4. System creates the `evaluations` row (`status: 'processing'`, `tender_id`, `evaluated_by`) and one `evaluation_criterion_scores` row per active criterion, snapshotting `criteria_name`/`category`/`weight_percentage` with `staff_score` left `null`.
+  5. Evaluator is taken to the scoring form for this evaluation attempt (UC-B5).
 - **Edge Case / Alternative Flow:**
-  - **Tender's `eligibility_status` is `'rejected'`:** system blocks the Processing Tender Form from opening entirely, since a rejected tender should never receive a PQM score.
+  - **Tender's `eligibility_status` is `'rejected'`:** system blocks creation entirely (`409 tender_ineligible`), since a rejected tender should never receive a PQM score.
+  - **Active criteria don't sum to exactly 100%:** system blocks creation (`409`, reporting the current `active_weight_total`), since a PQM score computed against a mis-weighted criteria set would be invalid.
 
-## UC-B5: Compute Deterministic PQM Score
+## UC-B5: Score Evaluation Criteria & Compute Weighted PQM
 
-- **Actor:** System, triggered by Evaluator confirming extracted inputs (UC-B4)
-- **Trigger:** An `evaluations` row exists with `status: 'processing'` and confirmed `ai_extracted_inputs`.
+- **Actor:** Evaluator (scoring), System (weighted calculation)
+- **Trigger:** An `evaluations` row exists with `status: 'processing'` and its `evaluation_criterion_scores` rows are unscored (UC-B4).
 - **Main Flow:**
-  1. Backend reads the confirmed `ai_extracted_inputs` and the active `evaluation_criteria` weights.
-  2. Backend deterministically calculates `price_score` and `quality_score` in code (not via the LLM), since arithmetic precision matters for a compliance-facing score.
-  3. Backend combines the weighted scores into `pqm_score` (out of 100%).
-  4. System saves the scores to the `evaluations` row and sets `status: 'scored'` and `evaluation_date`.
+  1. Evaluator enters a `staff_score` (0-100) and optional `remarks` for each criterion on the scoring form; progress can be saved as a draft any number of times (`PATCH /api/evaluations/:id/scores`).
+  2. Once every criterion has a `staff_score`, evaluator submits the evaluation (`POST /api/evaluations/:id/submit`).
+  3. Backend recomputes each row's `weighted_score` (`staff_score / 100 * weight_percentage_snapshot`) - never trusting a client-supplied value - and sums them into `price_score` / `quality_score` / `pqm_score`.
+  4. System sets `status: 'scored'` and `evaluation_date`; the final PQM score is displayed to the evaluator.
 - **Edge Case / Alternative Flow:**
-  - **`ai_extracted_inputs` is missing a value the formula needs** (e.g. AI could not read the alternative offer price): system does not silently compute a partial score - it sets `status: 'incomplete'` and flags which input is missing for the evaluator to supply manually before scoring can proceed.
+  - **Submission attempted while any criterion is still unscored:** system blocks with `422` and lists which criteria are missing a score, rather than computing a partial total.
+  - **Draft scores edited after the evaluation is already `'scored'`:** blocked (`409`) - only a fresh re-evaluation attempt (UC-B11) can be rescored.
 
-## UC-B6: View Evaluation / PQM Score Breakdown
+## UC-B6: View Evaluation / PQM Score Breakdown & Compare Results
 
 - **Actor:** Evaluators, Management
-- **Trigger:** A user wants to see how a tender's PQM score was derived, or compare scores across vendors for the same tender exercise.
+- **Trigger:** A user wants to see how a tender's PQM score was derived, or compare scores across evaluation attempts/vendors.
 - **Main Flow:**
-  1. User opens a tender's evaluation detail view.
-  2. System fetches the `evaluations` row(s) for that `tender_id`.
-  3. UI displays `price_score`, `quality_score`, `pqm_score`, the criteria weights used, and the raw `ai_extracted_inputs` for transparency.
+  1. User opens a tender's evaluation detail view, or the Evaluations list's comparison table.
+  2. System fetches the `evaluations` row(s) for that `tender_id`, or every completed evaluation across tenders for the comparison table.
+  3. UI displays each criterion's snapshotted `criteria_name`/`category`/`weight_percentage` alongside its `staff_score` and `weighted_score`, plus `price_score`/`quality_score`/`pqm_score` - exactly as recorded at scoring time, unaffected by any later edit to `evaluation_criteria`.
 - **Edge Case / Alternative Flow:**
-  - **Evaluation `status` is `'incomplete'`:** UI surfaces the missing-input warning from UC-B5 instead of displaying a `pqm_score` of 0, so it isn't mistaken for a genuinely low score.
+  - **Evaluation `status` is `'processing'`:** UI shows the live scoring form instead of a final PQM score, so an in-progress evaluation is never mistaken for a genuinely low one.
 
 ## UC-B7: Generate AI Risk Assessment & Mitigation Matrix
 
@@ -127,8 +129,8 @@ Covers every function this scope owns, per `design/er-diagram.md` (`EVALUATION_C
 - **Trigger:** A Manager rejects an evaluation (UC-B9) but the tender is not withdrawn - e.g. after a clarification response (Scope D) resolves a pricing deviation, the MA team wants it rescored. **This is always a manual, evaluator-initiated action** - re-processing is never fired automatically off a Scope D clarification being resolved, to avoid a circular build dependency between Scope B and Scope D (see `design/feature-dependencies.md`, "Circular Dependency"). An evaluator checks Scope D's clarification log themselves and decides to re-process.
 - **Main Flow:**
   1. Evaluator opens a tender with `evaluations.status: 'rejected'`.
-  2. Evaluator manually triggers "Re-process Evaluation" (`POST /api/evaluations/:id/reprocess`), which creates a new `evaluations` row (not an edit of the rejected one) linked to the same `tender_id`.
-  3. Flow resumes at UC-B4 (AI input extraction) using any updated documents/vendor responses.
+  2. Evaluator manually triggers "Re-evaluate" (`POST /api/evaluations/:id/reprocess`), which creates a new `evaluations` row (not an edit of the rejected one) linked to the same `tender_id`, with a fresh set of unscored `evaluation_criterion_scores` rows snapshotted from the *currently* active criteria.
+  3. Flow resumes at UC-B5 (the scoring form) for the evaluator to enter fresh staff scores.
   4. The prior rejected `evaluations` row and its `approvals`/`risk_assessments` remain untouched as historical record.
 - **Edge Case / Alternative Flow:**
-  - **Underlying tender documents haven't changed since the rejection:** system still allows re-processing (e.g. a Manager may want a different evaluator's read of the same evidence), but flags on the new evaluation that no source documents changed since the last rejection, so reviewers know why the inputs look identical.
+  - **Active criteria have changed since the rejected attempt:** the new evaluation attempt is scored against the current weighting, not the rejected attempt's - each evaluation's `evaluation_criterion_scores` snapshot always reflects the criteria set in effect when *that* attempt was created, so the two attempts remain independently comparable and neither retroactively changes the other.

@@ -1,6 +1,6 @@
 # Database Schema - Jerrold (Scope B: Evaluation, Processing & Risk Framework)
 
-Tables owned by this scope, per `design/er-diagram.md` and `design/jerrold/use-cases.md`: `evaluation_criteria`, `evaluations`, `risk_assessments`, `approvals`. All tables use Sequelize's default `id` (INTEGER, autoincrement) primary key and `underscored: true` / `timestamps: true` model options unless noted.
+Tables owned by this scope, per `design/er-diagram.md` and `design/jerrold/use-cases.md`: `evaluation_criteria`, `evaluations`, `evaluation_criterion_scores`, `risk_assessments`, `approvals`. All tables use Sequelize's default `id` (INTEGER, autoincrement) primary key and `underscored: true` / `timestamps: true` model options unless noted.
 
 ## External Foreign Key Dependencies
 
@@ -65,7 +65,7 @@ One row per scoring attempt on a tender. A tender can have more than one `evalua
 | `price_score` | `DataTypes.DECIMAL(5, 2)` | NULL until scored |
 | `quality_score` | `DataTypes.DECIMAL(5, 2)` | NULL until scored |
 | `pqm_score` | `DataTypes.DECIMAL(5, 2)` | NULL until scored |
-| `ai_extracted_inputs` | `DataTypes.JSONB` | NULL until AI extraction runs |
+| `ai_extracted_inputs` | `DataTypes.JSONB` | Unused legacy column (see note below) - always NULL on evaluations created by the current manual-scoring flow |
 | `status` | `DataTypes.ENUM('processing', 'incomplete', 'scored', 'approved', 'rejected')` | NOT NULL, default `'processing'` |
 | `evaluated_by` | `DataTypes.INTEGER` | FK -> `users.id`, NOT NULL |
 | `evaluation_date` | `DataTypes.DATE` | NULL until `status: 'scored'` |
@@ -91,7 +91,7 @@ const Evaluation = sequelize.define('Evaluation', {
   underscored: true,
 });
 
-Evaluation.belongsTo(Tender, { foreignKey: 'tender_id' });
+Evaluation.belongsTo(Tender, { foreignKey: 'tender_id', as: 'tender' });
 Tender.hasMany(Evaluation, { foreignKey: 'tender_id' });
 
 Evaluation.belongsTo(User, { as: 'evaluator', foreignKey: 'evaluated_by' });
@@ -99,6 +99,52 @@ User.hasMany(Evaluation, { as: 'evaluationsDone', foreignKey: 'evaluated_by' });
 
 Evaluation.hasMany(RiskAssessment, { foreignKey: 'evaluation_id', onDelete: 'CASCADE' });
 Evaluation.hasMany(Approval, { foreignKey: 'evaluation_id', onDelete: 'CASCADE' });
+```
+
+> **Corrected:** `price_score`/`quality_score`/`pqm_score` are no longer derived from `ai_extracted_inputs` via an AI-formula - per lecturer feedback (manual per-criterion staff scoring), they're now the backend-summed `weighted_score` totals from `evaluation_criterion_scores` (see below), split by `category_snapshot`. `ai_extracted_inputs` and the `'incomplete'` status value are unused by current code (kept only so no destructive column/enum-drop migration was needed) - `status: 'processing'` now means "created, staff scoring in progress" rather than "AI extraction running". The `Evaluation.belongsTo(Tender)` association above was previously deferred (see `models/index.js`'s old note) and is now live, with the FK name confirmed to match the `evaluations` migration.
+
+---
+
+## 2a. `evaluation_criterion_scores`
+
+One row per active criterion at the time an evaluation was created (UC-B4/B5). The `*_snapshot` columns freeze `criteria_name`/`category`/`weight_percentage` as they were then, so a later edit to `evaluation_criteria` never alters a historical evaluation's record (UC-B2's edge case, extended to this table). `staff_score`/`weighted_score` start `null` and are filled in by the evaluator via draft saves; `weighted_score` is always recomputed server-side, never accepted from the client.
+
+| Column | Type | Constraints |
+|---|---|---|
+| `id` | `DataTypes.INTEGER` | PK, autoincrement |
+| `evaluation_id` | `DataTypes.INTEGER` | FK -> `evaluations.id`, NOT NULL, `onDelete: 'CASCADE'` |
+| `evaluation_criteria_id` | `DataTypes.INTEGER` | FK -> `evaluation_criteria.id`, NOT NULL |
+| `criteria_name_snapshot` | `DataTypes.STRING` | NOT NULL |
+| `category_snapshot` | `DataTypes.ENUM('price', 'quality')` | NOT NULL |
+| `weight_percentage_snapshot` | `DataTypes.DECIMAL(5, 2)` | NOT NULL |
+| `staff_score` | `DataTypes.DECIMAL(5, 2)` | NULL until scored, `CHECK (staff_score >= 0 AND staff_score <= 100)` |
+| `weighted_score` | `DataTypes.DECIMAL(5, 2)` | NULL until scored, backend-computed only |
+| `remarks` | `DataTypes.TEXT` | NULL |
+| `created_at` | `DataTypes.DATE` | NOT NULL, default `NOW` |
+| `updated_at` | `DataTypes.DATE` | NOT NULL, default `NOW` |
+
+Unique composite index on `(evaluation_id, evaluation_criteria_id)` - a criterion can only have one score row per evaluation attempt.
+
+```js
+const EvaluationCriterionScore = sequelize.define('EvaluationCriterionScore', {
+  evaluation_id: { type: DataTypes.INTEGER, allowNull: false },
+  evaluation_criteria_id: { type: DataTypes.INTEGER, allowNull: false },
+  criteria_name_snapshot: { type: DataTypes.STRING, allowNull: false },
+  category_snapshot: { type: DataTypes.ENUM('price', 'quality'), allowNull: false },
+  weight_percentage_snapshot: { type: DataTypes.DECIMAL(5, 2), allowNull: false },
+  staff_score: { type: DataTypes.DECIMAL(5, 2), allowNull: true, validate: { min: 0, max: 100 } },
+  weighted_score: { type: DataTypes.DECIMAL(5, 2), allowNull: true },
+  remarks: { type: DataTypes.TEXT, allowNull: true },
+}, {
+  tableName: 'evaluation_criterion_scores',
+  underscored: true,
+});
+
+Evaluation.hasMany(EvaluationCriterionScore, { as: 'criterionScores', foreignKey: 'evaluation_id', onDelete: 'CASCADE' });
+EvaluationCriterionScore.belongsTo(Evaluation, { foreignKey: 'evaluation_id' });
+
+EvaluationCriterionScore.belongsTo(EvaluationCriteria, { as: 'criterion', foreignKey: 'evaluation_criteria_id' });
+EvaluationCriteria.hasMany(EvaluationCriterionScore, { foreignKey: 'evaluation_criteria_id' });
 ```
 
 ---

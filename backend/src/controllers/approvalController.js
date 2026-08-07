@@ -34,6 +34,7 @@ const list = async (req, res) => {
       data: approvals.map((a) => ({
         id: a.id,
         approver_id: a.approver_id,
+        approver_name: a.approver?.full_name ?? null,
         decision: a.decision,
         remarks: a.remarks,
         decided_at: a.decided_at

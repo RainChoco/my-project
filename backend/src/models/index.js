@@ -9,6 +9,7 @@ const BcaGradeLimit = require('./bcaGradeLimit');
 const EligibilityThreshold = require('./eligibilityThreshold');
 const EvaluationCriteria = require('./evaluationCriteria');
 const Evaluation = require('./evaluation');
+const EvaluationCriterionScore = require('./evaluationCriterionScore');
 const Approval = require('./approval');
 const BoardPaper = require('./BoardPaper');
 const Proposal = require('./Proposal');
@@ -51,9 +52,16 @@ Approval.belongsTo(Evaluation, { foreignKey: 'evaluation_id' });
 Approval.belongsTo(User, { as: 'approver', foreignKey: 'approver_id' });
 User.hasMany(Approval, { as: 'approvalsDecided', foreignKey: 'approver_id' });
 
-// Evaluation → Tender (FK confirmed: tender_id from 20260101000013-create-evaluations.js)
+// FK name matches the evaluations migration (tender_id -> tenders.id) - now that
+// Zheng Hong's Tender model is merged, this association is safe to wire up.
 Evaluation.belongsTo(Tender, { foreignKey: 'tender_id', as: 'tender' });
 Tender.hasMany(Evaluation, { foreignKey: 'tender_id', as: 'evaluations' });
+
+Evaluation.hasMany(EvaluationCriterionScore, { as: 'criterionScores', foreignKey: 'evaluation_id', onDelete: 'CASCADE' });
+EvaluationCriterionScore.belongsTo(Evaluation, { foreignKey: 'evaluation_id', as: 'evaluations' });
+
+EvaluationCriterionScore.belongsTo(EvaluationCriteria, { as: 'criterion', foreignKey: 'evaluation_criteria_id' });
+EvaluationCriteria.hasMany(EvaluationCriterionScore, { foreignKey: 'evaluation_criteria_id' });
 
 // --- Sulaiman: Scope D - Alternate Proposal Communication System ---
 
@@ -91,6 +99,7 @@ module.exports = {
   EligibilityThreshold,
   EvaluationCriteria,
   Evaluation,
+  EvaluationCriterionScore,
   Approval,
   BoardPaper,
   Proposal,

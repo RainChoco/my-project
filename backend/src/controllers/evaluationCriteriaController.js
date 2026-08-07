@@ -25,10 +25,11 @@ const list = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    const { criteria_name, category, weight_percentage } = req.body;
+    const { criteria_name, category, description, weight_percentage } = req.body;
     const criterion = await evaluationCriteriaService.createCriterion({
       criteria_name,
       category,
+      description,
       weight_percentage,
       created_by: req.user.id
     });
@@ -58,4 +59,51 @@ const deactivate = async (req, res) => {
   }
 };
 
-module.exports = { list, create, update, deactivate };
+const reactivate = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const criterion = await evaluationCriteriaService.reactivateCriterion(id);
+    res.status(200).json({ id: criterion.id, is_active: criterion.is_active, updated_at: criterion.updated_at });
+  } catch (error) {
+    handleError(res, error, 'evaluationCriteria.reactivate');
+  }
+};
+
+const destroyPermanently = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const result = await evaluationCriteriaService.deleteCriterionPermanently(id);
+    res.status(200).json(result);
+  } catch (error) {
+    handleError(res, error, 'evaluationCriteria.destroyPermanently');
+  }
+};
+
+const previewDuplicateCleanup = async (req, res) => {
+  try {
+    const plan = await evaluationCriteriaService.planDuplicateCleanup();
+    res.status(200).json({ groups: plan });
+  } catch (error) {
+    handleError(res, error, 'evaluationCriteria.previewDuplicateCleanup');
+  }
+};
+
+const runDuplicateCleanup = async (req, res) => {
+  try {
+    const result = await evaluationCriteriaService.cleanupDuplicates();
+    res.status(200).json(result);
+  } catch (error) {
+    handleError(res, error, 'evaluationCriteria.runDuplicateCleanup');
+  }
+};
+
+module.exports = {
+  list,
+  create,
+  update,
+  deactivate,
+  reactivate,
+  destroyPermanently,
+  previewDuplicateCleanup,
+  runDuplicateCleanup
+};

@@ -2,18 +2,17 @@ const evaluationService = require('../services/evaluationService');
 
 const handleError = (res, error, label) => {
   if (error.status) {
-    return res.status(error.status).json(error.body || { status: 'error', message: error.message });
+    return res.status(error.status).json({ status: 'error', message: error.message, ...(error.body || {}) });
   }
   console.error(`Error in ${label}:`, error);
   return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
 };
 
-const processForEvaluation = async (req, res) => {
+const createEvaluation = async (req, res) => {
   try {
     const tenderId = parseInt(req.params.tenderId, 10);
-    const { document_ids } = req.body;
-    const evaluation = await evaluationService.processTenderForEvaluation(tenderId, document_ids, req.user.id);
-    res.status(202).json({
+    const evaluation = await evaluationService.createEvaluationFromTender(tenderId, req.user.id);
+    res.status(201).json({
       id: evaluation.id,
       tender_id: evaluation.tender_id,
       status: evaluation.status,
@@ -21,7 +20,7 @@ const processForEvaluation = async (req, res) => {
       created_at: evaluation.created_at
     });
   } catch (error) {
-    handleError(res, error, 'evaluation.processForEvaluation');
+    handleError(res, error, 'evaluation.createEvaluation');
   }
 };
 
@@ -53,10 +52,20 @@ const getDetail = async (req, res) => {
   }
 };
 
-const confirmInputs = async (req, res) => {
+const saveDraftScores = async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const evaluation = await evaluationService.confirmInputs(id, req.body.ai_extracted_inputs);
+    const detail = await evaluationService.saveDraftScores(id, req.body.scores, req.user.id);
+    res.status(200).json(detail);
+  } catch (error) {
+    handleError(res, error, 'evaluation.saveDraftScores');
+  }
+};
+
+const submitEvaluation = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const evaluation = await evaluationService.submitEvaluation(id);
     res.status(200).json({
       id: evaluation.id,
       status: evaluation.status,
@@ -66,15 +75,14 @@ const confirmInputs = async (req, res) => {
       evaluation_date: evaluation.evaluation_date
     });
   } catch (error) {
-    handleError(res, error, 'evaluation.confirmInputs');
+    handleError(res, error, 'evaluation.submitEvaluation');
   }
 };
 
 const reprocess = async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const { document_ids } = req.body;
-    const evaluation = await evaluationService.reprocessEvaluation(id, document_ids, req.user.id);
+    const evaluation = await evaluationService.reprocessEvaluation(id, req.user.id);
     res.status(201).json({
       id: evaluation.id,
       tender_id: evaluation.tender_id,
@@ -87,4 +95,22 @@ const reprocess = async (req, res) => {
   }
 };
 
-module.exports = { processForEvaluation, listForTender, getDetail, confirmInputs, reprocess };
+const listCompleted = async (req, res) => {
+  try {
+    const tenderId = req.query.tender_id ? parseInt(req.query.tender_id, 10) : undefined;
+    const evaluations = await evaluationService.listCompletedEvaluations({ tenderId });
+    res.status(200).json({ data: evaluations });
+  } catch (error) {
+    handleError(res, error, 'evaluation.listCompleted');
+  }
+};
+
+module.exports = {
+  createEvaluation,
+  listForTender,
+  getDetail,
+  saveDraftScores,
+  submitEvaluation,
+  reprocess,
+  listCompleted
+};

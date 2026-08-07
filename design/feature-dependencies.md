@@ -13,8 +13,7 @@ Cross-referenced from `README.md` (task allocation), `design/er-diagram.md`, and
 | Board Paper / Deck Generation | Calista | JWT auth + `users` table | All (Group) | Auth | No |
 | Pricing Deviation Detection; Clarification Drafting | Sulaiman | JWT auth + `users` table + RBAC roles | All (Group) | Auth | No |
 | Strategic Rankings Dashboard | Kai Xuan | JWT auth + `users` table | All (Group) | Auth | No |
-| PQM Score Calculation (AI Bid Term Extraction) | Jerrold | `tenders` table row (`evaluations.tender_id` FK) and `tenders.eligibility_status != 'rejected'` check | Zheng Hong | DB | Yes - seed a fixture `tenders` row/table early; swap to live Scope A API once ready |
-| PQM Score Calculation | Jerrold | `GET /api/tenders/:id/documents` → `tender_documents.id` list passed as `document_ids` | Zheng Hong | API | Yes - hardcode fake document IDs during dev; the AI extraction call itself can be stubbed |
+| PQM Score Calculation (manual per-criterion staff scoring) | Jerrold | `tenders` table row (`evaluations.tender_id` FK), `tenders.tender_ref_no`/`vendor_name` for display, and `tenders.eligibility_status != 'rejected'` check | Zheng Hong | DB | Yes - seed a fixture `tenders` row/table early; swap to live Scope A API once ready |
 | Risk Matrix Generation / Review Gate; Approval Audit Trail | Jerrold | Own `evaluations` row only (`evaluation.status === 'scored'`) | Jerrold (in-scope) | DB | N/A - internal to Scope B, no cross-team block |
 | Board Paper Text Generation (financial/risk sections) | Calista | `GET /api/evaluations/:id` (PQM breakdown) + `GET /api/evaluations/:id/risk-assessments` | Jerrold | API | Yes - board paper generation is read-only downstream; mock evaluation/risk JSON payloads until Scope B's endpoints are live |
 | Board Paper Text Generation | Calista | `tenders` row (vendor name, tender ref) | Zheng Hong | DB | Yes - mock with fixture tender data |

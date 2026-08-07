@@ -1,27 +1,31 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, RotateCcw, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
 import { Skeleton } from '../../../components/ui/skeleton';
-import { Separator } from '../../../components/ui/separator';
-import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table';
-import { EvaluationStatusBadge, DecisionBadge } from '../components/StatusBadge';
-import { ConfirmInputsForm } from '../components/ConfirmInputsForm';
-import { ApprovalForm } from '../components/ApprovalForm';
-import { DocumentIdsDialog } from '../components/DocumentIdsDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../../components/ui/alert-dialog';
+import { EvaluationStatusBadge } from '../components/StatusBadge';
+import { CriterionScoreForm } from '../components/CriterionScoreForm';
+import { CriterionScoresTable } from '../components/CriterionScoresTable';
 import { ActionMessage } from '../components/ActionMessage';
 import { useActionMessage, getErrorMessage } from '../hooks/useActionMessage';
-import { fetchEvaluation, confirmEvaluationInputs, reprocessEvaluation } from '../services/evaluationApi';
-import { fetchApprovals, createApproval } from '../services/approvalApi';
+import { fetchEvaluation, saveDraftScores, submitEvaluation, reprocessEvaluation } from '../services/evaluationApi';
 import { useAuth } from '../../../context';
 import { ROLES } from '../../../routes/routeConfig';
 
-// UC-B5/B6 (PQM breakdown + confirm inputs), UC-B11 (reprocess), UC-B9/B10
-// (approval decision + history) - all against a single evaluation id.
+// UC-B5/B6 (weighted PQM breakdown + criterion scoring), UC-B11 (reprocess) -
+// the approval decision itself (UC-B9/B10) lives on its own page, ApprovalHistoryPage.jsx.
 export default function EvaluationDetailPage() {
   const { id } = useParams();
   const { role } = useAuth();
@@ -29,8 +33,8 @@ export default function EvaluationDetailPage() {
   const queryClient = useQueryClient();
   const { message, showSuccess } = useActionMessage();
 
-  const [confirmError, setConfirmError] = useState(null);
-  const [approvalError, setApprovalError] = useState(null);
+  const [saveError, setSaveError] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
   const [reprocessOpen, setReprocessOpen] = useState(false);
   const [reprocessError, setReprocessError] = useState(null);
 
@@ -39,50 +43,53 @@ export default function EvaluationDetailPage() {
     queryFn: () => fetchEvaluation(id),
   });
 
-  const approvalsQuery = useQuery({
-    queryKey: ['evaluation-approvals', id],
-    queryFn: () => fetchApprovals(id),
+  const invalidateEvaluation = () => queryClient.invalidateQueries({ queryKey: ['evaluation', id] });
+
+  const saveDraftMutation = useMutation({
+    mutationFn: (scores) => saveDraftScores(id, scores),
+    onSuccess: () => {
+      invalidateEvaluation();
+      setSaveError(null);
+      showSuccess('Draft scores saved.');
+    },
+    onError: (err) => setSaveError(getErrorMessage(err)),
   });
 
-  const confirmMutation = useMutation({
-    mutationFn: (payload) => confirmEvaluationInputs(id, payload),
+  const submitMutation = useMutation({
+    mutationFn: async (scores) => {
+      await saveDraftScores(id, scores);
+      return submitEvaluation(id);
+    },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['evaluation', id] });
-      setConfirmError(null);
-      showSuccess(result.status === 'scored' ? 'Inputs confirmed - PQM score computed.' : 'Inputs saved.');
+      invalidateEvaluation();
+      setSubmitError(null);
+      showSuccess(`Submitted - PQM score ${result.pqm_score}.`);
     },
     onError: (err) => {
       if (err?.response?.status === 422) {
-        // Backend already persisted the 'incomplete' status + missing_fields;
-        // refetch so the page reflects it instead of just showing a toast.
-        queryClient.invalidateQueries({ queryKey: ['evaluation', id] });
-        setConfirmError('Some required inputs are still missing - see the warning above.');
+        invalidateEvaluation();
+        const missing = err.response.data?.missing_criteria ?? [];
+        const names = missing.map((m) => m.criteria_name).join(', ');
+        setSubmitError(
+          names
+            ? `Still need a score for: ${names}.`
+            : 'Every criterion needs a staff score before this evaluation can be submitted.'
+        );
         return;
       }
-      setConfirmError(getErrorMessage(err));
+      setSubmitError(getErrorMessage(err));
     },
   });
 
   const reprocessMutation = useMutation({
-    mutationFn: (documentIds) => reprocessEvaluation(id, documentIds),
+    mutationFn: () => reprocessEvaluation(id),
     onSuccess: (evaluation) => {
       setReprocessOpen(false);
       setReprocessError(null);
-      showSuccess(`Re-processing started as evaluation #${evaluation.id}.`);
+      showSuccess(`Re-evaluation started as evaluation #${evaluation.id}.`);
       navigate(`/evaluations/${evaluation.id}`);
     },
     onError: (err) => setReprocessError(getErrorMessage(err)),
-  });
-
-  const approvalMutation = useMutation({
-    mutationFn: (values) => createApproval(id, values),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['evaluation', id] });
-      queryClient.invalidateQueries({ queryKey: ['evaluation-approvals', id] });
-      setApprovalError(null);
-      showSuccess('Decision logged.');
-    },
-    onError: (err) => setApprovalError(getErrorMessage(err)),
   });
 
   if (evaluationQuery.isLoading) {
@@ -108,9 +115,11 @@ export default function EvaluationDetailPage() {
   }
 
   const evaluation = evaluationQuery.data;
-  const canConfirmInputs = role === ROLES.EVALUATOR && ['processing', 'incomplete'].includes(evaluation.status);
+  // ma_staff shares the score/submit workflow with evaluator (see
+  // EvaluationsPage.jsx's canCreate); re-evaluation (UC-B11) stays
+  // evaluator-only, matching the backend's unchanged /reprocess route.
+  const canScore = [ROLES.EVALUATOR, ROLES.MA_STAFF].includes(role) && evaluation.status === 'processing';
   const canReprocess = role === ROLES.EVALUATOR && evaluation.status === 'rejected';
-  const canDecide = role === ROLES.MANAGEMENT && evaluation.status === 'scored';
 
   return (
     <div className="flex flex-col gap-4">
@@ -126,26 +135,17 @@ export default function EvaluationDetailPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Evaluation #{evaluation.id}</h1>
-          <p className="text-sm text-muted-foreground">Tender #{evaluation.tender_id}</p>
+          <p className="text-sm text-muted-foreground">
+            {evaluation.tender_ref_no ? `${evaluation.tender_ref_no} - ${evaluation.vendor_name}` : `Tender #${evaluation.tender_id}`}
+          </p>
         </div>
         <EvaluationStatusBadge status={evaluation.status} />
       </div>
 
-      {evaluation.status === 'incomplete' && evaluation.missing_fields?.length > 0 && (
-        <Alert className="border-amber-500 text-amber-700 dark:text-amber-400">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Missing required inputs</AlertTitle>
-          <AlertDescription>
-            The active evaluation criteria need: {evaluation.missing_fields.join(', ')}. Supply them below to compute
-            the PQM score.
-          </AlertDescription>
-        </Alert>
-      )}
-
       <Card>
         <CardHeader>
           <CardTitle className="text-base">PQM score breakdown</CardTitle>
-          <CardDescription>Computed deterministically by the backend - never accepted directly from a form.</CardDescription>
+          <CardDescription>The weighted total is always calculated by the backend - never submitted directly by the form.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
@@ -165,50 +165,33 @@ export default function EvaluationDetailPage() {
             <p className="text-lg font-semibold">{evaluation.evaluation_date ?? '-'}</p>
           </div>
         </CardContent>
-        {evaluation.criteria_used?.length > 0 && (
-          <>
-            <Separator />
-            <CardContent className="pt-6">
-              <p className="mb-2 text-sm font-medium">Active criteria used</p>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Weight</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {evaluation.criteria_used.map((c) => (
-                    <TableRow key={c.criteria_name}>
-                      <TableCell>{c.criteria_name}</TableCell>
-                      <TableCell className="capitalize">{c.category}</TableCell>
-                      <TableCell>{c.weight_percentage}%</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </>
-        )}
       </Card>
 
-      {canConfirmInputs && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Confirm extracted inputs</CardTitle>
-            <CardDescription>Review/correct the AI-extracted inputs, then confirm to compute the PQM score.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ConfirmInputsForm
-              initialInputs={evaluation.ai_extracted_inputs}
-              onSubmit={(payload) => confirmMutation.mutateAsync(payload)}
-              isSubmitting={confirmMutation.isPending}
-              submitError={confirmError}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Criterion scores</CardTitle>
+          <CardDescription>
+            {canScore
+              ? 'Enter a score (0-100) and optional remarks for every criterion, then submit to compute the PQM score.'
+              : 'Criteria, weights, and scores as recorded on this evaluation attempt - unaffected by any later change to the criteria configuration.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {canScore ? (
+            <CriterionScoreForm
+              criterionScores={evaluation.criterion_scores}
+              onSaveDraft={(scores) => saveDraftMutation.mutate(scores)}
+              onSubmitFinal={(scores) => submitMutation.mutate(scores)}
+              isSavingDraft={saveDraftMutation.isPending}
+              isSubmitting={submitMutation.isPending}
+              saveError={saveError}
+              submitError={submitError}
             />
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <CriterionScoresTable criterionScores={evaluation.criterion_scores} />
+          )}
+        </CardContent>
+      </Card>
 
       {canReprocess && (
         <Card>
@@ -226,7 +209,7 @@ export default function EvaluationDetailPage() {
               }}
             >
               <RotateCcw className="h-4 w-4" />
-              Re-process evaluation
+              Re-evaluate
             </Button>
           </CardContent>
         </Card>
@@ -234,65 +217,44 @@ export default function EvaluationDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Approval decision history</CardTitle>
-          <CardDescription>Append-only audit trail - a new evaluation attempt starts its own fresh history.</CardDescription>
+          <CardTitle className="text-base">Approval</CardTitle>
+          <CardDescription>
+            Criteria scores, a board paper summary, the decision history, and (for management) the decision form all
+            live on the dedicated Approval page.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {approvalsQuery.isLoading ? (
-            <Skeleton className="h-8 w-full" />
-          ) : approvalsQuery.isError ? (
-            <p className="text-sm text-muted-foreground">{getErrorMessage(approvalsQuery.error, 'Failed to load approval history.')}</p>
-          ) : approvalsQuery.data.data.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Awaiting approval.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Decision</TableHead>
-                  <TableHead>Remarks</TableHead>
-                  <TableHead>Decided at</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {approvalsQuery.data.data.map((approval) => (
-                  <TableRow key={approval.id}>
-                    <TableCell><DecisionBadge decision={approval.decision} /></TableCell>
-                    <TableCell className="max-w-sm truncate">{approval.remarks ?? '-'}</TableCell>
-                    <TableCell>{new Date(approval.decided_at).toLocaleString()}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <Button onClick={() => navigate(`/evaluations/${id}/approval`)}>
+            <ShieldCheck className="h-4 w-4" />
+            Open approval page
+          </Button>
         </CardContent>
       </Card>
 
-      {canDecide && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Log a decision</CardTitle>
-            <CardDescription>Approve, reject, or request revision. Remarks are required unless approving.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ApprovalForm
-              onSubmit={(values) => approvalMutation.mutateAsync(values)}
-              isSubmitting={approvalMutation.isPending}
-              submitError={approvalError}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      <DocumentIdsDialog
-        open={reprocessOpen}
-        onOpenChange={setReprocessOpen}
-        title="Re-process evaluation"
-        description="Starts a new evaluation attempt for the same tender, using any updated documents."
-        submitLabel="Start re-processing"
-        isSubmitting={reprocessMutation.isPending}
-        submitError={reprocessError}
-        onSubmit={(documentIds) => reprocessMutation.mutateAsync(documentIds)}
-      />
+      <AlertDialog open={reprocessOpen} onOpenChange={setReprocessOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Re-evaluate this tender?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Starts a brand-new evaluation attempt against the currently active criteria. This rejected record stays
+              untouched as historical record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {reprocessError && <p className="text-sm text-destructive">{reprocessError}</p>}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reprocessMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                reprocessMutation.mutate();
+              }}
+              disabled={reprocessMutation.isPending}
+            >
+              {reprocessMutation.isPending ? 'Starting...' : 'Re-evaluate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
