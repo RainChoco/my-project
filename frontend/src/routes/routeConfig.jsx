@@ -9,7 +9,7 @@ import {
   TenderRecordLookupPage,
   EligibilityConfigPage,
 } from '../features/tenders';
-import { EvaluationCriteriaPage, EvaluationsPage, EvaluationDetailPage } from '../features/evaluations';
+import { EvaluationCriteriaPage, EvaluationsPage, EvaluationDetailPage, ApprovalHistoryPage, PendingApprovalsPage } from '../features/evaluations';
 import {
   BoardPaperPage,
   BoardPaperResultPage,
@@ -92,11 +92,21 @@ export const routeConfig = [
     element: <EvaluationsPage />,
   },
   {
+    path: '/evaluations/pending-approvals',
+    label: 'Approval',
+    roles: [MA_STAFF, EVALUATOR, MANAGEMENT], // UC-B9/B10: queue of evaluations awaiting a manager decision
+    element: <PendingApprovalsPage />,
+  },
+  {
     path: '/evaluations/:id',
     // Not in the sidebar nav (no `label`) - reached by clicking a row on
     // /evaluations, not a top-level nav item. Same actor list as /evaluations.
     roles: [MA_STAFF, EVALUATOR, MANAGEMENT],
     element: <EvaluationDetailPage />,
+    children: [
+      // UC-B9/B10: dedicated manager-decision screen, linked from EvaluationDetailPage.
+      { path: 'approval', roles: [MA_STAFF, EVALUATOR, MANAGEMENT], element: <ApprovalHistoryPage /> },
+    ],
   },
   {
   path: '/board-papers',

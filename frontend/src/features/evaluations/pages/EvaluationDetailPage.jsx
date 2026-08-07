@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,19 +15,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../../../components/ui/alert-dialog';
-import { Badge } from '../../../components/ui/badge';
-import { EvaluationStatusBadge, DecisionBadge } from '../components/StatusBadge';
+import { EvaluationStatusBadge } from '../components/StatusBadge';
 import { CriterionScoreForm } from '../components/CriterionScoreForm';
-import { ApprovalForm } from '../components/ApprovalForm';
+import { CriterionScoresTable } from '../components/CriterionScoresTable';
 import { ActionMessage } from '../components/ActionMessage';
 import { useActionMessage, getErrorMessage } from '../hooks/useActionMessage';
 import { fetchEvaluation, saveDraftScores, submitEvaluation, reprocessEvaluation } from '../services/evaluationApi';
-import { fetchApprovals, createApproval } from '../services/approvalApi';
 import { useAuth } from '../../../context';
 import { ROLES } from '../../../routes/routeConfig';
 
-// UC-B5/B6 (weighted PQM breakdown + criterion scoring), UC-B11 (reprocess),
-// UC-B9/B10 (approval decision + history) - all against a single evaluation id.
+// UC-B5/B6 (weighted PQM breakdown + criterion scoring), UC-B11 (reprocess) -
+// the approval decision itself (UC-B9/B10) lives on its own page, ApprovalHistoryPage.jsx.
 export default function EvaluationDetailPage() {
   const { id } = useParams();
   const { role } = useAuth();
@@ -38,18 +35,12 @@ export default function EvaluationDetailPage() {
 
   const [saveError, setSaveError] = useState(null);
   const [submitError, setSubmitError] = useState(null);
-  const [approvalError, setApprovalError] = useState(null);
   const [reprocessOpen, setReprocessOpen] = useState(false);
   const [reprocessError, setReprocessError] = useState(null);
 
   const evaluationQuery = useQuery({
     queryKey: ['evaluation', id],
     queryFn: () => fetchEvaluation(id),
-  });
-
-  const approvalsQuery = useQuery({
-    queryKey: ['evaluation-approvals', id],
-    queryFn: () => fetchApprovals(id),
   });
 
   const invalidateEvaluation = () => queryClient.invalidateQueries({ queryKey: ['evaluation', id] });
@@ -101,17 +92,6 @@ export default function EvaluationDetailPage() {
     onError: (err) => setReprocessError(getErrorMessage(err)),
   });
 
-  const approvalMutation = useMutation({
-    mutationFn: (values) => createApproval(id, values),
-    onSuccess: () => {
-      invalidateEvaluation();
-      queryClient.invalidateQueries({ queryKey: ['evaluation-approvals', id] });
-      setApprovalError(null);
-      showSuccess('Decision logged.');
-    },
-    onError: (err) => setApprovalError(getErrorMessage(err)),
-  });
-
   if (evaluationQuery.isLoading) {
     return (
       <div className="flex flex-col gap-4">
@@ -135,10 +115,11 @@ export default function EvaluationDetailPage() {
   }
 
   const evaluation = evaluationQuery.data;
-  const totalActiveWeight = evaluation.criterion_scores.reduce((sum, c) => sum + Number(c.weight_percentage), 0);
-  const canScore = role === ROLES.EVALUATOR && evaluation.status === 'processing';
+  // ma_staff shares the score/submit workflow with evaluator (see
+  // EvaluationsPage.jsx's canCreate); re-evaluation (UC-B11) stays
+  // evaluator-only, matching the backend's unchanged /reprocess route.
+  const canScore = [ROLES.EVALUATOR, ROLES.MA_STAFF].includes(role) && evaluation.status === 'processing';
   const canReprocess = role === ROLES.EVALUATOR && evaluation.status === 'rejected';
-  const canDecide = role === ROLES.MANAGEMENT && evaluation.status === 'scored';
 
   return (
     <div className="flex flex-col gap-4">
@@ -187,24 +168,13 @@ export default function EvaluationDetailPage() {
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <div>
-            <CardTitle className="text-base">Criterion scores</CardTitle>
-            <CardDescription>
-              {canScore
-                ? 'Enter a score (0-100) and optional remarks for every criterion, then submit to compute the PQM score.'
-                : 'Criteria, weights, and scores as recorded on this evaluation attempt - unaffected by any later change to the criteria configuration.'}
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Total active weight</span>
-            <Badge
-              variant="outline"
-              className={totalActiveWeight === 100 ? 'border-green-500 text-green-700 dark:text-green-400' : 'border-amber-500 text-amber-700 dark:text-amber-400'}
-            >
-              {totalActiveWeight}%
-            </Badge>
-          </div>
+        <CardHeader>
+          <CardTitle className="text-base">Criterion scores</CardTitle>
+          <CardDescription>
+            {canScore
+              ? 'Enter a score (0-100) and optional remarks for every criterion, then submit to compute the PQM score.'
+              : 'Criteria, weights, and scores as recorded on this evaluation attempt - unaffected by any later change to the criteria configuration.'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {canScore ? (
@@ -218,30 +188,7 @@ export default function EvaluationDetailPage() {
               submitError={submitError}
             />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Criterion</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Weight</TableHead>
-                  <TableHead>Staff score</TableHead>
-                  <TableHead>Weighted contribution</TableHead>
-                  <TableHead>Remarks</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {evaluation.criterion_scores.map((c) => (
-                  <TableRow key={c.evaluation_criteria_id}>
-                    <TableCell>{c.criteria_name}</TableCell>
-                    <TableCell className="capitalize">{c.category}</TableCell>
-                    <TableCell>{c.weight_percentage}%</TableCell>
-                    <TableCell>{c.staff_score ?? '-'}</TableCell>
-                    <TableCell>{c.weighted_score ?? '-'}</TableCell>
-                    <TableCell className="max-w-sm truncate">{c.remarks ?? '-'}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <CriterionScoresTable criterionScores={evaluation.criterion_scores} />
           )}
         </CardContent>
       </Card>
@@ -270,54 +217,19 @@ export default function EvaluationDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Approval decision history</CardTitle>
-          <CardDescription>Append-only audit trail - a new evaluation attempt starts its own fresh history.</CardDescription>
+          <CardTitle className="text-base">Approval</CardTitle>
+          <CardDescription>
+            Criteria scores, a board paper summary, the decision history, and (for management) the decision form all
+            live on the dedicated Approval page.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {approvalsQuery.isLoading ? (
-            <Skeleton className="h-8 w-full" />
-          ) : approvalsQuery.isError ? (
-            <p className="text-sm text-muted-foreground">{getErrorMessage(approvalsQuery.error, 'Failed to load approval history.')}</p>
-          ) : approvalsQuery.data.data.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Awaiting approval.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Decision</TableHead>
-                  <TableHead>Remarks</TableHead>
-                  <TableHead>Decided at</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {approvalsQuery.data.data.map((approval) => (
-                  <TableRow key={approval.id}>
-                    <TableCell><DecisionBadge decision={approval.decision} /></TableCell>
-                    <TableCell className="max-w-sm truncate">{approval.remarks ?? '-'}</TableCell>
-                    <TableCell>{new Date(approval.decided_at).toLocaleString()}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <Button onClick={() => navigate(`/evaluations/${id}/approval`)}>
+            <ShieldCheck className="h-4 w-4" />
+            Open approval page
+          </Button>
         </CardContent>
       </Card>
-
-      {canDecide && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Log a decision</CardTitle>
-            <CardDescription>Approve, reject, or request revision. Remarks are required unless approving.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ApprovalForm
-              onSubmit={(values) => approvalMutation.mutateAsync(values)}
-              isSubmitting={approvalMutation.isPending}
-              submitError={approvalError}
-            />
-          </CardContent>
-        </Card>
-      )}
 
       <AlertDialog open={reprocessOpen} onOpenChange={setReprocessOpen}>
         <AlertDialogContent>

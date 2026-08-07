@@ -24,7 +24,7 @@ const EvaluationCriterionScore = sequelize.define('EvaluationCriterionScore', {
     allowNull: false
   },
   category_snapshot: {
-    type: DataTypes.ENUM('price', 'quality'),
+    type: DataTypes.ENUM('price', 'quality', 'experience', 'capability', 'compliance', 'other'),
     allowNull: false
   },
   weight_percentage_snapshot: {

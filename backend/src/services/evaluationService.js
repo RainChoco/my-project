@@ -56,6 +56,14 @@ async function createEvaluationFromTender(tenderId, evaluatorId) {
     throw err;
   }
 
+  const inProgress = await Evaluation.findOne({ where: { tender_id: tenderId, status: 'processing' } });
+  if (inProgress) {
+    const err = new Error('An evaluation is already in progress for this tender');
+    err.status = 409;
+    err.body = { error: 'evaluation_in_progress', evaluation_id: inProgress.id };
+    throw err;
+  }
+
   const activeCriteria = await getActiveCriteriaOrThrow();
 
   return sequelize.transaction(async (t) => {

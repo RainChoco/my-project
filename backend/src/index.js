@@ -3,7 +3,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const routes = require('./routes');
-const { sequelize } = require('./models');
+const { sequelize, User, Contract, Tender } = require('./models');
+const { seedDemoUsers } = require('./utils/seedDemoUsers');
+const { seedDemoData } = require('./utils/seedDemoData');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,7 +27,21 @@ app.get('/health', (req, res) => {
 app.use('/api', routes);
 
 // Sync database schema and start server
-sequelize.sync().then(() => {
+sequelize.sync().then(async () => {
+  try {
+    await seedDemoUsers({ UserModel: User });
+    console.log('Demo users seeded');
+  } catch (seedError) {
+    console.error('Failed to seed demo users:', seedError.message);
+  }
+
+  try {
+    await seedDemoData({ ContractModel: Contract, TenderModel: Tender });
+    console.log('Demo contracts and tenders seeded');
+  } catch (seedError) {
+    console.error('Failed to seed demo contracts or tenders:', seedError.message);
+  }
+
   console.log('Database synced');
 
   if (process.env.NODE_ENV !== 'test') {

@@ -1,4 +1,4 @@
-const { Approval, Evaluation, sequelize } = require('../models');
+const { Approval, Evaluation, User, sequelize } = require('../models');
 
 // 'revision_requested' intentionally has no entry here: it doesn't finalize the
 // evaluation. evaluations.status has no matching value for it (only 'approved'/
@@ -59,7 +59,14 @@ async function listApprovals(evaluationId) {
     err.status = 404;
     throw err;
   }
-  return Approval.findAll({ where: { evaluation_id: evaluationId }, order: [['decided_at', 'ASC']] });
+  return Approval.findAll({
+    where: { evaluation_id: evaluationId },
+    // Approval.belongsTo(User, { as: 'approver' }) already exists in
+    // models/index.js - eager-loading it here just surfaces the manager's
+    // name for the Decision History table, no new association needed.
+    include: [{ model: User, as: 'approver', attributes: ['id', 'full_name'] }],
+    order: [['decided_at', 'ASC']]
+  });
 }
 
 module.exports = { createApproval, listApprovals };
