@@ -10,7 +10,10 @@ const { createEvaluationSchema, tenderIdParamSchema } = require('../validators/e
 // Jerrold: create an evaluation from an existing tender, mounted under Zheng
 // Hong's tender resource without touching his tenderRoutes.js stub.
 
-router.post('/', authenticate, authorise('evaluator'), validate(createEvaluationSchema), evaluationController.createEvaluation);
+// ma_staff can also create evaluations for this project's workflow (in
+// addition to evaluator, who keeps existing access) - management stays
+// restricted to the approval endpoints in evaluationRoutes.js.
+router.post('/', authenticate, authorise('evaluator', 'ma_staff'), validate(createEvaluationSchema), evaluationController.createEvaluation);
 router.get('/', authenticate, validate(tenderIdParamSchema), evaluationController.listForTender);
 
 module.exports = router;

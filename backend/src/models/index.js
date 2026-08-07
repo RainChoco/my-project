@@ -55,7 +55,7 @@ User.hasMany(Approval, { as: 'approvalsDecided', foreignKey: 'approver_id' });
 // FK name matches the evaluations migration (tender_id -> tenders.id) - now that
 // Zheng Hong's Tender model is merged, this association is safe to wire up.
 Evaluation.belongsTo(Tender, { foreignKey: 'tender_id', as: 'tender' });
-Tender.hasMany(Evaluation, { foreignKey: 'tender_id' });
+Tender.hasMany(Evaluation, { foreignKey: 'tender_id', as: 'evaluations' });
 
 Evaluation.hasMany(EvaluationCriterionScore, { as: 'criterionScores', foreignKey: 'evaluation_id', onDelete: 'CASCADE' });
 EvaluationCriterionScore.belongsTo(Evaluation, { foreignKey: 'evaluation_id', as: 'evaluations' });

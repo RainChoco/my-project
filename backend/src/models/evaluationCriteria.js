@@ -12,8 +12,12 @@ const EvaluationCriteria = sequelize.define('EvaluationCriteria', {
     allowNull: false
   },
   category: {
-    type: DataTypes.ENUM('price', 'quality'),
+    type: DataTypes.ENUM('price', 'quality', 'experience', 'capability', 'compliance', 'other'),
     allowNull: false
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true
   },
   weight_percentage: {
     type: DataTypes.DECIMAL(5, 2),

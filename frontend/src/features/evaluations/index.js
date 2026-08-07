@@ -3,3 +3,5 @@
 export { default as EvaluationCriteriaPage } from './pages/EvaluationCriteriaPage';
 export { default as EvaluationsPage } from './pages/EvaluationsPage';
 export { default as EvaluationDetailPage } from './pages/EvaluationDetailPage';
+export { default as ApprovalHistoryPage } from './pages/ApprovalHistoryPage';
+export { default as PendingApprovalsPage } from './pages/PendingApprovalsPage';
