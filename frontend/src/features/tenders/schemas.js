@@ -90,3 +90,27 @@ export const eligibilityOverrideSchema = Yup.object({
   passed: Yup.boolean().transform(stringToBoolean).required('Select an outcome'),
   notes: Yup.string().trim().min(1, 'Notes is required').required('Notes is required'),
 });
+
+// Eligibility Configuration settings view (EligibilityConfigPage). Per-grade "required
+// unless Unlimited" cross-field logic lives in the page's own formik `validate` function
+// instead of here, since Yup's `when()` can't easily reach a sibling top-level field
+// (bcaUnlimited.<grade>) from inside a nested bcaLimits.<grade> schema without threading
+// validation context through - a plain optional-number check here is enough for the shape.
+// max_tender_value itself mirrors backend/src/validators/tenderValidator.js's
+// bcaGradeLimitUpdateSchema (positive number or null).
+export const eligibilityConfigSchema = Yup.object({
+  bcaLimits: Yup.object(
+    Object.fromEntries(
+      BCA_GRADES.map((grade) => [
+        grade,
+        Yup.number().transform(blankToUndefined).typeError('Must be a number').positive('Must be a positive number'),
+      ])
+    )
+  ),
+  minPaidUpCapital: Yup.number()
+    .transform(blankToUndefined)
+    .typeError('Must be a number')
+    .positive('Must be a positive number')
+    .required('Minimum paid-up capital is required'),
+  minBizsafeLevel: Yup.string().oneOf(BIZSAFE_LEVELS, 'Invalid bizSAFE level').required(),
+});

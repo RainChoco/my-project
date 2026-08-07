@@ -141,7 +141,7 @@ function TenderDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link to="/tenders" className="text-sm text-muted-foreground hover:underline">
             &larr; Back to tenders
@@ -149,30 +149,31 @@ function TenderDetailPage() {
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">{tender.tender_ref_no}</h1>
           <p className="text-sm text-muted-foreground">{tender.vendor_name}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <StatusBadge status={tender.status} />
-          <EligibilityBadge eligibilityStatus={tender.eligibility_status} />
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-2">
+            <StatusBadge status={tender.status} />
+            <EligibilityBadge eligibilityStatus={tender.eligibility_status} />
+          </div>
+          {canManage && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                disabled={LOCKED_FOR_EDIT_STATUSES.includes(tender.status)}
+                onClick={() => navigate(`/tenders/${id}/edit`)}
+              >
+                Edit Tender
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={LOCKED_FOR_DELETE_STATUSES.includes(tender.status)}
+                onClick={() => setConfirmDelete(true)}
+              >
+                Delete Tender
+              </Button>
+            </div>
+          )}
         </div>
       </div>
-
-      {canManage && (
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            disabled={LOCKED_FOR_EDIT_STATUSES.includes(tender.status)}
-            onClick={() => navigate(`/tenders/${id}/edit`)}
-          >
-            Edit
-          </Button>
-          <Button
-            variant="destructive"
-            disabled={LOCKED_FOR_DELETE_STATUSES.includes(tender.status)}
-            onClick={() => setConfirmDelete(true)}
-          >
-            Withdraw / Delete
-          </Button>
-        </div>
-      )}
 
       {/* ── Linked Contract Opportunity ─────────────────────────────── */}
       {tender.contract && (

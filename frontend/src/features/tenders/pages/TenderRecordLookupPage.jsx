@@ -1,18 +1,22 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ScanSearch, FileSpreadsheet, FileImage, FileText, FileType2,
   Trash2, Sparkles, ChevronDown, CheckCircle2, Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 import { ELIGIBILITY_STATUS_LABELS, ELIGIBILITY_BADGE_VARIANTS } from '../constants';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, formatDate } from '../utils/format';
+import { computeNextTenderRefNo } from '../utils/tenderRefNo';
+import { createTenderSchema } from '../schemas';
+import { createTender, listTenders } from '../services/tenderApi';
 import TenderImageDropzone from '../components/TenderImageDropzone';
 
 // Past tender records may show up as a spreadsheet export, a scanned image, or the
@@ -44,6 +48,7 @@ const SIMULATED_EXTRACTED_FIELDS = {
   main_offer_price: 1250000,
   eligibility_status: 'eligible',
   contractId: 'CTR-PRPGTC-RR-22-001',
+  submission_date: '2026-07-10',
 };
 
 function formatFileSize(bytes) {
@@ -69,30 +74,46 @@ function getFileTypeMeta(file) {
   return { icon: FileText, color: 'text-slate-600', bg: 'bg-slate-50', label: 'Document' };
 }
 
-// Reference lookup by tender number isn't wired up in the backend yet, so that
-// field stays disabled. The upload dropzone below is otherwise fully interactive -
-// selecting a file stages it locally, and "Extract Data" simulates OCR/AI extraction
-// (see SIMULATED_EXTRACTED_FIELDS) until a real extraction service is wired up.
+// The upload dropzone is fully interactive - selecting a file stages it locally, and
+// "Extract Data" simulates OCR/AI extraction (see SIMULATED_EXTRACTED_FIELDS) until a
+// real extraction service is wired up.
 function TenderRecordLookupPage() {
   const navigate = useNavigate();
-  const [refNo, setRefNo] = useState('');
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [stagedFile, setStagedFile] = useState(null);
   // 'idle' -> 'extracting' -> 'extracted', reset whenever the staged file changes.
   const [extractionStatus, setExtractionStatus] = useState('idle');
   const [isPreviewOpen, setIsPreviewOpen] = useState(true);
+  const [submitError, setSubmitError] = useState(null);
   const extractTimeoutRef = useRef(null);
 
   useEffect(() => () => clearTimeout(extractTimeoutRef.current), []);
 
+  // Fetched purely to compute the next auto-generated tender_ref_no below (same
+  // TC-<year>-<seq> convention as TenderFormPage's create mode) - not rendered itself.
+  const { data: existingTendersData } = useQuery({
+    queryKey: ['tenders-for-ref-no'],
+    queryFn: () => listTenders({ limit: 100 }),
+  });
+  const nextTenderRefNo = useMemo(
+    () => computeNextTenderRefNo(existingTendersData?.data ?? []),
+    [existingTendersData]
+  );
+
+  const createMutation = useMutation({ mutationFn: createTender });
+
   const handleFileSelect = (file) => {
     setStagedFile(file);
     setExtractionStatus('idle');
+    setSubmitError(null);
   };
 
   const handleRemoveFile = () => {
     clearTimeout(extractTimeoutRef.current);
     setStagedFile(null);
     setExtractionStatus('idle');
+    setSubmitError(null);
   };
 
   const handleExtract = () => {
@@ -101,17 +122,35 @@ function TenderRecordLookupPage() {
     extractTimeoutRef.current = setTimeout(() => setExtractionStatus('extracted'), 900);
   };
 
-  const handleApplyToForm = () => {
-    navigate('/tenders/new', {
-      state: {
-        contractId: SIMULATED_EXTRACTED_FIELDS.contractId,
-        prefill: {
-          vendor_name: SIMULATED_EXTRACTED_FIELDS.vendor_name,
-          main_offer_price: SIMULATED_EXTRACTED_FIELDS.main_offer_price,
-          eligibility_status: SIMULATED_EXTRACTED_FIELDS.eligibility_status,
-        },
-      },
-    });
+  const handleSubmitRecord = async () => {
+    setSubmitError(null);
+    const values = {
+      contractId: SIMULATED_EXTRACTED_FIELDS.contractId,
+      tender_ref_no: nextTenderRefNo,
+      vendor_name: SIMULATED_EXTRACTED_FIELDS.vendor_name,
+      submission_date: SIMULATED_EXTRACTED_FIELDS.submission_date,
+      main_offer_price: SIMULATED_EXTRACTED_FIELDS.main_offer_price,
+      alternative_offer_price: '',
+      status: 'submitted',
+      eligibility_status: SIMULATED_EXTRACTED_FIELDS.eligibility_status,
+    };
+
+    try {
+      const payload = createTenderSchema.cast(values, { stripUnknown: true });
+      const created = await createMutation.mutateAsync(payload);
+      queryClient.invalidateQueries({ queryKey: ['tenders'] });
+      queryClient.invalidateQueries({ queryKey: ['contract-tenders', payload.contractId] });
+      toast({
+        title: 'Past tender record successfully saved to submission history!',
+        description: `${created.tender_ref_no} was added to Tender Submissions.`,
+        variant: 'success',
+      });
+      navigate('/tenders');
+    } catch (error) {
+      const message = error.response?.data?.message ?? 'Failed to submit the extracted tender record. Please try again.';
+      setSubmitError(message);
+      toast({ title: 'Submission failed', description: message, variant: 'destructive' });
+    }
   };
 
   const typeMeta = stagedFile ? getFileTypeMeta(stagedFile) : null;
@@ -123,40 +162,17 @@ function TenderRecordLookupPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <ScanSearch className="h-5 w-5 text-primary" />
-            <CardTitle>Existing / Past Record Lookup (OCR Upload)</CardTitle>
+            <CardTitle>Past Document AI / OCR Extraction</CardTitle>
           </div>
           <CardDescription>
-            Upload an existing tender package, scanned document, or spreadsheet for OCR / AI data extraction.
+            Upload a past tender package, scanned document, or spreadsheet. AI will scan and extract the historical
+            tender details to auto-fill a new submission.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="flex flex-col gap-6">
-          <Alert>
-            <AlertDescription>
-              Uploaded files below are staged for OCR / AI data extraction to help pre-fill this tender&apos;s
-              details. Reference number lookup isn&apos;t wired up yet - use &quot;New Tender Submission&quot; for
-              manual entry in the meantime.
-            </AlertDescription>
-          </Alert>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="lookup-ref-no">Tender Reference Number</Label>
-            <div className="flex gap-2">
-              <Input
-                id="lookup-ref-no"
-                placeholder="TC-2026-007"
-                value={refNo}
-                onChange={(e) => setRefNo(e.target.value)}
-                disabled
-              />
-              <Button type="button" variant="outline" disabled>
-                Look Up
-              </Button>
-            </div>
-          </div>
-
           {/* ── Upload + Staging ─────────────────────────────────────────── */}
-          <div className="flex flex-col gap-3 border-t pt-5">
+          <div className="flex flex-col gap-3">
             <Label>Upload Document / Spreadsheet / Scan</Label>
             <TenderImageDropzone
               file={null}
@@ -258,19 +274,24 @@ function TenderRecordLookupPage() {
                         </Badge>
                       </div>
                       <div className="rounded-lg border border-border p-3">
-                        <div className="text-xs font-medium text-muted-foreground">Contract Reference</div>
+                        <div className="text-xs font-medium text-muted-foreground">Contract Opportunity</div>
                         <div className="mt-1 font-mono text-sm font-semibold text-foreground">
                           {SIMULATED_EXTRACTED_FIELDS.contractId}
                         </div>
                       </div>
+                      <div className="rounded-lg border border-border p-3">
+                        <div className="text-xs font-medium text-muted-foreground">Submission Date</div>
+                        <div className="mt-1 text-sm font-semibold text-foreground">
+                          {formatDate(SIMULATED_EXTRACTED_FIELDS.submission_date)}
+                        </div>
+                      </div>
                     </div>
-                    <Button
-                      type="button"
-                      className="self-start bg-[#E31E24] text-white hover:bg-[#c01a1f]"
-                      onClick={handleApplyToForm}
-                    >
-                      Apply to New Tender Form
-                    </Button>
+
+                    {submitError && (
+                      <Alert variant="destructive">
+                        <AlertDescription>{submitError}</AlertDescription>
+                      </Alert>
+                    )}
                   </>
                 )
               )}
@@ -299,9 +320,18 @@ function TenderRecordLookupPage() {
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-start">
+        <CardFooter className="flex items-center justify-between">
           <Button type="button" variant="outline" onClick={() => navigate('/tenders/new')}>
             Back
+          </Button>
+          <Button
+            type="button"
+            className="bg-[#E31E24] text-white hover:bg-[#c01a1f]"
+            onClick={handleSubmitRecord}
+            disabled={extractionStatus !== 'extracted' || createMutation.isPending}
+            title={extractionStatus !== 'extracted' ? 'Extract data from the uploaded file first' : undefined}
+          >
+            {createMutation.isPending ? 'Submitting...' : 'Submit Extracted Tender Record'}
           </Button>
         </CardFooter>
       </Card>

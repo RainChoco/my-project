@@ -85,6 +85,36 @@ const BoardPaper = sequelize.define(
                 "Proceed to Management Approval."
         },
 
+        aiSummary: {
+            type: DataTypes.TEXT,
+            allowNull: true
+        },
+
+        aiFinancialAnalysis: {
+            type: DataTypes.TEXT,
+            allowNull: true
+        },
+
+        aiRiskAssessment: {
+            type: DataTypes.TEXT,
+            allowNull: true
+        },
+
+        aiRecommendation: {
+            type: DataTypes.TEXT,
+            allowNull: true
+        },
+
+        aiConfidenceText: {
+            type: DataTypes.TEXT,
+            allowNull: true
+        },
+
+        aiRiskLevel: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+
         preparedBy: {
             type: DataTypes.STRING,
             defaultValue: "AI Summary Tool"

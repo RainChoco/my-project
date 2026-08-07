@@ -15,7 +15,9 @@ import { useToast } from '@/hooks/use-toast';
 import { createTenderSchema, editTenderSchema } from '../schemas';
 import { BCA_GRADES, BIZSAFE_LEVELS, LOCKED_FOR_EDIT_STATUSES, STATUS_LABELS, ELIGIBILITY_STATUS_LABELS } from '../constants';
 import { createTender, updateTender, getTender, uploadTenderImage, listTenders } from '../services/tenderApi';
+import { computeNextTenderRefNo } from '../utils/tenderRefNo';
 import { fetchContracts } from '@/features/contracts/services/contractApi';
+import { TENDER_SUBMISSION_BLOCKED_STATUSES } from '@/features/contracts/constants';
 
 const CREATE_DEFAULTS = {
   contractId: '',
@@ -41,19 +43,6 @@ const CREATE_DEFAULTS = {
 // and eligibility-check workflow, not picked when first logging a tender.
 const CREATE_STATUS_OPTIONS = ['draft', 'submitted', 'under_evaluation'];
 const CREATE_ELIGIBILITY_OPTIONS = ['eligible', 'flagged', 'pending'];
-
-// Auto-generates the next "TC-<year>-<seq>" reference number from whatever tenders
-// already exist for the current year - still just a default; the field stays editable.
-function computeNextTenderRefNo(existingTenders) {
-  const year = new Date().getFullYear();
-  const pattern = new RegExp(`^TC-${year}-(\\d+)$`);
-  let maxSeq = 0;
-  existingTenders.forEach((t) => {
-    const match = pattern.exec(t.tender_ref_no || '');
-    if (match) maxSeq = Math.max(maxSeq, parseInt(match[1], 10));
-  });
-  return `TC-${year}-${String(maxSeq + 1).padStart(3, '0')}`;
-}
 
 const EDIT_DEFAULTS = {
   ...CREATE_DEFAULTS,
@@ -121,7 +110,7 @@ function ContractInfoPanel({ contract }) {
   if (!contract) return null;
   const closingDate = contract.closingDate ? new Date(contract.closingDate) : null;
   const isPastDeadline = closingDate && closingDate < new Date();
-  const isBlocked = ['Archived', 'Closed', 'Cancelled'].includes(contract.status);
+  const isBlocked = TENDER_SUBMISSION_BLOCKED_STATUSES.includes(contract.status);
 
   return (
     <div style={{
@@ -287,19 +276,24 @@ function TenderFormPage({ mode }) {
   // setFieldValue (not folded into initialValues above) so it can't clobber whatever
   // else the user has already typed if this resolves after they've started the form -
   // enableReinitialize would otherwise reset the whole form back to initialValues.
+  // Gated on existingTendersData itself (not just autoTenderRefNo) - before that query
+  // resolves, computeNextTenderRefNo([]) already returns a truthy "TC-<year>-001"
+  // fallback, which would otherwise get locked in permanently by the
+  // !formik.values.tender_ref_no guard below and never update once the real data
+  // (and real next sequence number) arrives.
   useEffect(() => {
-    if (!isEditMode && autoTenderRefNo && !formik.values.tender_ref_no) {
+    if (!isEditMode && existingTendersData && !formik.values.tender_ref_no) {
       formik.setFieldValue('tender_ref_no', autoTenderRefNo);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoTenderRefNo, isEditMode]);
+  }, [autoTenderRefNo, existingTendersData, isEditMode]);
 
   // Derive the selected contract object for the info panel
   const selectedContract = !isEditMode
     ? contracts.find((c) => c.id === formik.values.contractId) ?? null
     : tender?.contract ?? null;
 
-  const isContractBlocked = selectedContract && ['Archived', 'Closed', 'Cancelled'].includes(selectedContract.status);
+  const isContractBlocked = selectedContract && TENDER_SUBMISSION_BLOCKED_STATUSES.includes(selectedContract.status);
 
   if (!isEditMode && entryMode === null) {
     return (

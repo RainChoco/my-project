@@ -12,9 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { NativeSelect } from '@/features/tenders/components/NativeSelect';
 import { fetchContracts, deleteContract } from '../services/contractApi';
-
-const STATUS_VALUES = ['Draft', 'Open', 'Evaluating', 'Awarded'];
-const STATUS_BADGE_VARIANTS = { Draft: 'secondary', Open: 'success', Evaluating: 'warning', Awarded: 'default' };
+import { STATUS_VALUES, STATUS_BADGE_VARIANTS, CATEGORY_VALUES } from '../constants';
 
 function ConfirmDeleteContractDialog({ contract, isPending, onConfirm, onCancel }) {
   return (
@@ -45,6 +43,7 @@ function ContractListPage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [contractToDelete, setContractToDelete] = useState(null);
 
   const { data: contracts, isLoading } = useQuery({
@@ -62,13 +61,16 @@ function ContractListPage() {
   });
 
   const filteredContracts = (contracts ?? []).filter((c) => {
-    const matchesSearch =
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = term
+      ? [c.name, c.id, c.contractRefNo, c.townCouncilName].some((field) => field?.toLowerCase().includes(term))
+      : true;
     const matchesStatus = statusFilter ? c.status === statusFilter : true;
-    return matchesSearch && matchesStatus;
+    const matchesCategory = categoryFilter ? c.category === categoryFilter : true;
+    return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const hasActiveFilters = Boolean(searchTerm || statusFilter);
+  const hasActiveFilters = Boolean(searchTerm || statusFilter || categoryFilter);
 
   return (
     <div className="flex flex-col gap-6">
@@ -96,8 +98,8 @@ function ContractListPage() {
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="contract-search"
-                  placeholder="Search by name or ID..."
-                  className="w-64 pl-8"
+                  placeholder="Search by name, ID, reference no., or Town Council..."
+                  className="w-72 pl-8"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -119,6 +121,22 @@ function ContractListPage() {
                 ))}
               </NativeSelect>
             </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="contract-category">Category</Label>
+              <NativeSelect
+                id="contract-category"
+                className="w-56"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <option value="">All categories</option>
+                {CATEGORY_VALUES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
             {hasActiveFilters && (
               <Button
                 type="button"
@@ -127,6 +145,7 @@ function ContractListPage() {
                 onClick={() => {
                   setSearchTerm('');
                   setStatusFilter('');
+                  setCategoryFilter('');
                 }}
               >
                 Clear filters
@@ -147,6 +166,7 @@ function ContractListPage() {
               <TableRow>
                 <TableHead>Contract ID</TableHead>
                 <TableHead>Name</TableHead>
+                <TableHead>Client</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Budget</TableHead>
                 <TableHead>Status</TableHead>
@@ -157,7 +177,7 @@ function ContractListPage() {
               {isLoading &&
                 Array.from({ length: 4 }).map((_, index) => (
                   <TableRow key={`skeleton-${index}`}>
-                    {Array.from({ length: 6 }).map((__, cellIndex) => (
+                    {Array.from({ length: 7 }).map((__, cellIndex) => (
                       <TableCell key={cellIndex}>
                         <Skeleton className="h-4 w-full" />
                       </TableCell>
@@ -167,7 +187,7 @@ function ContractListPage() {
 
               {!isLoading && filteredContracts.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                     No contracts found.
                   </TableCell>
                 </TableRow>
@@ -178,6 +198,13 @@ function ContractListPage() {
                   <TableRow key={contract.id}>
                     <TableCell className="font-mono text-xs text-muted-foreground">{contract.id}</TableCell>
                     <TableCell className="font-medium text-foreground">{contract.name}</TableCell>
+                    <TableCell>
+                      {contract.townCouncilName ? (
+                        <Badge variant="outline">{contract.townCouncilName}</Badge>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>{contract.category}</TableCell>
                     <TableCell>${parseFloat(contract.budgetLimit).toLocaleString()}</TableCell>
                     <TableCell>
