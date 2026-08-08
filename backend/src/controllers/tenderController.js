@@ -2,6 +2,7 @@ const { Op } = require('sequelize');
 const { sequelize, Tender, TenderDocument, EligibilityCheck, BcaGradeLimit, EligibilityThreshold, Contract } = require('../models');
 const cloudinaryService = require('../services/cloudinaryService');
 const notificationService = require('../services/NotificationService');
+const aiExtractionService = require('../services/aiExtractionService');
 
 const LOCKED_FOR_EDIT_STATUSES = ['under_evaluation', 'approved', 'rejected', 'withdrawn'];
 const LOCKED_FOR_DELETE_STATUSES = ['under_evaluation', 'approved', 'rejected'];
@@ -380,11 +381,11 @@ async function getCurrentBcaGradeLimit(grade) {
   });
 }
 
-// NOTE: this performs only the deterministic comparison half of UC-A6 (step 3 onward).
-// The AI extraction half (step 1-2: sending documents to ChatGPT to populate
-// paid_up_capital/bca_fm01_license_no/bca_fm01_grade/non_debarment_declared) is not
-// wired here - no ChatGPT/OpenAI integration exists in this codebase yet. This assumes
-// those fields are already set on the tender row (e.g. via PATCH /api/tenders/:id).
+// Implements UC-A6 end to end: step 1-2 (AI extraction, via aiExtractionService)
+// followed by step 3-onward (the deterministic comparison below). Extraction only
+// fills fields the AI actually found (or leaves them untouched, e.g. if OPENAI_API_KEY
+// isn't configured, or the tender's documents aren't in a format it can read) - it
+// never overwrites a field that was already set manually via PATCH /api/tenders/:id.
 const triggerEligibilityCheck = async (req, res) => {
   try {
     const tender = await Tender.findByPk(req.params.id);
@@ -392,9 +393,21 @@ const triggerEligibilityCheck = async (req, res) => {
       return res.status(404).json({ status: 'error', message: 'Tender not found' });
     }
 
-    const documentCount = await TenderDocument.count({ where: { tender_id: tender.id } });
-    if (documentCount === 0) {
+    const documents = await TenderDocument.findAll({ where: { tender_id: tender.id } });
+    if (documents.length === 0) {
       return res.status(409).json({ status: 'error', message: 'Tender has no documents uploaded yet' });
+    }
+
+    let extractionNotes = {};
+    try {
+      const { fields, notes } = await aiExtractionService.extractTenderEligibilityFields({ tender, documents });
+      if (Object.keys(fields).length > 0) {
+        await tender.update(fields);
+      }
+      extractionNotes = notes;
+    } catch (extractionError) {
+      console.error('AI eligibility extraction failed:', extractionError);
+      return res.status(502).json({ status: 'error', message: extractionError.message || 'ChatGPT API request failed' });
     }
 
     // Re-runnable: clear any prior checks for this tender before recomputing.
@@ -402,7 +415,7 @@ const triggerEligibilityCheck = async (req, res) => {
 
     const minCapitalThreshold = await EligibilityThreshold.findOne({ where: { criterion_key: 'min_paid_up_capital' } });
     const checksToCreate = [];
-    const summaryNotes = [];
+    const summaryNotes = Object.values(extractionNotes);
 
     // 1. min_paid_up_capital
     if (tender.paid_up_capital == null || !minCapitalThreshold) {

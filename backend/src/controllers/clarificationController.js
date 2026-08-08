@@ -46,7 +46,7 @@ const detectDeviation = async (req, res) => {
 
     let rationale;
     try {
-      rationale = clarificationAiService.generateDeviationRationale({
+      rationale = await clarificationAiService.generateDeviationRationale({
         deviationPercentage,
         tolerancePercentage: DEVIATION_TOLERANCE_PERCENTAGE,
         exceedsTolerance
@@ -176,7 +176,7 @@ const draftMessage = async (req, res) => {
 
     let draft;
     try {
-      draft = clarificationAiService.generateDraftMessage({ log, tender: log.tender });
+      draft = await clarificationAiService.generateDraftMessage({ log, tender: log.tender });
     } catch (aiError) {
       console.error('ChatGPT draft generation failed:', aiError);
       return res.status(502).json({ status: 'error', message: 'ChatGPT API request failed or timed out' });
