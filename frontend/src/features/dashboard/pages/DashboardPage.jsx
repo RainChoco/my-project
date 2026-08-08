@@ -24,7 +24,6 @@ import SubmissionStatusChart from '../charts/SubmissionStatusChart';
 import useDashboardFilters from '../hooks/useDashboardFilters';
 import { fetchKPIs, fetchRankings, archiveRankings } from '../services/dashboardApi';
 import { fetchContracts } from '../../contracts/services/contractApi';
-import { mockKPIs, mockRankings } from '../utils/mockData';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function getPQMBadge(score) {
@@ -139,13 +138,13 @@ export default function DashboardPage() {
 
   const { data: kpis, isLoading: kpisLoading, error: kpisError } = useQuery({
     queryKey: ['kpis', filters.contractId],
-    queryFn: () => fetchKPIs({ contractId: filters.contractId }).catch(() => mockKPIs), // Fallback to mock data if API fails
+    queryFn: () => fetchKPIs({ contractId: filters.contractId }),
     enabled: !!filters.contractId
   });
 
   const { data: rankings, isLoading: rankingsLoading, error: rankingsError } = useQuery({
     queryKey: ['rankings', filters],
-    queryFn: () => fetchRankings(filters).catch(() => mockRankings), // Fallback to mock data if API fails
+    queryFn: () => fetchRankings(filters),
     enabled: !!filters.contractId
   });
 

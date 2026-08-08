@@ -1,4 +1,5 @@
-const { Approval, Evaluation, User, sequelize } = require('../models');
+const { Approval, Evaluation, Tender, User, sequelize } = require('../models');
+const notificationService = require('./NotificationService');
 
 // 'revision_requested' intentionally has no entry here: it doesn't finalize the
 // evaluation. evaluations.status has no matching value for it (only 'approved'/
@@ -15,7 +16,7 @@ const DECISION_TO_EVALUATION_STATUS = {
 // their own Approval row, leaving two conflicting decisions logged instead
 // of one (see dashboardService.js#archiveScoringList for the same pattern).
 async function createApproval(evaluationId, { decision, remarks }, approverId) {
-  return sequelize.transaction(async (t) => {
+  const approval = await sequelize.transaction(async (t) => {
     const evaluation = await Evaluation.findByPk(evaluationId, {
       transaction: t,
       lock: t.LOCK.UPDATE
@@ -35,7 +36,7 @@ async function createApproval(evaluationId, { decision, remarks }, approverId) {
       throw err;
     }
 
-    const approval = await Approval.create({
+    const approvalRow = await Approval.create({
       evaluation_id: evaluationId,
       approver_id: approverId,
       decision,
@@ -48,8 +49,19 @@ async function createApproval(evaluationId, { decision, remarks }, approverId) {
       await evaluation.save({ transaction: t });
     }
 
-    return approval;
+    return approvalRow;
   });
+
+  if (decision === 'approved' || decision === 'rejected') {
+    const evaluation = await Evaluation.findByPk(evaluationId, { include: [{ model: Tender, as: 'tender' }] });
+    notificationService.notify({
+      type: 'tender',
+      message: `Evaluation for ${evaluation?.tender?.tender_ref_no ?? `tender #${evaluation?.tender_id}`} was ${decision}`,
+      link: `/evaluations/${evaluationId}`
+    });
+  }
+
+  return approval;
 }
 
 async function listApprovals(evaluationId) {

@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ScanSearch, FileSpreadsheet, FileImage, FileText, FileType2,
   Trash2, Sparkles, ChevronDown, CheckCircle2, Loader2,
@@ -9,14 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
 import { ELIGIBILITY_STATUS_LABELS, ELIGIBILITY_BADGE_VARIANTS } from '../constants';
 import { formatCurrency, formatDate } from '../utils/format';
-import { computeNextTenderRefNo } from '../utils/tenderRefNo';
-import { createTenderSchema } from '../schemas';
-import { createTender, listTenders } from '../services/tenderApi';
 import TenderImageDropzone from '../components/TenderImageDropzone';
 
 // Past tender records may show up as a spreadsheet export, a scanned image, or the
@@ -41,8 +35,10 @@ const SAMPLE_FORMAT_CHIPS = [
 ];
 
 // No OCR/AI extraction service is wired up in the backend yet - this is a fixed,
-// simulated result standing in for that pipeline so the staging → review → apply
-// flow can be previewed end to end. Swap for a real extraction call when ready.
+// simulated result standing in for that pipeline so the staging → review preview
+// flow can be demoed end to end. "Submit Extracted Tender Record" is disabled
+// below so this simulated data can never be written to the real tenders table -
+// re-enable it once a real extraction endpoint replaces SIMULATED_EXTRACTED_FIELDS.
 const SIMULATED_EXTRACTED_FIELDS = {
   vendor_name: 'Cana Construction Pte Ltd',
   main_offer_price: 1250000,
@@ -79,78 +75,29 @@ function getFileTypeMeta(file) {
 // real extraction service is wired up.
 function TenderRecordLookupPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
   const [stagedFile, setStagedFile] = useState(null);
   // 'idle' -> 'extracting' -> 'extracted', reset whenever the staged file changes.
   const [extractionStatus, setExtractionStatus] = useState('idle');
   const [isPreviewOpen, setIsPreviewOpen] = useState(true);
-  const [submitError, setSubmitError] = useState(null);
   const extractTimeoutRef = useRef(null);
 
   useEffect(() => () => clearTimeout(extractTimeoutRef.current), []);
 
-  // Fetched purely to compute the next auto-generated tender_ref_no below (same
-  // TC-<year>-<seq> convention as TenderFormPage's create mode) - not rendered itself.
-  const { data: existingTendersData } = useQuery({
-    queryKey: ['tenders-for-ref-no'],
-    queryFn: () => listTenders({ limit: 100 }),
-  });
-  const nextTenderRefNo = useMemo(
-    () => computeNextTenderRefNo(existingTendersData?.data ?? []),
-    [existingTendersData]
-  );
-
-  const createMutation = useMutation({ mutationFn: createTender });
-
   const handleFileSelect = (file) => {
     setStagedFile(file);
     setExtractionStatus('idle');
-    setSubmitError(null);
   };
 
   const handleRemoveFile = () => {
     clearTimeout(extractTimeoutRef.current);
     setStagedFile(null);
     setExtractionStatus('idle');
-    setSubmitError(null);
   };
 
   const handleExtract = () => {
     setExtractionStatus('extracting');
     setIsPreviewOpen(true);
     extractTimeoutRef.current = setTimeout(() => setExtractionStatus('extracted'), 900);
-  };
-
-  const handleSubmitRecord = async () => {
-    setSubmitError(null);
-    const values = {
-      contractId: SIMULATED_EXTRACTED_FIELDS.contractId,
-      tender_ref_no: nextTenderRefNo,
-      vendor_name: SIMULATED_EXTRACTED_FIELDS.vendor_name,
-      submission_date: SIMULATED_EXTRACTED_FIELDS.submission_date,
-      main_offer_price: SIMULATED_EXTRACTED_FIELDS.main_offer_price,
-      alternative_offer_price: '',
-      status: 'submitted',
-      eligibility_status: SIMULATED_EXTRACTED_FIELDS.eligibility_status,
-    };
-
-    try {
-      const payload = createTenderSchema.cast(values, { stripUnknown: true });
-      const created = await createMutation.mutateAsync(payload);
-      queryClient.invalidateQueries({ queryKey: ['tenders'] });
-      queryClient.invalidateQueries({ queryKey: ['contract-tenders', payload.contractId] });
-      toast({
-        title: 'Past tender record successfully saved to submission history!',
-        description: `${created.tender_ref_no} was added to Tender Submissions.`,
-        variant: 'success',
-      });
-      navigate('/tenders');
-    } catch (error) {
-      const message = error.response?.data?.message ?? 'Failed to submit the extracted tender record. Please try again.';
-      setSubmitError(message);
-      toast({ title: 'Submission failed', description: message, variant: 'destructive' });
-    }
   };
 
   const typeMeta = stagedFile ? getFileTypeMeta(stagedFile) : null;
@@ -286,12 +233,6 @@ function TenderRecordLookupPage() {
                         </div>
                       </div>
                     </div>
-
-                    {submitError && (
-                      <Alert variant="destructive">
-                        <AlertDescription>{submitError}</AlertDescription>
-                      </Alert>
-                    )}
                   </>
                 )
               )}
@@ -327,11 +268,10 @@ function TenderRecordLookupPage() {
           <Button
             type="button"
             className="bg-[#E31E24] text-white hover:bg-[#c01a1f]"
-            onClick={handleSubmitRecord}
-            disabled={extractionStatus !== 'extracted' || createMutation.isPending}
-            title={extractionStatus !== 'extracted' ? 'Extract data from the uploaded file first' : undefined}
+            disabled
+            title="Submitting is disabled - this is a simulated preview only, no OCR/AI extraction service is connected yet. Use New Tender Submission to record a real tender."
           >
-            {createMutation.isPending ? 'Submitting...' : 'Submit Extracted Tender Record'}
+            Submit Disabled (Simulated Preview Only)
           </Button>
         </CardFooter>
       </Card>

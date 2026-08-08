@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, Bell, FileCheck2, UserPlus, ClipboardCheck, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../context';
 import { routeConfig } from '../routes/routeConfig';
@@ -13,10 +13,15 @@ import {
   DropdownMenuSeparator,
 } from '../components/ui/dropdown-menu';
 import { cn } from '../lib';
+import {
+  fetchNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from '../features/notifications/services/notificationApi';
 
-// Town Council operational alerts - static placeholder data until a real
-// notifications API exists. `minutesAgo` is relative to load time; `link`
-// routes to the relevant tender/contract/report when the notification is clicked.
+// Icon/color per notification type - the notifications themselves come from
+// GET /api/notifications (backend/src/routes/notificationRoutes.js), created
+// by real tender submissions, evaluation approvals, and compliance checks.
 const NOTIFICATION_TYPES = {
   tender: { icon: FileCheck2, color: 'text-blue-600 dark:text-blue-400' },
   submission: { icon: UserPlus, color: 'text-emerald-600 dark:text-emerald-400' },
@@ -24,38 +29,8 @@ const NOTIFICATION_TYPES = {
   compliance: { icon: ShieldAlert, color: 'text-red-600 dark:text-red-400' },
 };
 
-const TOWN_COUNCIL_NOTIFICATIONS = [
-  {
-    id: 1,
-    type: 'tender',
-    message: 'Tender TC-2026-008 closed for evaluation',
-    minutesAgo: 10,
-    link: '/tenders/8',
-  },
-  {
-    id: 2,
-    type: 'submission',
-    message: 'New submission received from CPG Facilities Management',
-    minutesAgo: 60,
-    link: '/tenders/1',
-  },
-  {
-    id: 3,
-    type: 'approval',
-    message: 'Pending approval: Managing Agent Tender Board Paper #4',
-    minutesAgo: 120,
-    link: '/board-papers',
-  },
-  {
-    id: 4,
-    type: 'compliance',
-    message: 'Compliance Alert: bizSAFE Level 3 expiring for Vendor ABC',
-    minutesAgo: 1440,
-    link: '/tenders/config',
-  },
-];
-
-function formatRelativeTime(minutesAgo) {
+function formatRelativeTime(createdAt) {
+  const minutesAgo = Math.max(0, Math.round((Date.now() - new Date(createdAt).getTime()) / 60000));
   if (minutesAgo < 60) return `${minutesAgo} min ago`;
   const hours = Math.round(minutesAgo / 60);
   if (hours < 24) return `${hours} hr${hours !== 1 ? 's' : ''} ago`;
@@ -109,13 +84,21 @@ function AppLayout() {
   const { user, role, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
 
-  const [notifications, setNotifications] = useState(
-    TOWN_COUNCIL_NOTIFICATIONS.map((n) => ({ ...n, read: false }))
-  );
+  const { data: notifications = [] } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: fetchNotifications,
+    refetchInterval: 30000,
+  });
   const unreadCount = notifications.filter((n) => !n.read).length;
-  const markAllAsRead = () => setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  const markAsRead = (id) => setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+
+  const invalidateNotifications = () => queryClient.invalidateQueries({ queryKey: ['notifications'] });
+  const markAllReadMutation = useMutation({ mutationFn: markAllNotificationsRead, onSuccess: invalidateNotifications });
+  const markReadMutation = useMutation({ mutationFn: markNotificationRead, onSuccess: invalidateNotifications });
+
+  const markAllAsRead = () => markAllReadMutation.mutate();
+  const markAsRead = (id) => markReadMutation.mutate(id);
 
   const rolesByPath = routeConfig.reduce((acc, route) => {
     if (route.label) acc[route.path] = route.roles;
@@ -231,7 +214,7 @@ function AppLayout() {
                         <span className={cn('text-sm leading-snug', !n.read ? 'font-medium text-slate-900 dark:text-slate-100' : 'text-slate-500')}>
                           {n.message}
                         </span>
-                        <span className="text-xs text-slate-400">{formatRelativeTime(n.minutesAgo)}</span>
+                        <span className="text-xs text-slate-400">{formatRelativeTime(n.createdAt)}</span>
                       </span>
                     </DropdownMenuItem>
                   );

@@ -1,4 +1,5 @@
 const { Evaluation, EvaluationCriteria, EvaluationCriterionScore, Tender, sequelize } = require('../models');
+const notificationService = require('./NotificationService');
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
@@ -195,7 +196,7 @@ async function submitEvaluation(evaluationId) {
     throw err;
   }
 
-  return sequelize.transaction(async (t) => {
+  const scored = await sequelize.transaction(async (t) => {
     let priceScore = 0;
     let qualityScore = 0;
 
@@ -220,6 +221,15 @@ async function submitEvaluation(evaluationId) {
 
     return evaluation;
   });
+
+  const scoredTender = await getTenderById(scored.tender_id);
+  notificationService.notify({
+    type: 'approval',
+    message: `Pending approval: Evaluation for ${scoredTender?.tender_ref_no ?? `tender #${scored.tender_id}`} (PQM ${scored.pqm_score}) is ready for review.`,
+    link: '/evaluations/pending-approvals'
+  });
+
+  return scored;
 }
 
 // UC-B11: re-evaluating a rejected tender always creates a NEW evaluations row

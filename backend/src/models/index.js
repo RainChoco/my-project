@@ -17,6 +17,7 @@ const ClarificationLog = require('./clarificationLog');
 const ClarificationMessage = require('./clarificationMessage');
 const ClarificationAttachment = require('./clarificationAttachment');
 const JobAdjustmentRequest = require('./jobAdjustmentRequest');
+const Notification = require('./notification');
 
 // Associations - defined here (not in the model files) so every model is already
 // required before any association referencing another model is set up.
@@ -106,5 +107,6 @@ module.exports = {
   ClarificationLog,
   ClarificationMessage,
   ClarificationAttachment,
-  JobAdjustmentRequest
+  JobAdjustmentRequest,
+  Notification
 };

@@ -12,12 +12,14 @@ const clarificationRoutes     = require('./clarificationRoutes');
 const proposalRoutes          = require('./proposalRoutes');
 const historyRoutes           = require('./historyRoutes');
 const dashboardRoutes         = require('./dashboardRoutes');
+const notificationRoutes      = require('./notificationRoutes');
 // Kai Xuan: Contract Opportunity CRUD
 const contractRoutes          = require('./contractRoutes');
 
 // ── Public routes ─────────────────────────────────────────────────────────────
 router.use('/auth', authRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/notifications', notificationRoutes);
 
 // ── Teammate routes (preserved exactly as pushed to remote) ───────────────────
 // tenderRoutes defines its own full paths (/tenders, /eligibility-checks, /config/...)

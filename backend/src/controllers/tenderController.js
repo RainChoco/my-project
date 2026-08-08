@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
 const { sequelize, Tender, TenderDocument, EligibilityCheck, BcaGradeLimit, EligibilityThreshold, Contract } = require('../models');
 const cloudinaryService = require('../services/cloudinaryService');
+const notificationService = require('../services/NotificationService');
 
 const LOCKED_FOR_EDIT_STATUSES = ['under_evaluation', 'approved', 'rejected', 'withdrawn'];
 const LOCKED_FOR_DELETE_STATUSES = ['under_evaluation', 'approved', 'rejected'];
@@ -56,6 +57,12 @@ const createTender = async (req, res) => {
       bizsafe_level,
       conflict_of_interest_declared,
       created_by: req.user.id
+    });
+
+    notificationService.notify({
+      type: 'submission',
+      message: `New submission received from ${tender.vendor_name} for ${tender.tender_ref_no}`,
+      link: `/tenders/${tender.id}`
     });
 
     return res.status(201).json(tender.toJSON());
@@ -475,6 +482,14 @@ const triggerEligibilityCheck = async (req, res) => {
 
     const aiEligibilitySummary = summaryNotes.length ? summaryNotes.join(' ') : 'All eligibility criteria met.';
     await tender.update({ ai_eligibility_summary: aiEligibilitySummary });
+
+    if (eligibilityStatus === 'flagged' || eligibilityStatus === 'rejected') {
+      notificationService.notify({
+        type: 'compliance',
+        message: `Compliance ${eligibilityStatus === 'rejected' ? 'failure' : 'alert'}: ${tender.tender_ref_no} - ${aiEligibilitySummary}`,
+        link: `/tenders/${tender.id}`
+      });
+    }
 
     return res.status(200).json({
       tender_id: tender.id,
