@@ -8,9 +8,9 @@
   },
   "scripts": {
     "start": "node src/index.js",
-    "dev":   "cross-env NODE_ENV=development node src/index.js",
-    "seed":  "npx sequelize-cli db:seed:all",
-    "test":  "cross-env NODE_ENV=test jest"
+    "dev": "node src/index.js",
+    "seed": "npx sequelize-cli db:seed:all",
+    "test": "cross-env NODE_ENV=test jest"
   },
   "keywords": [],
   "author": "",
