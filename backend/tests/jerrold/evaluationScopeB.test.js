@@ -566,24 +566,23 @@ describe('Jerrold - Evaluation Criteria / Manual Criterion Scoring / Approval', 
         expect(res.body.decision).toBe('approved');
       });
 
-      // TEMPORARY (testing only): authorise('management') was removed from
-      // POST /evaluations/:id/approvals (see evaluationRoutes.js) so any
-      // logged-in test user can log a decision, not just management. This
-      // evaluation is already 'approved' from the test above, so the request
-      // is still rejected - just by the unrelated "no duplicate decisions"
-      // business rule (409), not a 403 for being the wrong role.
-      it('a non-management user can no longer be blocked by role alone - still 409s here because it is already decided', async () => {
+      // authorise('management') on POST /evaluations/:id/approvals runs before
+      // the controller's own business rules, so a non-management user is
+      // blocked with a 403 even on an evaluation that's already been decided
+      // (i.e. the role check takes precedence over the "no duplicate decisions"
+      // business rule, not the other way around).
+      it('blocks a non-management user from logging a decision, even on an already-decided evaluation (403)', async () => {
         const res = await request(app)
           .post(`/api/evaluations/${evaluationId}/approvals`)
           .set('Authorization', `Bearer ${evaluatorToken}`)
           .send({ decision: 'approved' });
-        expect(res.statusCode).toBe(409);
+        expect(res.statusCode).toBe(403);
       });
 
-      // Proves the role restriction is actually gone (not just coincidentally
-      // absent above): a fresh, still-'scored' evaluation lets a non-management
-      // user's decision go through and land a 201.
-      it('a non-management user can log a decision on a still-pending evaluation while the role check is relaxed', async () => {
+      // Same role check, proven again on a fresh, still-'scored' evaluation -
+      // confirms the block isn't just a side effect of the evaluation above
+      // already being decided.
+      it('blocks a non-management user from logging a decision on a still-pending evaluation (403)', async () => {
         const tempTender = await Tender.create({
           tender_ref_no: 'TC-TEST-004',
           vendor_name: 'Role Relaxation Test Vendor',
@@ -613,9 +612,8 @@ describe('Jerrold - Evaluation Criteria / Manual Criterion Scoring / Approval', 
         const res = await request(app)
           .post(`/api/evaluations/${tempEvaluationId}/approvals`)
           .set('Authorization', `Bearer ${evaluatorToken}`)
-          .send({ decision: 'approved', remarks: 'Approved by a non-management test user' });
-        expect(res.statusCode).toBe(201);
-        expect(res.body.decision).toBe('approved');
+          .send({ decision: 'approved', remarks: 'Attempted by a non-management test user' });
+        expect(res.statusCode).toBe(403);
       });
 
       it('lists the approval decision history, including the manager\'s name', async () => {

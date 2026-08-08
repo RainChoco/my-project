@@ -91,14 +91,10 @@ export default function ApprovalHistoryPage() {
     );
   }
 
-  // TEMPORARY (testing only): the role check normally required here is
-  // `role === ROLES.MANAGEMENT &&`, restricting these controls to
-  // management users. Removed so any logged-in test user can see and try
-  // the Manager Decision controls. The backend still enforces
-  // authorise('management') on POST /evaluations/:id/approvals regardless -
-  // a non-management user clicking Approve/Reject will still get a 403 from
-  // the server. Restore the role check before shipping to production.
-  const canDecide = evaluation.status === 'scored';
+  // Backend enforces authorise('management') on POST /evaluations/:id/approvals -
+  // gated here too so non-management users see the read-only decision history
+  // instead of controls that would just 403 on submit.
+  const canDecide = role === ROLES.MANAGEMENT && evaluation.status === 'scored';
   const decisionCompleted = ['approved', 'rejected'].includes(evaluation.status);
   const boardPaper = boardPaperQuery.data;
 

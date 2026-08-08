@@ -27,12 +27,7 @@ router.patch('/:id/scores', authenticate, authorise('evaluator', 'ma_staff'), va
 router.post('/:id/submit', authenticate, authorise('evaluator', 'ma_staff'), validate(submitSchema), evaluationController.submitEvaluation);
 router.post('/:id/reprocess', authenticate, authorise('evaluator'), validate(reprocessSchema), evaluationController.reprocess);
 
-// TEMPORARY (testing only): normally authorise('management') restricts
-// logging a decision to management users - removed so any logged-in test
-// user can actually approve/reject, matching the frontend's canDecide check
-// in ApprovalHistoryPage.jsx being loosened the same way. Restore
-// authorise('management') here before shipping to production.
-router.post('/:id/approvals', authenticate, validate(createApprovalSchema), approvalController.create);
+router.post('/:id/approvals', authenticate, authorise('management'), validate(createApprovalSchema), approvalController.create);
 router.get('/:id/approvals', authenticate, validate(approvalIdParamSchema), approvalController.list);
 
 module.exports = router;
