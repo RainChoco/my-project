@@ -17,6 +17,11 @@ const DEMO_USERS = [
         email: 'cheryl.lim@townms.gov.sg',
         role: 'management',
     },
+    {
+        full_name: 'Calista Tan',
+        email: 'calista@townms.gov.sg',
+        role: 'report_preparer',
+    },
 ];
 
 async function seedDemoUsers({ UserModel }) {
