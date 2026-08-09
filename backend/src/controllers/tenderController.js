@@ -312,6 +312,17 @@ const replaceDocument = async (req, res) => {
   }
 };
 
+// TenderFormPage's "Tender Document Package" dropzone (TenderImageDropzone.jsx)
+// accepts PDF/DOCX/XLSX by default, not just images - this endpoint's own
+// image-only check contradicted that, guaranteeing every upload through it
+// would fail regardless of file type. Mirrors uploadDocument's mimetype check.
+const ALLOWED_TENDER_PACKAGE_MIME_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel'
+];
+
 const uploadTenderImage = async (req, res) => {
   try {
     const tender = await Tender.findByPk(req.params.id);
@@ -321,8 +332,10 @@ const uploadTenderImage = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ status: 'error', message: 'No file attached' });
     }
-    if (!req.file.mimetype.startsWith('image/')) {
-      return res.status(400).json({ status: 'error', message: 'File must be an image' });
+    const isImage = req.file.mimetype.startsWith('image/');
+    const isAllowedDocument = ALLOWED_TENDER_PACKAGE_MIME_TYPES.includes(req.file.mimetype);
+    if (!isImage && !isAllowedDocument) {
+      return res.status(400).json({ status: 'error', message: 'File must be an image, PDF, DOCX, or XLSX' });
     }
 
     let uploadResult;
@@ -333,7 +346,7 @@ const uploadTenderImage = async (req, res) => {
       uploadResult = await cloudinaryService.uploadBuffer(req.file.buffer, {
         folder: `town-council-tender/${tender.tender_ref_no}`,
         publicId: 'tender-image',
-        resourceType: 'image'
+        resourceType: isImage ? 'image' : 'raw'
       });
     } catch (uploadError) {
       console.error('Cloudinary upload failed:', uploadError);

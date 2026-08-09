@@ -2,10 +2,21 @@ import { useCallback, useRef, useState } from 'react';
 import { UploadCloud, FileText, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const DEFAULT_ACCEPTED_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-const DEFAULT_ACCEPT_ATTR = '.pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-const DEFAULT_HELP_TEXT = 'PDF or DOCX - up to 20MB';
-const DEFAULT_ERROR_TEXT = 'Only PDF or DOCX files are supported.';
+// Matches uploadTenderImage's backend validation (tenderController.js) - PDF/DOCX/XLSX
+// alongside images, since this dropzone (despite its name) backs the "Tender Document
+// Package" upload, not a strict image-only field.
+const DEFAULT_ACCEPTED_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  'image/png',
+  'image/jpeg',
+];
+const DEFAULT_ACCEPT_ATTR =
+  '.pdf,.docx,.xlsx,.xls,.png,.jpg,.jpeg,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,image/png,image/jpeg';
+const DEFAULT_HELP_TEXT = 'PDF, DOCX, XLSX, PNG, or JPG - up to 20MB';
+const DEFAULT_ERROR_TEXT = 'Only PDF, DOCX, XLSX, PNG, or JPG files are supported.';
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 
 function formatFileSize(bytes) {
