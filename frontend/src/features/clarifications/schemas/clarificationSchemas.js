@@ -36,11 +36,8 @@ export const resolveSchema = Yup.object({
 
 // Client-side only - detectDeviation takes tenderId from the URL, not a body,
 // but the lookup dialog still needs to validate the id before enabling submit.
+// Accepts either the tender's ref no (e.g. "TC-2026-006") or its internal numeric id -
+// the backend resolves whichever was entered.
 export const tenderIdLookupSchema = Yup.object({
-  tender_id: Yup.number()
-    .transform((value, originalValue) => (originalValue === '' ? undefined : value))
-    .typeError('Enter a valid tender id')
-    .integer('Tender id must be a whole number')
-    .positive('Tender id must be a positive number')
-    .required('Tender id is required'),
+  tender_id: Yup.string().trim().required('Tender ref no or id is required'),
 });

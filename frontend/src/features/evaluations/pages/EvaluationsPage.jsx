@@ -35,7 +35,7 @@ import {
 import { fetchCriteria } from '../services/evaluationCriteriaApi';
 import { getTender } from '../../tenders/services/tenderApi';
 import { useAuth } from '../../../context';
-import { ROLES } from '../../../routes/routeConfig';
+import { ROLES } from '../../../routes/roles';
 
 // Tender selected -> Tender Summary -> Create/Continue Evaluation -> embedded
 // scoring workspace (progress tracker + criteria + live score summary) ->

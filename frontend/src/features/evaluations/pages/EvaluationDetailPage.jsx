@@ -22,7 +22,7 @@ import { ActionMessage } from '../components/ActionMessage';
 import { useActionMessage, getErrorMessage } from '../hooks/useActionMessage';
 import { fetchEvaluation, saveDraftScores, submitEvaluation, reprocessEvaluation } from '../services/evaluationApi';
 import { useAuth } from '../../../context';
-import { ROLES } from '../../../routes/routeConfig';
+import { ROLES } from '../../../routes/roles';
 
 // UC-B5/B6 (weighted PQM breakdown + criterion scoring), UC-B11 (reprocess) -
 // the approval decision itself (UC-B9/B10) lives on its own page, ApprovalHistoryPage.jsx.

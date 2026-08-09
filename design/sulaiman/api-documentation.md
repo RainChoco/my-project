@@ -10,6 +10,7 @@ Covers only the endpoints this scope owns, matching the use cases (UC-D1 to UC-D
 
 - **Purpose:** Trigger (or re-trigger) AI pricing-deviation detection between a tender's main and alternative offer (UC-D1). Called automatically once Scope B's PQM scoring completes; exposed here for manual re-runs (e.g. after a price revision).
 - **Auth required:** Yes - role: `ma_staff`
+- **`:tenderId`:** either the tender's internal numeric id or its `tender_ref_no` (e.g. `TC-2026-006`) - resolved server-side against whichever matches.
 - **Request Body:** none
 - **Success Response `201 Created`** (deviation exceeds tolerance):
   ```json
@@ -50,7 +51,7 @@ Covers only the endpoints this scope owns, matching the use cases (UC-D1 to UC-D
 - **Query Parameters:**
   | Param | Type | Notes |
   |---|---|---|
-  | `tender_id` | integer | Filter by tender |
+  | `tender_id` | string | Filter by tender - accepts the internal numeric id or `tender_ref_no` (e.g. `TC-2026-006`) |
   | `log_type` | string | `pricing_deviation` or `job_adjustment_notification` |
   | `status` | string | `flagged`, `no_action_required`, `draft_ready`, `approved`, `sent`, `responded`, `escalated`, `resolved` |
   | `overdue` | boolean | `true` returns only `status: 'sent'` logs past `follow_up_due_at` (UC-D8 dashboard) |
@@ -370,7 +371,7 @@ Covers only the endpoints this scope owns, matching the use cases (UC-D1 to UC-D
 - **Query Parameters:**
   | Param | Type | Notes |
   |---|---|---|
-  | `tender_id` | integer | Filter by tender |
+  | `tender_id` | string | Filter by tender - accepts the internal numeric id or `tender_ref_no` (e.g. `TC-2026-006`) |
   | `approval_status` | string | `pending_approval`, `approved`, `rejected` |
   | `is_material` | boolean | Filter to material (evaluation-affecting) requests only |
 - **Success Response `200 OK`:**

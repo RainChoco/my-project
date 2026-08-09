@@ -16,3 +16,4 @@ frontend/.env
 *.sqlite3
 tender_db.sqlite
 backend/tender_db.sqlite
+backend/*.sqlite

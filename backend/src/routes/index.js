@@ -29,7 +29,10 @@ router.use('/tenders/:tenderId/evaluations', tenderEvaluationRoutes);
 router.use('/evaluations', evaluationRoutes);
 router.use('/evaluation-criteria', evaluationCriteriaRoutes);
 router.use('/boardpapers', boardPaperRoutes);
-router.use('/clarifications', clarificationRoutes);
+// clarificationRoutes defines its own full paths (/tenders/:tenderId/clarification-logs/...,
+// /clarification-logs, /job-adjustment-requests, ...) since those aren't all nested under
+// one shared prefix either - same pattern as tenderRoutes above.
+router.use('/', clarificationRoutes);
 router.use('/proposals', proposalRoutes);
 router.use('/history', historyRoutes);
 

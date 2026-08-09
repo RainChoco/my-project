@@ -20,17 +20,9 @@ import {
 import ClarificationLogsPage from '../features/clarifications/pages/ClarificationLogsPage';
 import ClarificationLogDetailPage from '../features/clarifications/pages/ClarificationLogDetailPage';
 import JobAdjustmentRequestsPage from '../features/clarifications/pages/JobAdjustmentRequestsPage';
+import { ROLES, ALL_ROLES } from './roles';
 
-// Matches backend/src/models/user.js's `role` ENUM and design/test-tokens.md.
-export const ROLES = {
-  MA_STAFF: 'ma_staff',
-  EVALUATOR: 'evaluator',
-  MANAGEMENT: 'management',
-  REPORT_PREPARER: 'report_preparer',
-  VENDOR_LIAISON: 'vendor_liaison',
-};
-
-export const ALL_ROLES = Object.values(ROLES);
+export { ROLES, ALL_ROLES };
 
 const { MA_STAFF, EVALUATOR, MANAGEMENT, REPORT_PREPARER, VENDOR_LIAISON } = ROLES;
 

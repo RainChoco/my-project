@@ -14,13 +14,13 @@ import { tenderIdLookupSchema } from '../schemas/clarificationSchemas';
 
 // UC-D1: ma_staff manually (re-)triggers AI pricing-deviation detection for a
 // tender. There's no tender picker UI shared across scopes yet, so the tender
-// is looked up by id, same pattern as the evaluations feature's DocumentIdsDialog.
+// is looked up by its ref no (or internal id) - the backend resolves either.
 export function DetectDeviationDialog({ open, onOpenChange, onSubmit, isSubmitting, submitError }) {
   const formik = useFormik({
     initialValues: { tender_id: '' },
     validationSchema: tenderIdLookupSchema,
     onSubmit: async (values) => {
-      await onSubmit(Number(values.tender_id));
+      await onSubmit(values.tender_id.trim());
     },
   });
 
@@ -38,7 +38,7 @@ export function DetectDeviationDialog({ open, onOpenChange, onSubmit, isSubmitti
 
           <div className="flex flex-col gap-4 py-4">
             <FormField
-              label="Tender ID"
+              label="Tender Ref No"
               htmlFor="tender_id"
               error={formik.errors.tender_id}
               touched={formik.touched.tender_id}
@@ -46,8 +46,8 @@ export function DetectDeviationDialog({ open, onOpenChange, onSubmit, isSubmitti
               <Input
                 id="tender_id"
                 name="tender_id"
-                type="number"
-                min="1"
+                type="text"
+                placeholder="TC-2026-006"
                 value={formik.values.tender_id}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}

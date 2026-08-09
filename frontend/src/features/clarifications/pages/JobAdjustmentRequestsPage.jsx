@@ -18,7 +18,7 @@ import {
 } from '../services/jobAdjustmentApi';
 import { APPROVAL_STATUS_VALUES, APPROVAL_STATUS_LABELS } from '../constants';
 import { useAuth } from '@/context';
-import { ROLES } from '@/routes/routeConfig';
+import { ROLES } from '@/routes/roles';
 
 const EMPTY_FILTERS = { tender_id: '', approval_status: '', is_material: false };
 
@@ -37,7 +37,7 @@ export default function JobAdjustmentRequestsPage() {
   const canNotify = role === ROLES.VENDOR_LIAISON;
 
   const queryParams = {
-    ...(filters.tender_id && { tender_id: Number(filters.tender_id) }),
+    ...(filters.tender_id && { tender_id: filters.tender_id.trim() }),
     ...(filters.approval_status && { approval_status: filters.approval_status }),
     ...(filters.is_material && { is_material: 'true' }),
   };
@@ -91,12 +91,12 @@ export default function JobAdjustmentRequestsPage() {
         <CardContent>
           <div className="flex flex-wrap items-end gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="jar-filter-tender">Tender ID</Label>
+              <Label htmlFor="jar-filter-tender">Tender Ref No</Label>
               <Input
                 id="jar-filter-tender"
-                type="number"
-                min="1"
-                className="w-32"
+                type="text"
+                placeholder="TC-2026-006"
+                className="w-40"
                 value={filters.tender_id}
                 onChange={(e) => handleFilterChange('tender_id', e.target.value)}
               />
@@ -171,7 +171,7 @@ export default function JobAdjustmentRequestsPage() {
                   <TableRow key={jar.id}>
                     <TableCell>
                       <Button variant="link" className="h-auto p-0" onClick={() => navigate(`/clarifications/${jar.clarification_log_id}`)}>
-                        #{jar.tender_id}
+                        {jar.tender_ref_no ?? `#${jar.tender_id}`}
                       </Button>
                     </TableCell>
                     <TableCell className="max-w-md truncate">{jar.description}</TableCell>

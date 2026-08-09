@@ -7,7 +7,7 @@ const REQUEST_TIMEOUT = 15000;
 
 export async function detectDeviation(tenderId) {
   const { data } = await apiClient.post(
-    `/tenders/${tenderId}/clarification-logs/detect-deviation`,
+    `/tenders/${encodeURIComponent(tenderId)}/clarification-logs/detect-deviation`,
     undefined,
     { timeout: REQUEST_TIMEOUT }
   );

@@ -16,7 +16,7 @@ import { useActionMessage, getErrorMessage } from '../hooks/useActionMessage';
 import { listClarificationLogs, detectDeviation } from '../services/clarificationApi';
 import { LOG_TYPE_VALUES, LOG_TYPE_LABELS, LOG_STATUS_VALUES, LOG_STATUS_LABELS } from '../constants';
 import { useAuth } from '@/context';
-import { ROLES } from '@/routes/routeConfig';
+import { ROLES } from '@/routes/roles';
 
 const PAGE_LIMIT = 20;
 const EMPTY_FILTERS = { tender_id: '', log_type: '', status: '', overdue: false };
@@ -40,7 +40,7 @@ export default function ClarificationLogsPage() {
   const queryParams = {
     page,
     limit: PAGE_LIMIT,
-    ...(filters.tender_id && { tender_id: Number(filters.tender_id) }),
+    ...(filters.tender_id && { tender_id: filters.tender_id.trim() }),
     ...(filters.log_type && { log_type: filters.log_type }),
     ...(filters.status && { status: filters.status }),
     ...(filters.overdue && { overdue: 'true' }),
@@ -115,12 +115,12 @@ export default function ClarificationLogsPage() {
         <CardContent>
           <div className="flex flex-wrap items-end gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="filter-tender-id">Tender ID</Label>
+              <Label htmlFor="filter-tender-id">Tender Ref No</Label>
               <Input
                 id="filter-tender-id"
-                type="number"
-                min="1"
-                className="w-32"
+                type="text"
+                placeholder="TC-2026-006"
+                className="w-40"
                 value={filters.tender_id}
                 onChange={(e) => handleFilterChange('tender_id', e.target.value)}
               />

@@ -42,7 +42,12 @@ import {
 } from '../services/clarificationApi';
 import { createJobAdjustmentRequest } from '../services/jobAdjustmentApi';
 import { useAuth } from '@/context';
-import { ROLES } from '@/routes/routeConfig';
+import { ROLES } from '@/routes/roles';
+
+// UC-D2-D9 lifecycle actions (draft/edit/approve/send/record response/resend/
+// escalate/resolve) belong to MA staff and vendor liaison staff - evaluators
+// on this route are viewers only (UC-D6).
+const ACTION_ROLES = [ROLES.MA_STAFF, ROLES.VENDOR_LIAISON];
 
 // UC-D2-D9: the full clarification log thread and every lifecycle action against
 // it - draft, edit, approve, send, record vendor response + attachment, resend/

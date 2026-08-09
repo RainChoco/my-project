@@ -15,7 +15,9 @@ const DISPATCH_CHANNEL_VALUES = ['email', 'manual'];
 const APPROVAL_STATUS_VALUES = ['pending_approval', 'approved', 'rejected'];
 const BOOLEAN_STRING_VALUES = ['true', 'false'];
 
-const tenderIdParams = yup.object({ tenderId: yup.number().integer().required() });
+// Accepts either the tender's internal numeric id or its tender_ref_no (e.g. "TC-2026-006") -
+// the controller resolves whichever was passed against the Tender table.
+const tenderIdParams = yup.object({ tenderId: yup.string().trim().required() });
 const logIdParams = yup.object({ id: yup.number().integer().required() });
 const messageIdParams = yup.object({ messageId: yup.number().integer().required() });
 const jobAdjustmentIdParams = yup.object({ id: yup.number().integer().required() });
@@ -28,7 +30,7 @@ const detectDeviationSchema = yup.object({ params: tenderIdParams });
 
 const listClarificationLogsSchema = yup.object({
   query: yup.object({
-    tender_id: yup.number().integer().optional(),
+    tender_id: yup.string().trim().optional(),
     log_type: yup.string().oneOf(LOG_TYPE_VALUES, 'invalid log_type').optional(),
     status: yup.string().oneOf(LOG_STATUS_VALUES, 'invalid status').optional(),
     overdue: yup.string().oneOf(BOOLEAN_STRING_VALUES, 'overdue must be true or false').optional(),
@@ -90,7 +92,7 @@ const createJobAdjustmentRequestSchema = yup.object({
 
 const listJobAdjustmentRequestsSchema = yup.object({
   query: yup.object({
-    tender_id: yup.number().integer().optional(),
+    tender_id: yup.string().trim().optional(),
     approval_status: yup.string().oneOf(APPROVAL_STATUS_VALUES, 'invalid approval_status').optional(),
     is_material: yup.string().oneOf(BOOLEAN_STRING_VALUES, 'is_material must be true or false').optional()
   })

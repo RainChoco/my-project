@@ -17,7 +17,7 @@ import { fetchEvaluation } from '../services/evaluationApi';
 import { fetchApprovals, createApproval } from '../services/approvalApi';
 import { fetchBoardPaperForTender } from '../services/boardPaperSummaryApi';
 import { useAuth } from '../../../context';
-import { ROLES } from '../../../routes/routeConfig';
+import { ROLES } from '../../../routes/roles';
 
 const BOARD_PAPER_SECTIONS = [
   { key: 'executiveSummary', label: 'Executive Summary' },

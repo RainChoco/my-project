@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Tender, ClarificationLog, ClarificationMessage, ClarificationAttachment, JobAdjustmentRequest } = require('../models');
+const { sequelize, Tender, ClarificationLog, ClarificationMessage, ClarificationAttachment, JobAdjustmentRequest } = require('../models');
 const cloudinaryService = require('../services/cloudinaryService');
 const clarificationAiService = require('../services/clarificationAiService');
 
@@ -17,13 +17,27 @@ function addDaysAsDateOnly(date, days) {
   return result.toISOString().slice(0, 10);
 }
 
+// Tenders are looked up throughout Scope D by whatever identifier the caller has on
+// hand: the internal numeric id, or the human-readable tender_ref_no (e.g. "TC-2026-006")
+// shown everywhere in the UI. This resolves either to the actual Tender row. The ref no
+// match is case-insensitive since users may not type it back in the exact stored case.
+function resolveTender(identifier) {
+  const trimmed = String(identifier).trim();
+  if (/^\d+$/.test(trimmed)) {
+    return Tender.findByPk(trimmed);
+  }
+  return Tender.findOne({
+    where: sequelize.where(sequelize.fn('LOWER', sequelize.col('tender_ref_no')), trimmed.toLowerCase())
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Pricing Deviation Detection
 // ---------------------------------------------------------------------------
 
 const detectDeviation = async (req, res) => {
   try {
-    const tender = await Tender.findByPk(req.params.tenderId);
+    const tender = await resolveTender(req.params.tenderId);
     if (!tender) {
       return res.status(404).json({ status: 'error', message: 'Tender not found' });
     }
@@ -42,17 +56,18 @@ const detectDeviation = async (req, res) => {
     const altPrice = Number(tender.alternative_offer_price);
     const deviationAmount = Math.abs(mainPrice - altPrice);
     const deviationPercentage = Number(((deviationAmount / mainPrice) * 100).toFixed(2));
-    const exceedsTolerance = deviationPercentage > DEVIATION_TOLERANCE_PERCENTAGE;
 
+    let exceedsTolerance;
     let rationale;
     try {
-      rationale = clarificationAiService.generateDeviationRationale({
+      const assessment = await clarificationAiService.assessDeviation({
         deviationPercentage,
-        tolerancePercentage: DEVIATION_TOLERANCE_PERCENTAGE,
-        exceedsTolerance
+        tolerancePercentage: DEVIATION_TOLERANCE_PERCENTAGE
       });
+      exceedsTolerance = assessment.exceedsTolerance;
+      rationale = assessment.rationale;
     } catch (aiError) {
-      console.error('ChatGPT rationale generation failed:', aiError);
+      console.error('ChatGPT deviation assessment failed:', aiError);
       return res.status(502).json({ status: 'error', message: 'ChatGPT API request failed or returned an unparseable result' });
     }
 
@@ -85,7 +100,13 @@ const listClarificationLogs = async (req, res) => {
     const limit = parseInt(req.query.limit, 10) || 20;
 
     const where = {};
-    if (tender_id) where.tender_id = tender_id;
+    if (tender_id) {
+      const tender = await resolveTender(tender_id);
+      if (!tender) {
+        return res.status(200).json({ data: [], pagination: { page, limit, total: 0 } });
+      }
+      where.tender_id = tender.id;
+    }
     if (log_type) where.log_type = log_type;
     if (status) where.status = status;
     if (req.query.overdue === 'true') {
@@ -176,7 +197,7 @@ const draftMessage = async (req, res) => {
 
     let draft;
     try {
-      draft = clarificationAiService.generateDraftMessage({ log, tender: log.tender });
+      draft = await clarificationAiService.generateDraftMessage({ log, tender: log.tender });
     } catch (aiError) {
       console.error('ChatGPT draft generation failed:', aiError);
       return res.status(502).json({ status: 'error', message: 'ChatGPT API request failed or timed out' });
@@ -419,12 +440,27 @@ const listJobAdjustmentRequests = async (req, res) => {
   try {
     const { tender_id, approval_status } = req.query;
     const where = {};
-    if (tender_id) where.tender_id = tender_id;
+    if (tender_id) {
+      const tender = await resolveTender(tender_id);
+      if (!tender) {
+        return res.status(200).json({ data: [] });
+      }
+      where.tender_id = tender.id;
+    }
     if (approval_status) where.approval_status = approval_status;
     if (req.query.is_material) where.is_material = req.query.is_material === 'true';
 
-    const requests = await JobAdjustmentRequest.findAll({ where, order: [['created_at', 'DESC']] });
-    return res.status(200).json({ data: requests.map((r) => r.toJSON()) });
+    const requests = await JobAdjustmentRequest.findAll({
+      where,
+      include: [{ model: Tender, as: 'tender', attributes: ['tender_ref_no', 'vendor_name'] }],
+      order: [['created_at', 'DESC']]
+    });
+    return res.status(200).json({
+      data: requests.map((r) => {
+        const { tender, ...fields } = r.toJSON();
+        return { ...fields, tender_ref_no: tender?.tender_ref_no ?? null, vendor_name: tender?.vendor_name ?? null };
+      })
+    });
   } catch (error) {
     console.error('Error in listJobAdjustmentRequests:', error);
     return res.status(500).json({ status: 'error', message: 'Internal Server Error' });
