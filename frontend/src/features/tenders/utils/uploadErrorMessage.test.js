@@ -5,7 +5,7 @@ describe('getUploadErrorMessage', () => {
   it('returns a reassuring, retry-oriented message for a 502 (Cloudinary failure)', () => {
     const error = { response: { status: 502, data: { status: 'error', message: 'Cloudinary upload failed' } } };
     const message = getUploadErrorMessage(error);
-    expect(message).toMatch(/temporarily unavailable/i);
+    expect(message).toMatch(/upload service currently unavailable/i);
     expect(message).toMatch(/data was saved/i);
   });
 

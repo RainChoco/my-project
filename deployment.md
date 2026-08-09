@@ -13,24 +13,28 @@ This document covers deploying the Tender Evaluation Platform to production:
 
 | Service | URL |
 |---|---|
-| Frontend | https://my-project-smoky-one-97.vercel.app |
+| Frontend | https://my-project-git-main-my-project-4d77.vercel.app |
 | Backend API | https://my-project-3j4a.onrender.com/api |
 | Health check | https://my-project-3j4a.onrender.com/health |
+
+> The frontend URL is Vercel's stable "git branch" alias (always points at the latest `main` deploy) - Vercel also mints a new random preview URL per deploy, which the backend's CORS config allows automatically via a `my-project-*.vercel.app` pattern match (see `backend/src/index.js`).
 
 ---
 
 ## Test User Accounts
 
-Demo accounts are seeded automatically on every backend startup/sync (`backend/src/utils/seedDemoUsers.js`), so they exist on the live Render + Neon deployment above. All accounts share the same demo password.
+Log in at [`https://my-project-git-main-my-project-4d77.vercel.app/login`](https://my-project-git-main-my-project-4d77.vercel.app/login) with any of the accounts below. They're seeded automatically on every backend startup/sync (`backend/src/utils/seedDemoUsers.js`), so they already exist on the live Render + Neon deployment above - no setup needed. All accounts share the same demo password.
 
-| Full Name | Email | Password | Role |
+| Role | Username (Email) | Password | Full Name |
 |---|---|---|---|
-| Alice Tan | `alice.tan@townms.gov.sg` | `DevPass123!` | `ma_staff` |
-| Ben Ong | `ben.ong@townms.gov.sg` | `DevPass123!` | `evaluator` |
-| Cheryl Lim | `cheryl.lim@townms.gov.sg` | `DevPass123!` | `management` |
-| Calista Tan | `calista@townms.gov.sg` | `DevPass123!` | `report_preparer` |
+| `ma_staff` | `alice.tan@townms.gov.sg` | `DevPass123!` | Alice Tan |
+| `evaluator` | `ben.ong@townms.gov.sg` | `DevPass123!` | Ben Ong |
+| `management` | `cheryl.lim@townms.gov.sg` | `DevPass123!` | Cheryl Lim |
+| `report_preparer` | `calista@townms.gov.sg` | `DevPass123!` | Calista Tan |
 
 > These are seeded demo credentials, not production secrets - the password is hardcoded in `seedDemoUsers.js` for local/demo use only. Do not reuse this password scheme for real accounts.
+
+> ⚠️ **Known gap:** there is no seeded demo account for the `vendor_liaison` role (Sulaiman's Scope D - vendor clarification responses, job adjustment follow-ups). Add one to `DEMO_USERS` in `seedDemoUsers.js` if a reviewer needs to exercise that role directly.
 
 ---
 
@@ -128,7 +132,7 @@ After deploying to Vercel, set `FRONTEND_URL` in the Render backend environment 
 - [ ] `FRONTEND_URL` set on Render to the Vercel frontend URL
 - [ ] Cloudinary credentials set
 - [ ] `npm run build` passes locally before deploying
-- [ ] `npm test` passes (31/31)
+- [ ] `npm test` passes in both `backend/` and `frontend/`
 - [ ] Health check `GET /health` returns `{ status: 'ok' }`
 
 ---

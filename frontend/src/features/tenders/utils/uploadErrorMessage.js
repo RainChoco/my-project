@@ -10,7 +10,7 @@
 // upload-only problem worth retrying later.
 export function getUploadErrorMessage(error, fallback = 'Could not upload the file. Please try again.') {
   if (error?.response?.status === 502) {
-    return 'The file storage service is temporarily unavailable, so this file could not be uploaded. Your data was saved - please try uploading the file again in a few minutes.';
+    return 'Document upload service currently unavailable. Your data was saved - please try uploading the file again later.';
   }
   if (error?.code === 'ECONNABORTED') {
     return 'The upload timed out. Please try again.';
