@@ -1,68 +1,64 @@
 /** @vitest-environment jsdom */
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// historyStorage.js imports API_BASE_URL from lib/apiClient.js, which reads
-// import.meta.env.VITE_API_BASE_URL once at module-import time - so the "falls
-// back to apiClient's default when unset" behaviour can only be tested by
-// clearing that var and re-importing both modules fresh, otherwise this test's
-// outcome depends on whatever's in the developer's local (gitignored) frontend/.env.
+// historyStorage.js used to call fetch() directly with `credentials: "include"`
+// and no Authorization header - this app authenticates via a Bearer token
+// (apiClient.js), not cookies, so every real request 401'd and was silently
+// swallowed into []. Now goes through apiClient, which attaches that header;
+// mock apiClient itself rather than global fetch.
+vi.mock("../../../lib/apiClient", () => ({
+    default: { get: vi.fn() },
+}));
+
+import apiClient from "../../../lib/apiClient";
+import { getHistoryEntries } from "./historyStorage";
+
 describe("historyStorage", () => {
-    const originalApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-
     beforeEach(() => {
-        vi.restoreAllMocks();
-        vi.resetModules();
-        delete import.meta.env.VITE_API_BASE_URL;
-    });
-
-    afterEach(() => {
-        if (originalApiBaseUrl !== undefined) {
-            import.meta.env.VITE_API_BASE_URL = originalApiBaseUrl;
-        }
+        vi.clearAllMocks();
     });
 
     it("loads history entries from the dedicated history API", async () => {
-        const { getHistoryEntries } = await import("./historyStorage");
-
-        const fetchMock = vi.fn()
-            .mockResolvedValueOnce({
-                ok: true,
-                json: async () => [{
-                    id: 1,
-                    type: "Board Paper",
-                    title: "Board Paper - T-001",
-                    createdAt: "2026-07-29T10:00:00.000Z",
-                    entryData: {
-                        report: { title: "Board Paper - T-001" },
-                        tenderLabel: "T-001",
-                        purpose: "Review",
-                        preparedBy: "Alice"
+        apiClient.get.mockResolvedValue({
+            data: [{
+                id: 1,
+                type: "Board Paper",
+                title: "Board Paper - T-001",
+                createdAt: "2026-07-29T10:00:00.000Z",
+                entryData: {
+                    report: { title: "Board Paper - T-001" },
+                    tenderLabel: "T-001",
+                    purpose: "Review",
+                    preparedBy: "Alice"
+                }
+            }, {
+                id: 2,
+                type: "Proposal",
+                title: "Proposal - T-001",
+                createdAt: "2026-07-29T11:00:00.000Z",
+                entryData: {
+                    proposal: {
+                        proposalTitle: "Proposal - T-001",
+                        proposalType: "Recommendation",
+                        sections: { content: "Proposal content" }
                     }
-                }, {
-                    id: 2,
-                    type: "Proposal",
-                    title: "Proposal - T-001",
-                    createdAt: "2026-07-29T11:00:00.000Z",
-                    entryData: {
-                        proposal: {
-                            proposalTitle: "Proposal - T-001",
-                            proposalType: "Recommendation",
-                            sections: { content: "Proposal content" }
-                        }
-                    }
-                }]
-            });
-
-        vi.stubGlobal("fetch", fetchMock);
+                }
+            }]
+        });
 
         const entries = await getHistoryEntries();
 
-        expect(fetchMock).toHaveBeenCalledWith(
-            "http://localhost:5000/api/history",
-            expect.objectContaining({ credentials: "include" })
-        );
+        expect(apiClient.get).toHaveBeenCalledWith("/history");
         expect(entries).toHaveLength(2);
         expect(entries[0].type).toBe("Proposal");
         expect(entries[1].type).toBe("Board Paper");
+    });
+
+    it("returns an empty list instead of throwing when the request fails (e.g. a 401)", async () => {
+        apiClient.get.mockRejectedValue(new Error("Request failed with status code 401"));
+
+        const entries = await getHistoryEntries();
+
+        expect(entries).toEqual([]);
     });
 });

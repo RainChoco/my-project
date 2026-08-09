@@ -1,5 +1,4 @@
-import { API_BASE_URL as API_URL } from "../../../lib/apiClient";
-const HISTORY_ENDPOINT = `${API_URL}/history`;
+import apiClient from "../../../lib/apiClient";
 
 const buildEntry = (entry) => {
     if (!entry) {
@@ -47,13 +46,13 @@ export const getHistoryEntries = async () => {
     }
 
     try {
-        const response = await fetch(HISTORY_ENDPOINT, { credentials: "include" });
+        // Was previously a raw fetch() with `credentials: "include"` and no
+        // Authorization header - this app authenticates via a Bearer token
+        // (see apiClient.js), not cookies, so every call 401'd and the
+        // catch-all below silently returned [] - "no board papers generated"
+        // even when plenty existed. apiClient attaches the real auth header.
+        const { data: historyResponse } = await apiClient.get("/history");
 
-        if (!response.ok) {
-            return [];
-        }
-
-        const historyResponse = await response.json();
         const entries = Array.isArray(historyResponse)
             ? historyResponse.map(buildEntry).filter(Boolean)
             : [];
@@ -62,7 +61,7 @@ export const getHistoryEntries = async () => {
             .sort((left, right) => new Date(right.createdAt || 0) - new Date(left.createdAt || 0))
             .slice(0, 30);
     } catch (error) {
-        console.error(`Unable to read history entries from ${HISTORY_ENDPOINT}`, error);
+        console.error("Unable to read history entries", error);
         return [];
     }
 };
