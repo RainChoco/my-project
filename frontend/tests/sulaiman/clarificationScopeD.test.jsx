@@ -102,7 +102,8 @@ describe('ClarificationLogsPage (Sulaiman - Scope D)', () => {
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText('Detect pricing deviation')).toBeInTheDocument();
 
-    await user.type(within(dialog).getByLabelText('Tender ID'), '7');
+    await user.click(within(dialog).getByRole('combobox', { name: 'Tender' }));
+    await user.click(await screen.findByRole('option', { name: 'TC-D-001' }));
     await user.click(within(dialog).getByRole('button', { name: 'Run detection' }));
 
     await waitFor(() => expect(detectDeviation).toHaveBeenCalledWith(7));

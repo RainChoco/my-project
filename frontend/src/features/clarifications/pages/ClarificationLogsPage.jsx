@@ -272,6 +272,8 @@ export default function ClarificationLogsPage() {
         isSubmitting={detectMutation.isPending}
         submitError={detectError}
         onSubmit={(tenderId) => detectMutation.mutateAsync(tenderId)}
+        tenders={tenderOptions}
+        isTendersLoading={isTendersLoading}
       />
     </div>
   );
