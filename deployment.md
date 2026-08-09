@@ -13,9 +13,24 @@ This document covers deploying the Tender Evaluation Platform to production:
 
 | Service | URL |
 |---|---|
-| Frontend | *(to be set after Vercel deployment)* |
-| Backend API | *(to be set after Render deployment)* |
-| Health check | `<backend-url>/health` |
+| Frontend | https://my-project-smoky-one-97.vercel.app |
+| Backend API | https://my-project-3j4a.onrender.com/api |
+| Health check | https://my-project-3j4a.onrender.com/health |
+
+---
+
+## Test User Accounts
+
+Demo accounts are seeded automatically on every backend startup/sync (`backend/src/utils/seedDemoUsers.js`), so they exist on the live Render + Neon deployment above. All accounts share the same demo password.
+
+| Full Name | Email | Password | Role |
+|---|---|---|---|
+| Alice Tan | `alice.tan@townms.gov.sg` | `DevPass123!` | `ma_staff` |
+| Ben Ong | `ben.ong@townms.gov.sg` | `DevPass123!` | `evaluator` |
+| Cheryl Lim | `cheryl.lim@townms.gov.sg` | `DevPass123!` | `management` |
+| Calista Tan | `calista@townms.gov.sg` | `DevPass123!` | `report_preparer` |
+
+> These are seeded demo credentials, not production secrets - the password is hardcoded in `seedDemoUsers.js` for local/demo use only. Do not reuse this password scheme for real accounts.
 
 ---
 

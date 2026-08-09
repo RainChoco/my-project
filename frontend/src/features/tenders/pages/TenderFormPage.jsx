@@ -242,7 +242,7 @@ function TenderFormPage({ mode }) {
           const created = await createMutation.mutateAsync(payload);
           tenderId = created.id;
           queryClient.invalidateQueries({ queryKey: ['tenders'] });
-          queryClient.invalidateQueries({ queryKey: ['contract-tenders', payload.contractId] });
+          queryClient.invalidateQueries({ queryKey: ['contractTenders', payload.contractId] });
           toast({ title: 'Tender created', description: `${created.tender_ref_no} was logged as a draft.`, variant: 'success' });
         }
 

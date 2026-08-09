@@ -1,14 +1,28 @@
 /** @vitest-environment jsdom */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getHistoryEntries } from "./historyStorage";
-
+// historyStorage.js reads import.meta.env.VITE_API_BASE_URL once at module-import
+// time, so the "falls back to a relative /api path" behaviour can only be tested
+// by clearing that var and re-importing the module fresh - otherwise this test's
+// outcome depends on whatever's in the developer's local (gitignored) frontend/.env.
 describe("historyStorage", () => {
+    const originalApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
     beforeEach(() => {
         vi.restoreAllMocks();
+        vi.resetModules();
+        delete import.meta.env.VITE_API_BASE_URL;
+    });
+
+    afterEach(() => {
+        if (originalApiBaseUrl !== undefined) {
+            import.meta.env.VITE_API_BASE_URL = originalApiBaseUrl;
+        }
     });
 
     it("loads history entries from the dedicated history API", async () => {
+        const { getHistoryEntries } = await import("./historyStorage");
+
         const fetchMock = vi.fn()
             .mockResolvedValueOnce({
                 ok: true,

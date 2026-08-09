@@ -1,0 +1,9 @@
+# Test Cases - Sulaiman (Frontend)
+
+## clarificationScopeD.test.jsx
+
+| Test ID | Test Name | Description | Expected Outcome |
+|---|---|---|---|
+| FE-SU-001 | Lists clarification logs with deviation and status, hides Detect Deviation for non ma_staff role (UC-D6) | Renders `ClarificationLogsPage` as a `vendor_liaison` user with `listClarificationLogs` mocked to resolve one flagged log (tender ref `TC-D-001`, vendor `Vendor Flagged Pte Ltd`, 6% deviation, status `flagged`). | The tender ref, vendor name, "6%", "Flagged" and "Pricing Deviation" text are all rendered, and no "Detect deviation" button is present in the document. |
+| FE-SU-002 | Lets ma_staff run deviation detection from the list and opens the resulting log (UC-D1) | Renders the page as `ma_staff` with an empty log list, then clicks "Detect deviation", fills in Tender ID `7` in the opened dialog, and clicks "Run detection" (with `detectDeviation` mocked to resolve a new log with id 42). | The empty-state message "No logs match the current filter." shows first; the dialog shows "Detect pricing deviation"; `detectDeviation` is called with `7`; and `mockNavigate` is called with `/clarifications/42`. |
+| FE-SU-003 | Filters by tender id and shows the adjust-filters hint, then clears back to the full list (edge case) | Renders the page as `vendor_liaison` with `listClarificationLogs` returning the full list, then an empty result, then the full list again; types `999` into the Tender ID filter field, then clicks "Clear filters". | After filtering, the "No logs match the current filter. Adjust or clear the filters above to see more." message appears and `listClarificationLogs` is last called with `tender_id: 999`; after clearing, `TC-D-001` reappears and the last call's params no longer contain a `tender_id` property. |

@@ -133,7 +133,9 @@ export default function DashboardPage() {
   const [toast, setToast]                             = useState(null);
   const [dismissedNotifs, setDismissedNotifs]         = useState(new Set());
 
-  const { data: availableContracts = [] } = useQuery({ queryKey: ['availableContracts'], queryFn: fetchContracts });
+  // Shares the ['contracts'] cache key with ContractListPage/ContractFormPage/TenderFilters
+  // so creating, editing, or deleting a contract there invalidates this dropdown too.
+  const { data: availableContracts = [] } = useQuery({ queryKey: ['contracts'], queryFn: fetchContracts });
   const selectedContract = availableContracts.find(c => c.id === filters.contractId);
 
   const { data: kpis, isLoading: kpisLoading, error: kpisError } = useQuery({

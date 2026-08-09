@@ -45,7 +45,7 @@ function BoardPaperResultPage() {
         isLoading: isTenderDocsLoading,
         isError: isTenderDocsError
     } = useQuery({
-        queryKey: ['tenderDocuments', tenderId],
+        queryKey: ['tender-documents', tenderId],
         queryFn: () => listTenderDocuments(tenderId),
         enabled: Boolean(tenderId),
     });
