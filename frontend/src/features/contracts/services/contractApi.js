@@ -1,40 +1,33 @@
-import axios from 'axios';
+import apiClient from '../../../lib/apiClient';
 
-// Use Vite proxy (/api → http://127.0.0.1:5000) so this works in all envs
-const API_BASE_URL = '/api/v1/contracts';
-
-// Helper: inject JWT token from localStorage
-const authHeader = () => {
-  const token = localStorage.getItem('authToken');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+const API_BASE_URL = '/v1/contracts';
 
 export const fetchContracts = async () => {
-  const { data } = await axios.get(API_BASE_URL, { headers: authHeader() });
+  const { data } = await apiClient.get(API_BASE_URL);
   return data.data;
 };
 
 export const fetchContractById = async (id) => {
-  const { data } = await axios.get(`${API_BASE_URL}/${id}`, { headers: authHeader() });
+  const { data } = await apiClient.get(`${API_BASE_URL}/${id}`);
   return data.data;
 };
 
 export const createContract = async (contractData) => {
-  const { data } = await axios.post(API_BASE_URL, contractData, { headers: authHeader() });
+  const { data } = await apiClient.post(API_BASE_URL, contractData);
   return data.data;
 };
 
 export const updateContract = async (id, contractData) => {
-  const { data } = await axios.put(`${API_BASE_URL}/${id}`, contractData, { headers: authHeader() });
+  const { data } = await apiClient.put(`${API_BASE_URL}/${id}`, contractData);
   return data.data;
 };
 
 export const deleteContract = async (id) => {
-  const { data } = await axios.delete(`${API_BASE_URL}/${id}`, { headers: authHeader() });
+  const { data } = await apiClient.delete(`${API_BASE_URL}/${id}`);
   return data.data;
 };
 
 export const fetchContractTenders = async (contractId) => {
-  const { data } = await axios.get(`${API_BASE_URL}/${contractId}/tenders`, { headers: authHeader() });
+  const { data } = await apiClient.get(`${API_BASE_URL}/${contractId}/tenders`);
   return data.data;
 };

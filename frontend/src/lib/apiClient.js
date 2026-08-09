@@ -2,10 +2,15 @@ import axios from 'axios';
 
 export const AUTH_TOKEN_KEY = 'authToken';
 
+// Falls back to localhost in dev and the Render backend in production, so a
+// missing VITE_API_BASE_URL on Vercel doesn't silently resolve to a relative
+// path (which Vercel has no rewrite for and returns index.html for).
+const DEFAULT_API_BASE_URL = import.meta.env.DEV
+  ? 'http://localhost:5000/api'
+  : 'https://my-project-3j4a.onrender.com/api';
+
 const apiClient = axios.create({
-  // Use the Vite dev-server proxy (/api → http://127.0.0.1:5000/api).
-  // In production, set VITE_API_BASE_URL to the deployed backend URL.
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL,
 });
 
 apiClient.interceptors.request.use((config) => {
