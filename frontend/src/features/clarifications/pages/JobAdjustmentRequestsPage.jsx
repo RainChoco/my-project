@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -16,11 +15,15 @@ import {
   updateJobAdjustmentRequest,
   createFollowUpNotification,
 } from '../services/jobAdjustmentApi';
+import { listTenders } from '@/features/tenders/services/tenderApi';
 import { APPROVAL_STATUS_VALUES, APPROVAL_STATUS_LABELS } from '../constants';
 import { useAuth } from '@/context';
 import { ROLES } from '@/routes/routeConfig';
 
 const EMPTY_FILTERS = { tender_id: '', approval_status: '', is_material: false };
+// Radix's Select can't use an empty string as an item value, so "All Tenders"
+// uses this sentinel and gets translated back to '' (no filter) in the handler.
+const ALL_TENDERS_VALUE = 'all';
 
 // UC-D7: job adjustment requests raised off a vendor response, viewable/filterable
 // across tenders. ma_staff approves/rejects material requests here; vendor_liaison
@@ -47,6 +50,15 @@ export default function JobAdjustmentRequestsPage() {
     queryFn: () => listJobAdjustmentRequests(queryParams),
     placeholderData: keepPreviousData,
   });
+
+  // Populates the Tender filter dropdown. Shares the ['tenders'] cache key
+  // prefix with the rest of the app so creating/editing a tender elsewhere
+  // keeps this list fresh too.
+  const { data: tendersData, isLoading: isTendersLoading } = useQuery({
+    queryKey: ['tenders', { limit: 100 }],
+    queryFn: () => listTenders({ limit: 100 }),
+  });
+  const tenderOptions = tendersData?.data ?? [];
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['job-adjustment-requests'] });
 
@@ -91,15 +103,24 @@ export default function JobAdjustmentRequestsPage() {
         <CardContent>
           <div className="flex flex-wrap items-end gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="jar-filter-tender">Tender ID</Label>
-              <Input
-                id="jar-filter-tender"
-                type="number"
-                min="1"
-                className="w-32"
-                value={filters.tender_id}
-                onChange={(e) => handleFilterChange('tender_id', e.target.value)}
-              />
+              <Label htmlFor="jar-filter-tender">Tender</Label>
+              <Select
+                value={filters.tender_id || ALL_TENDERS_VALUE}
+                onValueChange={(v) => handleFilterChange('tender_id', v === ALL_TENDERS_VALUE ? '' : v)}
+                disabled={isTendersLoading}
+              >
+                <SelectTrigger id="jar-filter-tender" className="w-56">
+                  <SelectValue placeholder={isTendersLoading ? 'Loading tenders...' : 'All Tenders'} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_TENDERS_VALUE}>All Tenders</SelectItem>
+                  {tenderOptions.map((tender) => (
+                    <SelectItem key={tender.id} value={String(tender.id)}>
+                      {tender.tender_ref_no}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="jar-filter-status">Approval status</Label>

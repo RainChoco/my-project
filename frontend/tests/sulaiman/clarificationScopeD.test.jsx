@@ -20,10 +20,14 @@ vi.mock('../../src/features/clarifications/services/clarificationApi', () => ({
   listClarificationLogs: vi.fn(),
   detectDeviation: vi.fn(),
 }));
+vi.mock('../../src/features/tenders/services/tenderApi', () => ({
+  listTenders: vi.fn(),
+}));
 
 import ClarificationLogsPage from '../../src/features/clarifications/pages/ClarificationLogsPage';
 import { useAuth } from '@/context';
 import { listClarificationLogs, detectDeviation } from '../../src/features/clarifications/services/clarificationApi';
+import { listTenders } from '../../src/features/tenders/services/tenderApi';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -57,6 +61,16 @@ describe('ClarificationLogsPage (Sulaiman - Scope D)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     queryClient.clear();
+    // jsdom lacks PointerEvent capture / scrollIntoView, both of which Radix's
+    // Select popup needs.
+    window.HTMLElement.prototype.hasPointerCapture = vi.fn().mockReturnValue(false);
+    window.HTMLElement.prototype.scrollIntoView = vi.fn();
+    listTenders.mockResolvedValue({
+      data: [
+        { id: 7, tender_ref_no: 'TC-D-001' },
+        { id: 999, tender_ref_no: 'TC-D-999' },
+      ],
+    });
   });
 
   it('lists clarification logs with deviation and status, and hides Detect deviation for a non ma_staff role (UC-D6)', async () => {
@@ -95,7 +109,7 @@ describe('ClarificationLogsPage (Sulaiman - Scope D)', () => {
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/clarifications/42'));
   });
 
-  it('filters by tender id and shows the adjust-filters hint, then clears back to the full list (edge case)', async () => {
+  it('filters by tender and shows the adjust-filters hint, then clears back to the full list (edge case)', async () => {
     useAuth.mockReturnValue({ role: 'vendor_liaison' });
     listClarificationLogs
       .mockResolvedValueOnce(LOGS_RESPONSE)
@@ -103,10 +117,12 @@ describe('ClarificationLogsPage (Sulaiman - Scope D)', () => {
       .mockResolvedValueOnce(LOGS_RESPONSE);
 
     renderPage();
+    const user = userEvent.setup();
 
     expect(await screen.findByText('TC-D-001')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('Tender ID'), { target: { value: '999' } });
+    await user.click(screen.getByRole('combobox', { name: 'Tender' }));
+    await user.click(await screen.findByRole('option', { name: 'TC-D-999' }));
 
     await waitFor(() =>
       expect(screen.getByText('No logs match the current filter. Adjust or clear the filters above to see more.')).toBeInTheDocument()
