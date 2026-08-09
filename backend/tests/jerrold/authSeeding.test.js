@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
-const { sequelize, User } = require('../src/models');
-const { seedDemoUsers } = require('../src/utils/seedDemoUsers');
+const { sequelize, User } = require('../../src/models');
+const { seedDemoUsers } = require('../../src/utils/seedDemoUsers');
 
 describe('Demo user seeding', () => {
     beforeEach(async () => {

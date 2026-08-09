@@ -1,6 +1,6 @@
-const { sequelize, User, Contract, Tender } = require('../src/models');
-const { seedDemoUsers } = require('../src/utils/seedDemoUsers');
-const { seedDemoData } = require('../src/utils/seedDemoData');
+const { sequelize, User, Contract, Tender } = require('../../src/models');
+const { seedDemoUsers } = require('../../src/utils/seedDemoUsers');
+const { seedDemoData } = require('../../src/utils/seedDemoData');
 
 describe('Demo data seeding', () => {
     beforeEach(async () => {
