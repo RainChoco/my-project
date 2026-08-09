@@ -52,3 +52,27 @@
 | BE-ZH-046 | Blocks non ma_staff roles from updating a threshold | Sends `PUT /api/config/eligibility-thresholds/min_paid_up_capital` as `evaluator` | Response status is 403 |
 | BE-ZH-047 | ma_staff can update an existing threshold | Sends `PUT /api/config/eligibility-thresholds/min_paid_up_capital` as `ma_staff` with `threshold_value: 750000`, then restores it back to 500000 | Response status is 200 and the returned `threshold_value` is 750000 |
 | BE-ZH-048 | 404s updating a threshold with an unknown criterion_key | Sends `PUT /api/config/eligibility-thresholds/not_a_real_criterion` as `ma_staff` | Response status is 404 |
+
+*(BE-ZH-049 onward were added later in `tenderScopeA.test.js`, interspersed at specific points rather than appended at the end of the file - IDs here are sequential by addition order, not strict file line-order.)*
+
+| BE-ZH-049 | Returns a friendly fallback message (never the raw Cloudinary error) and creates no document record when the upload service is unconfigured | Mocks `cloudinaryService.uploadBuffer` to reject with a `CLOUDINARY_NOT_CONFIGURED`-tagged error, then uploads a document | Response status is 502, `message` is exactly `'Document upload service currently unavailable'` (never mentions "cloudinary"), the `TenderDocument` count for that tender is unchanged, and the server log contains a "not configured" diagnostic |
+| BE-ZH-050 | Returns the same friendly fallback message for a generic Cloudinary-side failure (not just "not configured") | Mocks `cloudinaryService.uploadBuffer` to reject with a plain `Error('Network timeout contacting Cloudinary')` | Response status is 502 and `message` is exactly `'Document upload service currently unavailable'` |
+| BE-ZH-051 | Persists an explicit `status: 'submitted'` from the request body as-is, not overridden to draft | Sends `POST /api/tenders` as `ma_staff` with `status: 'submitted'` and `eligibility_status: 'eligible'` explicitly included | Response status is 201, `status` is `'submitted'`, `eligibility_status` is `'eligible'`, and the persisted DB row's `status` is `'submitted'` |
+
+## Tender Image / Document Package Upload (tenderScopeA.test.js)
+
+| Test ID | Test Name | Description | Expected Outcome |
+|---|---|---|---|
+| BE-ZH-052 | ma_staff can upload an image as the tender document package | Sends `POST /api/tenders/:id/image` as `ma_staff` with a PNG file attached (Cloudinary upload mocked) | Response status is 200 and the mocked `cloudinaryService.uploadBuffer` was called |
+| BE-ZH-053 | Returns the friendly fallback message and leaves the tender record untouched when the upload service is unconfigured | Mocks `cloudinaryService.uploadBuffer` to reject with a `CLOUDINARY_NOT_CONFIGURED`-tagged error, then uploads a PDF as the tender's document package | Response status is 502, `message` is exactly `'Document upload service currently unavailable'`, the tender's `image_url` is unchanged from before the attempt, and the server log contains a "not configured" diagnostic |
+
+## cloudinaryService.test.js
+
+*(Unit tests against the real, unmocked `config/cloudinary.js` / `services/cloudinaryService.js` modules - the controller tests above all replace `cloudinaryService` entirely via `jest.mock`, so they never exercise this code directly.)*
+
+| Test ID | Test Name | Description | Expected Outcome |
+|---|---|---|---|
+| BE-ZH-054 | Rejects immediately with a CLOUDINARY_NOT_CONFIGURED error when credentials are missing - no network call attempted | Deletes `CLOUDINARY_CLOUD_NAME`/`API_KEY`/`API_SECRET` from `process.env`, reloads the module fresh, and calls `uploadBuffer` | The returned promise rejects with an error whose `code` is `'CLOUDINARY_NOT_CONFIGURED'` |
+| BE-ZH-055 | Logs a clear diagnostic at module load time when credentials are missing, naming the missing vars | Deletes the three Cloudinary env vars, then fresh-requires `config/cloudinary.js` while spying on `console.error` | A logged line matches /not configured/i and contains all three missing env var names |
+| BE-ZH-056 | Exposes isCloudinaryConfigured as false when any credential is missing | Deletes only `CLOUDINARY_API_SECRET` and fresh-requires `config/cloudinary.js` | `cloudinary.isCloudinaryConfigured` is `false` |
+| BE-ZH-057 | Exposes isCloudinaryConfigured as true when all three credentials are present | Sets all three Cloudinary env vars to dummy values and fresh-requires `config/cloudinary.js` | `cloudinary.isCloudinaryConfigured` is `true` |
