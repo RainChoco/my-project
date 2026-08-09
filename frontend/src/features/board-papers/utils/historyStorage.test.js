@@ -1,9 +1,10 @@
 /** @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// historyStorage.js reads import.meta.env.VITE_API_BASE_URL once at module-import
-// time, so the "falls back to a relative /api path" behaviour can only be tested
-// by clearing that var and re-importing the module fresh - otherwise this test's
+// historyStorage.js imports API_BASE_URL from lib/apiClient.js, which reads
+// import.meta.env.VITE_API_BASE_URL once at module-import time - so the "falls
+// back to apiClient's default when unset" behaviour can only be tested by
+// clearing that var and re-importing both modules fresh, otherwise this test's
 // outcome depends on whatever's in the developer's local (gitignored) frontend/.env.
 describe("historyStorage", () => {
     const originalApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -57,7 +58,7 @@ describe("historyStorage", () => {
         const entries = await getHistoryEntries();
 
         expect(fetchMock).toHaveBeenCalledWith(
-            "/api/history",
+            "http://localhost:5000/api/history",
             expect.objectContaining({ credentials: "include" })
         );
         expect(entries).toHaveLength(2);

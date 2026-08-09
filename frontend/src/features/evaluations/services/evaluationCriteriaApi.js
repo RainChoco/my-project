@@ -1,8 +1,9 @@
-import { apiClient } from '../../../lib';
+import { apiClient, DEFAULT_TIMEOUT_MS } from '../../../lib';
 
-// Requests time out after 15s so a slow/hung API surfaces as an error state
-// rather than an indefinite spinner.
-const REQUEST_TIMEOUT = 15000;
+// Requests time out so a slow/hung API surfaces as an error state rather than
+// an indefinite spinner. Matches apiClient's own default so these requests get
+// the same cold-start tolerance as everything else instead of timing out first.
+const REQUEST_TIMEOUT = DEFAULT_TIMEOUT_MS;
 
 export const fetchCriteria = async (isActive) => {
   const params = isActive === undefined ? {} : { is_active: isActive };

@@ -1,9 +1,11 @@
-import { apiClient } from '@/lib';
+import { apiClient, DEFAULT_TIMEOUT_MS } from '@/lib';
 
 // Thin wrappers around backend/src/routes/clarificationRoutes.js's clarification
 // log/message endpoints. apiClient attaches the Authorization header and redirects
 // to /login on 401 (see src/lib/apiClient.js).
-const REQUEST_TIMEOUT = 15000;
+// Matches apiClient's own default so these requests get the same cold-start
+// tolerance as everything else instead of timing out first at 15s.
+const REQUEST_TIMEOUT = DEFAULT_TIMEOUT_MS;
 
 export async function detectDeviation(tenderId) {
   const { data } = await apiClient.post(

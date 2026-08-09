@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
+import { API_BASE_URL as API_URL } from "../../../lib/apiClient";
 const HISTORY_ENDPOINT = `${API_URL}/history`;
 
 const buildEntry = (entry) => {

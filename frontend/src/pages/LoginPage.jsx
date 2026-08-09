@@ -31,7 +31,16 @@ function LoginPage() {
     onSubmit: async (values, { setSubmitting }) => {
       setServerError(null);
       try {
-        const response = await apiClient.post('/auth/login', values);
+        // Login is usually the first request after the app's been idle, so it's
+        // the one most likely to hit Render's backend mid cold-start (can take
+        // 30-50s to wake up). Extended timeout + retryOnColdStart give it room
+        // to survive that instead of failing on apiClient's normal 20s default -
+        // safe to retry through a timeout here since re-submitting the same
+        // login has no harmful side effect, unlike e.g. a create/update request.
+        const response = await apiClient.post('/auth/login', values, {
+          timeout: 45000,
+          retryOnColdStart: true,
+        });
         login(response.data.data.token);
         const redirectTo = location.state?.from?.pathname ?? '/';
         navigate(redirectTo, { replace: true });
@@ -44,9 +53,12 @@ function LoginPage() {
         if (error.response) {
           setServerError(error.response.data?.message ?? 'Login failed. Please try again.');
         } else if (error.request) {
-          // Request went out but no response came back - CORS rejection,
-          // wrong API base URL, or the backend is unreachable.
-          setServerError('Unable to reach the server. Please check your connection and try again.');
+          // Request went out but no response came back - CORS rejection, wrong
+          // API base URL, or the backend is unreachable/still cold-starting
+          // (apiClient already retried a couple of times before giving up).
+          setServerError(
+            'Unable to reach the server. It may be waking up from being idle - please wait a moment and try again.'
+          );
         } else {
           setServerError('Login failed. Please try again.');
         }

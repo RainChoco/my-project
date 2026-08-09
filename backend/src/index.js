@@ -17,9 +17,24 @@ const configuredOrigins = (process.env.FRONTEND_URL || '')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+const exactOrigins = [...localOrigins, ...configuredOrigins];
+
+// Vercel gives every preview deployment its own randomly-hashed URL
+// (my-project-<hash>-<team>.vercel.app), so FRONTEND_URL's exact-match list can
+// only ever cover the production URL - every preview would otherwise fail CORS.
+// Match any Vercel URL for this project by prefix instead of requiring it to be
+// pre-registered exactly.
+const VERCEL_PREVIEW_PATTERN = /^https:\/\/my-project-[a-z0-9-]+\.vercel\.app$/i;
 
 const corsOptions = {
-  origin: [...localOrigins, ...configuredOrigins],
+  origin: (origin, callback) => {
+    // No Origin header (e.g. curl, server-to-server) - allow, matching cors'
+    // own default behaviour for non-browser requests.
+    if (!origin || exactOrigins.includes(origin) || VERCEL_PREVIEW_PATTERN.test(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
+  },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true

@@ -36,9 +36,12 @@ const SAMPLE_FORMAT_CHIPS = [
 
 // No OCR/AI extraction service is wired up in the backend yet - this is a fixed,
 // simulated result standing in for that pipeline so the staging → review preview
-// flow can be demoed end to end. "Submit Extracted Tender Record" is disabled
-// below so this simulated data can never be written to the real tenders table -
-// re-enable it once a real extraction endpoint replaces SIMULATED_EXTRACTED_FIELDS.
+// flow can be demoed end to end. "Use Extracted Data" hands these values to the
+// New Tender Submission form as a prefill (see TenderFormPage's `prefill` handling)
+// rather than writing them to the tenders table directly - the user still has to
+// review/edit and explicitly save from there, so nothing simulated reaches the
+// database unreviewed. Swap SIMULATED_EXTRACTED_FIELDS for a real extraction
+// endpoint's response once one exists; the handoff below doesn't need to change.
 const SIMULATED_EXTRACTED_FIELDS = {
   vendor_name: 'Cana Construction Pte Ltd',
   main_offer_price: 1250000,
@@ -98,6 +101,20 @@ function TenderRecordLookupPage() {
     setExtractionStatus('extracting');
     setIsPreviewOpen(true);
     extractTimeoutRef.current = setTimeout(() => setExtractionStatus('extracted'), 900);
+  };
+
+  const handleUseExtractedData = () => {
+    navigate('/tenders/new', {
+      state: {
+        contractId: SIMULATED_EXTRACTED_FIELDS.contractId,
+        prefill: {
+          vendor_name: SIMULATED_EXTRACTED_FIELDS.vendor_name,
+          main_offer_price: SIMULATED_EXTRACTED_FIELDS.main_offer_price,
+          eligibility_status: SIMULATED_EXTRACTED_FIELDS.eligibility_status,
+          submission_date: SIMULATED_EXTRACTED_FIELDS.submission_date,
+        },
+      },
+    });
   };
 
   const typeMeta = stagedFile ? getFileTypeMeta(stagedFile) : null;
@@ -268,10 +285,15 @@ function TenderRecordLookupPage() {
           <Button
             type="button"
             className="bg-[#E31E24] text-white hover:bg-[#c01a1f]"
-            disabled
-            title="Submitting is disabled - this is a simulated preview only, no OCR/AI extraction service is connected yet. Use New Tender Submission to record a real tender."
+            disabled={extractionStatus !== 'extracted'}
+            title={
+              extractionStatus !== 'extracted'
+                ? 'Extract data from an uploaded document first.'
+                : 'Opens New Tender Submission with these values pre-filled for your review.'
+            }
+            onClick={handleUseExtractedData}
           >
-            Submit Disabled (Simulated Preview Only)
+            Use Extracted Data
           </Button>
         </CardFooter>
       </Card>
