@@ -7,6 +7,24 @@ const aiExtractionService = require('../services/aiExtractionService');
 const LOCKED_FOR_EDIT_STATUSES = ['under_evaluation', 'approved', 'rejected', 'withdrawn'];
 const LOCKED_FOR_DELETE_STATUSES = ['under_evaluation', 'approved', 'rejected'];
 
+// Shared by uploadDocument/replaceDocument/uploadTenderImage below. The message
+// returned to the client is always this friendly, generic one - never the raw
+// Cloudinary/SDK error - but the server log distinguishes "not configured"
+// (missing env vars, caught before any network call - see cloudinaryService.js)
+// from an actual Cloudinary-side failure, since those need different fixes.
+const UPLOAD_SERVICE_UNAVAILABLE_MESSAGE = 'Document upload service currently unavailable';
+
+function logUploadFailure(context, error) {
+  if (error?.code === 'CLOUDINARY_NOT_CONFIGURED') {
+    console.error(
+      `[${context}] Upload rejected: Cloudinary is not configured on this server ` +
+      '(CLOUDINARY_CLOUD_NAME/CLOUDINARY_API_KEY/CLOUDINARY_API_SECRET). Set these environment variables to enable uploads.'
+    );
+  } else {
+    console.error(`[${context}] Cloudinary upload failed:`, error);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Tender CRUD
 // ---------------------------------------------------------------------------
@@ -215,8 +233,8 @@ const uploadDocument = async (req, res) => {
         resourceType: req.file.mimetype.startsWith('image/') ? 'image' : 'raw'
       });
     } catch (uploadError) {
-      console.error('Cloudinary upload failed:', uploadError);
-      return res.status(502).json({ status: 'error', message: 'Cloudinary upload failed' });
+      logUploadFailure('uploadDocument', uploadError);
+      return res.status(502).json({ status: 'error', message: UPLOAD_SERVICE_UNAVAILABLE_MESSAGE });
     }
 
     const document = await TenderDocument.create({
@@ -280,9 +298,9 @@ const replaceDocument = async (req, res) => {
         resourceType: req.file.mimetype.startsWith('image/') ? 'image' : 'raw'
       });
     } catch (uploadError) {
-      console.error('Cloudinary upload failed:', uploadError);
+      logUploadFailure('replaceDocument', uploadError);
       // Prior version remains is_latest: true - no partial state written.
-      return res.status(502).json({ status: 'error', message: 'Cloudinary upload failed' });
+      return res.status(502).json({ status: 'error', message: UPLOAD_SERVICE_UNAVAILABLE_MESSAGE });
     }
 
     const newDocument = await sequelize.transaction(async (t) => {
@@ -349,8 +367,8 @@ const uploadTenderImage = async (req, res) => {
         resourceType: isImage ? 'image' : 'raw'
       });
     } catch (uploadError) {
-      console.error('Cloudinary upload failed:', uploadError);
-      return res.status(502).json({ status: 'error', message: 'Cloudinary upload failed' });
+      logUploadFailure('uploadTenderImage', uploadError);
+      return res.status(502).json({ status: 'error', message: UPLOAD_SERVICE_UNAVAILABLE_MESSAGE });
     }
 
     await tender.update({ image_url: uploadResult.secure_url, image_public_id: uploadResult.public_id });

@@ -367,6 +367,47 @@ describe('Zheng Hong - Tender Submission & Eligibility (Scope A)', () => {
       uploadedDocumentId = res.body.id;
     });
 
+    it('returns a friendly fallback message (never the raw Cloudinary error) and creates no document record when the upload service is unconfigured', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const notConfiguredError = new Error('Cloudinary is not configured (missing CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET)');
+      notConfiguredError.code = 'CLOUDINARY_NOT_CONFIGURED';
+      cloudinaryService.uploadBuffer.mockRejectedValueOnce(notConfiguredError);
+
+      const before = await TenderDocument.count({ where: { tender_id: docTenderId } });
+
+      const res = await request(app)
+        .post(`/api/tenders/${docTenderId}/documents`)
+        .set('Authorization', `Bearer ${maStaffToken}`)
+        .field('file_type', 'alternative_offer')
+        .attach('file', Buffer.from('dummy pdf content'), 'offer.pdf');
+
+      expect(res.statusCode).toBe(502);
+      expect(res.body.message).toBe('Document upload service currently unavailable');
+      expect(res.body.message).not.toMatch(/cloudinary/i);
+
+      const after = await TenderDocument.count({ where: { tender_id: docTenderId } });
+      expect(after).toBe(before); // no phantom document row for a file that was never actually stored
+
+      const loggedNotConfigured = consoleErrorSpy.mock.calls.some(([line]) => /not configured/i.test(line));
+      expect(loggedNotConfigured).toBe(true);
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('returns the same friendly fallback message for a generic Cloudinary-side failure (not just "not configured")', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      cloudinaryService.uploadBuffer.mockRejectedValueOnce(new Error('Network timeout contacting Cloudinary'));
+
+      const res = await request(app)
+        .post(`/api/tenders/${docTenderId}/documents`)
+        .set('Authorization', `Bearer ${maStaffToken}`)
+        .field('file_type', 'alternative_offer')
+        .attach('file', Buffer.from('dummy pdf content'), 'offer.pdf');
+
+      expect(res.statusCode).toBe(502);
+      expect(res.body.message).toBe('Document upload service currently unavailable');
+      consoleErrorSpy.mockRestore();
+    });
+
     it('lists documents for a tender', async () => {
       const res = await request(app)
         .get(`/api/tenders/${docTenderId}/documents`)
@@ -402,6 +443,58 @@ describe('Zheng Hong - Tender Submission & Eligibility (Scope A)', () => {
         .set('Authorization', `Bearer ${maStaffToken}`)
         .attach('file', Buffer.from('irrelevant'), 'irrelevant.pdf');
       expect(res.statusCode).toBe(404);
+    });
+  });
+
+  describe('Tender Image / Document Package Upload', () => {
+    let imgTenderId;
+
+    beforeAll(async () => {
+      const tender = await Tender.create({
+        contractId: openContractId,
+        tender_ref_no: 'TC-A-IMAGE',
+        vendor_name: 'Image Vendor',
+        submission_date: '2026-01-05',
+        main_offer_price: 650000,
+        status: 'draft',
+        created_by: 1
+      });
+      imgTenderId = tender.id;
+    });
+
+    it('ma_staff can upload an image as the tender document package', async () => {
+      const res = await request(app)
+        .post(`/api/tenders/${imgTenderId}/image`)
+        .set('Authorization', `Bearer ${maStaffToken}`)
+        .attach('file', Buffer.from('dummy png bytes'), { filename: 'cover.png', contentType: 'image/png' });
+      expect(res.statusCode).toBe(200);
+      expect(cloudinaryService.uploadBuffer).toHaveBeenCalled();
+    });
+
+    it('returns the friendly fallback message and leaves the tender record untouched when the upload service is unconfigured', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const notConfiguredError = new Error('Cloudinary is not configured (missing CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET)');
+      notConfiguredError.code = 'CLOUDINARY_NOT_CONFIGURED';
+      cloudinaryService.uploadBuffer.mockRejectedValueOnce(notConfiguredError);
+
+      const before = await Tender.findByPk(imgTenderId);
+      const previousImageUrl = before.image_url;
+
+      const res = await request(app)
+        .post(`/api/tenders/${imgTenderId}/image`)
+        .set('Authorization', `Bearer ${maStaffToken}`)
+        .attach('file', Buffer.from('dummy pdf package'), { filename: 'package.pdf', contentType: 'application/pdf' });
+
+      expect(res.statusCode).toBe(502);
+      expect(res.body.message).toBe('Document upload service currently unavailable');
+      expect(res.body.message).not.toMatch(/cloudinary/i);
+
+      const after = await Tender.findByPk(imgTenderId);
+      expect(after.image_url).toBe(previousImageUrl); // untouched - no partial/corrupted state
+
+      const loggedNotConfigured = consoleErrorSpy.mock.calls.some(([line]) => /not configured/i.test(line));
+      expect(loggedNotConfigured).toBe(true);
+      consoleErrorSpy.mockRestore();
     });
   });
 
