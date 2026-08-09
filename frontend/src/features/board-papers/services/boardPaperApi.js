@@ -1,19 +1,25 @@
-import axios from "axios";
+import apiClient from "../../../lib/apiClient";
 
+// Used by the other (unused-in-app) functions below, which still call the
+// backend directly via fetch(). generateBoardPaper/downloadBoardPaperPDF go
+// through apiClient instead (see those functions) - a bare axios/fetch call
+// against a hardcoded relative "/api/boardpapers" path bypasses apiClient's
+// baseURL/auth-header handling entirely, and in production resolves against
+// the Vercel frontend's own origin instead of the Render backend. There's no
+// Vercel rewrite for that path, so a POST there hits Vercel's static-file
+// routing, which rejects non-GET methods with a 405 - exactly the error this
+// was breaking generateBoardPaper with.
 const API_BASE_URL = "/api/boardpapers";
 /*
 ==========================================
 Generate AI Board Paper
-POST /api/boardpapers/generate
+POST /boardpapers/generate
 ==========================================
 */
 
 export const generateBoardPaper = async (boardPaperData) => {
 
-    const { data } = await axios.post(
-        `${API_BASE_URL}/generate`,
-        boardPaperData
-    );
+    const { data } = await apiClient.post("/boardpapers/generate", boardPaperData);
 
     return data;
 
@@ -143,7 +149,7 @@ export async function updateBoardPaper(id, reportData) {
 /*
 ==========================================
 Download PDF
-GET /api/boardpapers/pdf/:id
+GET /boardpapers/pdf/:id
 ==========================================
 */
 
@@ -151,34 +157,27 @@ export async function downloadBoardPaperPDF(id, metadata = {}) {
 
     try {
 
-        const params = new URLSearchParams();
+        const params = {};
 
         Object.entries(metadata).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== "") {
-                params.append(key, String(value));
+                params[key] = String(value);
             }
         });
 
-        const queryString = params.toString();
-        const response = await fetch(
-            `${API_BASE_URL}/pdf/${id}${queryString ? `?${queryString}` : ""}`,
-            {
-                credentials: "include"
-            }
-        );
+        const { data } = await apiClient.get(`/boardpapers/pdf/${id}`, {
+            params,
+            responseType: "blob",
+        });
 
-        if (!response.ok) {
-            throw new Error("Unable to download PDF.");
-        }
-
-        return await response.blob();
+        return data;
 
     }
     catch (error) {
 
         console.error(error);
 
-        throw error;
+        throw new Error("Unable to download PDF.");
 
     }
 
