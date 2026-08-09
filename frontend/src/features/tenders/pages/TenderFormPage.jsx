@@ -152,8 +152,16 @@ function TenderFormPage({ mode }) {
   const { toast } = useToast();
   const [serverError, setServerError] = useState(null);
   const [tenderImageFile, setTenderImageFile] = useState(null);
-  // null = show the entry-mode selection screen (create mode only); edit mode skips it.
-  const [entryMode, setEntryMode] = useState(isEditMode ? 'manual' : null);
+  // null = show the entry-mode selection screen (create mode only); edit mode
+  // skips it, and so does arriving with a contractId already in location.state -
+  // that only happens via ContractDetailPage's "New Tender" button or
+  // TenderRecordLookupPage's "Use Extracted Data" handoff, both of which already
+  // committed to manual entry and pass data meant to prefill the form directly.
+  // Without this, that handoff dead-ended on the entry-mode chooser instead of
+  // showing the prefilled form, making it look like the extracted data was lost.
+  const [entryMode, setEntryMode] = useState(
+    isEditMode || location.state?.contractId ? 'manual' : null
+  );
 
   const {
     data: tender,
