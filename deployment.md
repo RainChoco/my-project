@@ -24,7 +24,7 @@ This document covers deploying the Tender Evaluation Platform to production:
 1. Create a free account at [neon.tech](https://neon.tech).
 2. Create a new project and copy the **connection string** (format: `postgresql://user:password@host/dbname?sslmode=require`).
 3. Set `DATABASE_URL` in your Render backend environment variables.
-4. On first deploy, Sequelize will run `sync({ alter: true })` automatically — no manual migration needed.
+4. On first deploy, Sequelize runs a plain `sync()` automatically, which creates any tables that don't exist yet - this is enough for a brand-new database. It does not alter existing tables to match later model changes, so after pulling in schema changes on an already-deployed database, run the migrations explicitly: `npx sequelize-cli db:migrate` (see `src/migrations/`).
 
 ---
 
@@ -99,18 +99,9 @@ This document covers deploying the Tender Evaluation Platform to production:
 
 ## 5. CORS Configuration
 
-The backend whitelists specific frontend origins. After deploying to Vercel, add the production URL to `backend/src/index.js`:
+The backend whitelists specific frontend origins in `backend/src/index.js`. Localhost origins are always allowed; the deployed Vercel origin is added via the `FRONTEND_URL` environment variable - no code change needed.
 
-```js
-const corsOptions = {
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'https://<your-vercel-app>.vercel.app',  // ← add this
-  ],
-  ...
-};
-```
+After deploying to Vercel, set `FRONTEND_URL` in the Render backend environment variables to your Vercel URL (e.g. `https://<your-vercel-app>.vercel.app`). If you have both a production and a preview URL, separate them with a comma: `FRONTEND_URL=https://app.vercel.app,https://app-preview.vercel.app`. Render redeploys automatically when an environment variable changes.
 
 ---
 
@@ -118,8 +109,8 @@ const corsOptions = {
 
 - [ ] `JWT_SECRET` set to a strong value (not the dev fallback)
 - [ ] `DATABASE_URL` points to Neon (not SQLite)
-- [ ] `VITE_API_BASE_URL` set to Render backend URL
-- [ ] CORS list includes the Vercel frontend URL
+- [ ] `VITE_API_BASE_URL` set to Render backend URL (as an absolute URL, e.g. `https://<app>.onrender.com/api` - not left unset, since it silently falls back to a relative `/api` path that Vercel has no rewrite for)
+- [ ] `FRONTEND_URL` set on Render to the Vercel frontend URL
 - [ ] Cloudinary credentials set
 - [ ] `npm run build` passes locally before deploying
 - [ ] `npm test` passes (31/31)

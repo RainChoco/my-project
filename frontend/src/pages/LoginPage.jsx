@@ -36,7 +36,20 @@ function LoginPage() {
         const redirectTo = location.state?.from?.pathname ?? '/';
         navigate(redirectTo, { replace: true });
       } catch (error) {
-        setServerError(error.response?.data?.message ?? 'Login failed. Please try again.');
+        // Logged so a misconfigured VITE_API_BASE_URL or backend CORS
+        // rejection is visible in the browser console instead of only
+        // surfacing as a generic message to the user.
+        console.error('Login request failed:', error);
+
+        if (error.response) {
+          setServerError(error.response.data?.message ?? 'Login failed. Please try again.');
+        } else if (error.request) {
+          // Request went out but no response came back - CORS rejection,
+          // wrong API base URL, or the backend is unreachable.
+          setServerError('Unable to reach the server. Please check your connection and try again.');
+        } else {
+          setServerError('Login failed. Please try again.');
+        }
       } finally {
         setSubmitting(false);
       }
