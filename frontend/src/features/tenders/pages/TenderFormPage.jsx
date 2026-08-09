@@ -16,6 +16,7 @@ import { createTenderSchema, editTenderSchema } from '../schemas';
 import { BCA_GRADES, BIZSAFE_LEVELS, LOCKED_FOR_EDIT_STATUSES, STATUS_LABELS, ELIGIBILITY_STATUS_LABELS } from '../constants';
 import { createTender, updateTender, getTender, uploadTenderImage, listTenders } from '../services/tenderApi';
 import { computeNextTenderRefNo } from '../utils/tenderRefNo';
+import { getUploadErrorMessage } from '../utils/uploadErrorMessage';
 import { fetchContracts } from '@/features/contracts/services/contractApi';
 import { TENDER_SUBMISSION_BLOCKED_STATUSES } from '@/features/contracts/constants';
 
@@ -254,15 +255,19 @@ function TenderFormPage({ mode }) {
           toast({ title: 'Tender created', description: `${created.tender_ref_no} was logged as a draft.`, variant: 'success' });
         }
 
+        // The tender record above is already created/updated and committed at this
+        // point, regardless of what happens next - the optional document package
+        // upload is attempted in its own try/catch specifically so a failure here
+        // (e.g. Cloudinary being unavailable) can never roll back or block the
+        // save that already succeeded, nor stop navigation to the saved tender.
         if (tenderImageFile) {
           try {
             await uploadImageMutation.mutateAsync({ tenderId, file: tenderImageFile });
             queryClient.invalidateQueries({ queryKey: ['tender', String(tenderId)] });
           } catch (uploadError) {
-            const uploadMessage = uploadError.response?.data?.message ?? 'Image upload failed.';
             toast({
-              title: 'Tender saved, but image upload failed',
-              description: uploadMessage,
+              title: 'Tender saved - document upload failed',
+              description: getUploadErrorMessage(uploadError, 'Document upload failed.'),
               variant: 'destructive',
             });
           }

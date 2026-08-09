@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import DocumentUploadForm from './DocumentUploadForm';
 import TenderDocumentsList from './TenderDocumentsList';
 import { uploadTenderDocument, replaceTenderDocument } from '../services/tenderApi';
+import { getUploadErrorMessage } from '../utils/uploadErrorMessage';
 
 function DocumentsManager({ tenderId, documents, isLoading, canManage }) {
   const { toast } = useToast();
@@ -24,7 +25,7 @@ function DocumentsManager({ tenderId, documents, isLoading, canManage }) {
     onError: (err) => {
       toast({
         title: 'Upload failed',
-        description: err.response?.data?.message ?? 'Could not upload the document.',
+        description: getUploadErrorMessage(err, 'Could not upload the document.'),
         variant: 'destructive',
       });
     },
@@ -39,7 +40,7 @@ function DocumentsManager({ tenderId, documents, isLoading, canManage }) {
     onError: (err) => {
       toast({
         title: 'Replace failed',
-        description: err.response?.data?.message ?? 'Could not replace the document.',
+        description: getUploadErrorMessage(err, 'Could not replace the document.'),
         variant: 'destructive',
       });
     },

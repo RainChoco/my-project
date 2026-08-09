@@ -94,6 +94,31 @@ describe('TenderFormPage (Zheng Hong)', () => {
     expect(screen.getByRole('button', { name: 'Save Tender' })).toBeDisabled();
   });
 
+  it('still saves the tender (and attempts navigation) even if the optional document upload fails, e.g. a Cloudinary outage', async () => {
+    tenderApi.createTender.mockResolvedValue({ id: 42, tender_ref_no: 'TC-2026-001' });
+    tenderApi.uploadTenderImage.mockRejectedValue({
+      response: { status: 502, data: { status: 'error', message: 'Cloudinary upload failed' } },
+    });
+    const { container } = renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: /New Tender Submission/i }));
+
+    fireEvent.change(await screen.findByLabelText(/Contract Opportunity/i), { target: { value: 'CTR-001' } });
+    fireEvent.change(screen.getByLabelText(/Vendor Name/i), { target: { value: 'Acme Facilities' } });
+    fireEvent.change(screen.getByLabelText(/Submission Date/i), { target: { value: '2026-01-05' } });
+    fireEvent.change(screen.getByLabelText(/Main Offer Price/i), { target: { value: '800000' } });
+
+    const file = new File(['dummy'], 'package.pdf', { type: 'application/pdf' });
+    fireEvent.change(container.querySelector('input[type="file"]'), { target: { files: [file] } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Tender' }));
+
+    await waitFor(() => expect(tenderApi.createTender).toHaveBeenCalledTimes(1));
+    // uploadTenderImage is only ever called after createTender's promise resolves
+    // successfully, so this call happening at all proves the tender save wasn't
+    // rolled back or blocked by the upload later failing.
+    await waitFor(() => expect(tenderApi.uploadTenderImage).toHaveBeenCalledWith(42, file));
+  });
+
   it('surfaces the server error and highlights tender_ref_no on a duplicate-reference 409', async () => {
     tenderApi.createTender.mockRejectedValue({
       response: { status: 409, data: { message: 'tender_ref_no already exists' } },
