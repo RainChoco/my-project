@@ -12,7 +12,6 @@ import {
     CardTitle
 } from "../../../components/ui/card";
 
-import { downloadBoardPaperPDF } from "../services/boardPaperApi";
 import { getTender, listTenderDocuments } from "../../tenders/services/tenderApi";
 
 function BoardPaperResultPage() {
@@ -73,19 +72,7 @@ function BoardPaperResultPage() {
     const recommendationText = boardPaper?.aiRecommendation || boardPaper?.finalRecommendation || NOT_AVAILABLE;
     const riskLevelText = boardPaper?.aiRiskLevel || (confidenceScore == null ? "Not available" : confidenceScore >= 90 ? "Low" : "Medium");
 
-    const tenderDetailsText = [
-        `Tender Reference: ${tender?.tender_ref_no || "—"}`,
-        `Vendor: ${tender?.vendor_name || "—"}`,
-        `Submission Date: ${tender?.submission_date ? new Date(tender.submission_date).toLocaleDateString("en-SG") : "—"}`,
-        `Status: ${tender?.status || "—"}`,
-        `Main Offer Price: ${tender?.main_offer_price ? `SGD ${Number(tender.main_offer_price).toLocaleString()}` : "—"}`,
-        `Alternative Offer Price: ${tender?.alternative_offer_price ? `SGD ${Number(tender.alternative_offer_price).toLocaleString()}` : "—"}`,
-    ].join("\n");
-
     const documentsList = Array.isArray(tenderDocs) ? tenderDocs : [];
-    const documentsText = documentsList.length > 0
-        ? documentsList.map((doc) => doc.original_filename || doc.file_type || "Document").join("\n")
-        : "No tender documents found.";
 
     const summarySections = useMemo(() => {
         const normalizeLine = (line, title) => {
@@ -426,47 +413,6 @@ function BoardPaperResultPage() {
                     onClick={() => navigate("/board-papers")}
                 >
                     Back
-                </Button>
-
-                <Button
-                    variant="outline"
-                    onClick={async () => {
-                        if (!boardPaper?.id) {
-                            alert("Unable to download PDF: board paper ID is missing.");
-                            return;
-                        }
-
-                        try {
-                            const blob = await downloadBoardPaperPDF(boardPaper.id, {
-                                title: boardPaper?.title || "",
-                                purpose: boardPaper?.purpose || "",
-                                preparedBy: boardPaper?.preparedBy || "",
-                                tenderLabel: tenderName,
-                                generatedDate,
-                                summaryText,
-                                confidenceScore,
-                                confidenceText,
-                                financialAnalysisText,
-                                riskAssessmentText,
-                                recommendationText,
-                                tenderDetailsText,
-                                documentListText: documentsText,
-                            });
-                            const url = window.URL.createObjectURL(blob);
-                            const link = document.createElement("a");
-                            link.href = url;
-                            link.download = `BoardPaper-${boardPaper.id}.pdf`;
-                            document.body.appendChild(link);
-                            link.click();
-                            link.remove();
-                            window.URL.revokeObjectURL(url);
-                        } catch (error) {
-                            console.error(error);
-                            alert("Failed to download board paper PDF.");
-                        }
-                    }}
-                >
-                    Download PDF
                 </Button>
 
                 <Button
