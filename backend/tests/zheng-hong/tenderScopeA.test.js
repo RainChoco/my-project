@@ -152,6 +152,34 @@ describe('Zheng Hong - Tender Submission & Eligibility (Scope A)', () => {
       tenderId = res.body.id;
     });
 
+    // TenderFormPage's create form defaults the "Submission Status" field to
+    // 'submitted' (not omitted), so this - not the omitted-status case above -
+    // is what actually happens on a normal create. Guards against the create
+    // endpoint silently defaulting to 'draft' regardless of what's sent, which
+    // previously matched a real bug where the *frontend toast* claimed "logged
+    // as a draft" even when the saved record (and its status badge) was
+    // actually 'submitted'.
+    it('persists an explicit status: "submitted" from the request body as-is, not overridden to draft', async () => {
+      const res = await request(app)
+        .post('/api/tenders')
+        .set('Authorization', `Bearer ${maStaffToken}`)
+        .send({
+          contractId: openContractId,
+          tender_ref_no: 'TC-A-SUBMITTED',
+          vendor_name: 'Submitted Vendor',
+          submission_date: '2026-01-05',
+          main_offer_price: 800000,
+          status: 'submitted',
+          eligibility_status: 'eligible'
+        });
+      expect(res.statusCode).toBe(201);
+      expect(res.body.status).toBe('submitted');
+      expect(res.body.eligibility_status).toBe('eligible');
+
+      const persisted = await Tender.findByPk(res.body.id);
+      expect(persisted.status).toBe('submitted');
+    });
+
     it('rejects a duplicate tender_ref_no (409)', async () => {
       const res = await request(app)
         .post('/api/tenders')

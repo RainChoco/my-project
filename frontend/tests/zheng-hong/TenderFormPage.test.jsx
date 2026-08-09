@@ -7,6 +7,8 @@ import TenderFormPage from '../../src/features/tenders/pages/TenderFormPage';
 import * as tenderApi from '../../src/features/tenders/services/tenderApi';
 import * as contractApi from '../../src/features/contracts/services/contractApi';
 
+const mockToast = vi.fn();
+
 vi.mock('../../src/features/tenders/services/tenderApi', () => ({
   createTender: vi.fn(),
   updateTender: vi.fn(),
@@ -16,6 +18,9 @@ vi.mock('../../src/features/tenders/services/tenderApi', () => ({
 }));
 vi.mock('../../src/features/contracts/services/contractApi', () => ({
   fetchContracts: vi.fn(),
+}));
+vi.mock('@/hooks/use-toast', () => ({
+  useToast: () => ({ toast: mockToast }),
 }));
 
 const CONTRACTS = [
@@ -81,6 +86,52 @@ describe('TenderFormPage (Zheng Hong)', () => {
     expect(payload.contractId).toBe('CTR-001');
     expect(payload.vendor_name).toBe('Acme Facilities');
     expect(payload.main_offer_price).toBe(800000);
+  });
+
+  it('shows a toast reflecting the actual saved status ("submitted"), not a hardcoded draft message', async () => {
+    tenderApi.createTender.mockResolvedValue({ id: 42, tender_ref_no: 'TC-2026-018', status: 'submitted' });
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: /New Tender Submission/i }));
+
+    fireEvent.change(await screen.findByLabelText(/Contract Opportunity/i), { target: { value: 'CTR-001' } });
+    fireEvent.change(screen.getByLabelText(/Vendor Name/i), { target: { value: 'Acme Facilities' } });
+    fireEvent.change(screen.getByLabelText(/Submission Date/i), { target: { value: '2026-01-05' } });
+    fireEvent.change(screen.getByLabelText(/Main Offer Price/i), { target: { value: '800000' } });
+    // Submission Status defaults to 'submitted' - left unchanged.
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Tender' }));
+
+    await waitFor(() =>
+      expect(mockToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Tender created',
+          description: 'TC-2026-018 was submitted successfully.',
+        })
+      )
+    );
+  });
+
+  it('shows a "logged as a draft" toast only when the tender is actually saved with status draft', async () => {
+    tenderApi.createTender.mockResolvedValue({ id: 43, tender_ref_no: 'TC-2026-019', status: 'draft' });
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: /New Tender Submission/i }));
+
+    fireEvent.change(await screen.findByLabelText(/Contract Opportunity/i), { target: { value: 'CTR-001' } });
+    fireEvent.change(screen.getByLabelText(/Vendor Name/i), { target: { value: 'Acme Facilities' } });
+    fireEvent.change(screen.getByLabelText(/Submission Date/i), { target: { value: '2026-01-05' } });
+    fireEvent.change(screen.getByLabelText(/Main Offer Price/i), { target: { value: '800000' } });
+    fireEvent.change(screen.getByLabelText(/Submission Status/i), { target: { value: 'draft' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Tender' }));
+
+    await waitFor(() =>
+      expect(mockToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Tender created',
+          description: 'TC-2026-019 was logged as a draft.',
+        })
+      )
+    );
   });
 
   it('disables submission while the selected contract is blocked from new tenders (e.g. Closed)', async () => {

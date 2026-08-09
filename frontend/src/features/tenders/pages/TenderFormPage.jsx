@@ -45,6 +45,19 @@ const CREATE_DEFAULTS = {
 const CREATE_STATUS_OPTIONS = ['draft', 'submitted', 'under_evaluation'];
 const CREATE_ELIGIBILITY_OPTIONS = ['eligible', 'flagged', 'pending'];
 
+// The create-success toast must reflect the tender's *actual* saved status
+// (CREATE_DEFAULTS.status defaults to 'submitted', but the "Submission Status"
+// dropdown lets the user pick any of CREATE_STATUS_OPTIONS) - previously this
+// was a hardcoded "was logged as a draft." regardless of what was actually
+// saved, which was flatly wrong whenever the status was 'submitted' (the
+// default) or 'under_evaluation', contradicting the status badge shown right
+// after on the tender detail page.
+const CREATE_STATUS_TOAST_MESSAGES = {
+  draft: 'was logged as a draft.',
+  submitted: 'was submitted successfully.',
+  under_evaluation: 'was logged and sent for evaluation.',
+};
+
 const EDIT_DEFAULTS = {
   ...CREATE_DEFAULTS,
   paid_up_capital: '',
@@ -252,7 +265,11 @@ function TenderFormPage({ mode }) {
           tenderId = created.id;
           queryClient.invalidateQueries({ queryKey: ['tenders'] });
           queryClient.invalidateQueries({ queryKey: ['contractTenders', payload.contractId] });
-          toast({ title: 'Tender created', description: `${created.tender_ref_no} was logged as a draft.`, variant: 'success' });
+          toast({
+            title: 'Tender created',
+            description: `${created.tender_ref_no} ${CREATE_STATUS_TOAST_MESSAGES[created.status] ?? 'was saved.'}`,
+            variant: 'success',
+          });
         }
 
         // The tender record above is already created/updated and committed at this
