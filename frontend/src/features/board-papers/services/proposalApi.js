@@ -1,30 +1,23 @@
-import { API_BASE_URL as API_URL } from "../../../lib/apiClient";
+import apiClient, { API_BASE_URL as API_URL } from "../../../lib/apiClient";
+
+// Used by the other (unused-in-app) functions below, which still call the
+// backend directly via fetch(). generateProposal goes through apiClient
+// instead (see below) - a bare fetch() call with no Authorization header
+// against a route gated by `authenticate` always 401'd, which is what was
+// actually producing "Unable to generate proposal" / "Failed to generate
+// proposal" - not a bad request body or wrong URL.
 
 /*
 -----------------------------------------
 Generate AI Proposal
-POST /api/proposals/generate
+POST /proposals/generate
 -----------------------------------------
 */
 
 export async function generateProposal(data) {
 
-    const response = await fetch(
-        `${API_URL}/proposals/generate`,
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to generate proposal.");
-    }
-
-    return await response.json();
+    const { data: result } = await apiClient.post("/proposals/generate", data);
+    return result;
 
 }
 

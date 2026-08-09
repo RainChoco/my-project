@@ -275,7 +275,7 @@ function ProposalGeneratorPage() {
             console.error(error);
             toast({
                 title: "Unable to generate proposal",
-                description: error.message || "Network error occurred.",
+                description: error.response?.data?.message || error.message || "Network error occurred.",
                 variant: "destructive"
             });
         }
